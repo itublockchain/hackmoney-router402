@@ -3,5 +3,5 @@
  */
 
 export * from "./handlers/index.js";
-export { registerX402Hooks } from "./register.js";
+export { registerX402Hooks, registerX402HTTPHooks } from "./register.js";
 export * from "./types.js";

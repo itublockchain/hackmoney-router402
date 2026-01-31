@@ -11,20 +11,20 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "x402:install": "pnpm install --prefix external/x402/typescript",
+    "x402:build": "pnpm run build --prefix external/x402/typescript"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.3.0",
     "@prisma/client": "^7.3.0",
     "@router402/types": "workspace:*",
     "@router402/utils": "workspace:*",
-    "@x402/core": "^2.2.0",
-    "@x402/evm": "^2.2.0",
-    "@x402/express": "^2.2.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "helmet": "^8.0.0",
+    "pg": "^8.13.0",
     "prisma": "^7.3.0",
     "viem": "^2.45.1",
     "zod": "^4.3.6"
@@ -33,6 +33,7 @@
     "@types/express": "^5.0.0",
     "@types/cors": "^2.8.17",
     "@types/node": "^22.10.5",
+    "@types/pg": "^8.11.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3"
   }

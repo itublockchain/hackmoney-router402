@@ -10,9 +10,17 @@ import helmet from "helmet";
 import { initConfig } from "./config/index.js";
 import { healthRouter } from "./routes/health.js";
 import { createPaidRouter } from "./routes/paid.js";
+import { initDebtService } from "./services/debt.js";
+import { disconnectPrisma, getPrismaClient } from "./utils/prisma.js";
 
 // Initialize and validate configuration at startup
 const config = initConfig();
+
+// Initialize Prisma client
+const prisma = getPrismaClient(config.DATABASE_URL);
+
+// Initialize debt service
+initDebtService(prisma, config);
 
 // Create routers that depend on config
 const paidRouter = createPaidRouter(config);
@@ -84,7 +92,8 @@ const server = app.listen(PORT, () => {
 const shutdownLogger = logger.context("Shutdown");
 process.on("SIGTERM", () => {
   shutdownLogger.info("SIGTERM signal received: closing HTTP server");
-  server.close(() => {
+  server.close(async () => {
+    await disconnectPrisma();
     shutdownLogger.info("HTTP server closed");
     process.exit(0);
   });
@@ -92,7 +101,8 @@ process.on("SIGTERM", () => {
 
 process.on("SIGINT", () => {
   shutdownLogger.info("\nSIGINT signal received: closing HTTP server");
-  server.close(() => {
+  server.close(async () => {
+    await disconnectPrisma();
     shutdownLogger.info("HTTP server closed");
     process.exit(0);
   });

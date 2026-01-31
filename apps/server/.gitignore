@@ -3,3 +3,12 @@ node_modules
 .env
 
 /generated/prisma
+
+# Build output
+dist/
+
+# x402 submodule build artifacts
+external/x402/typescript/packages/*/dist/
+external/x402/typescript/packages/*/node_modules/
+external/x402/typescript/node_modules/
+external/x402/node_modules/

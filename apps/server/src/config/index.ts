@@ -22,6 +22,7 @@ export function loadConfig(): Config {
       RPC_URL: process.env.RPC_URL,
       PAY_TO: process.env.PAY_TO,
       FACILITATOR_URL: process.env.FACILITATOR_URL,
+      DEBT_THRESHOLD: process.env.DEBT_THRESHOLD,
     });
 
     configLogger.info("Configuration loaded successfully");
