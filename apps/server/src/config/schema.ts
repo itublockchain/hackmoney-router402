@@ -29,6 +29,20 @@ export const configSchema = z.object({
    * @default "http://localhost:3000"
    */
   CORS_ORIGIN: z.string().url().default("http://localhost:3000"),
+
+  /**
+   * Database connection URL
+   * PostgreSQL connection string for Neon database
+   * @default "postgresql://username:password@host.neon.tech/neondb"
+   */
+  DATABASE_URL: z.string(),
+
+  /**
+   * Base RPC URL
+   * RPC endpoint for blockchain interactions
+   * @default "https://mainnet.base.org/"
+   */
+  RPC_URL: z.string().default("https://mainnet.base.org/"),
 });
 
 /**
