@@ -16,7 +16,8 @@
       "!**/packages/cli/public",
       "!**/coverage",
       "!**/*.min.js",
-      "!**/*.min.css"
+      "!**/*.min.css",
+      "!bun.lock"
     ]
   },
   "formatter": {
@@ -146,7 +147,14 @@
   },
   "overrides": [
     {
-      "includes": ["**/__tests__/**/*.ts", "**/*.spec.ts", "**/*.test.ts"],
+      "includes": [
+        "**/__tests__/**/*.ts",
+        "**/__tests__/**/*.tsx",
+        "**/*.spec.ts",
+        "**/*.spec.tsx",
+        "**/*.test.ts",
+        "**/*.test.tsx"
+      ],
       "linter": {
         "rules": {
           "suspicious": {
@@ -154,6 +162,9 @@
           },
           "style": {
             "noNonNullAssertion": "off"
+          },
+          "correctness": {
+            "noUnusedFunctionParameters": "off"
           }
         }
       }
