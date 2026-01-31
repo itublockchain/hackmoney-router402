@@ -9,9 +9,13 @@ import express, {
 import helmet from "helmet";
 import { initConfig } from "./config/index.js";
 import { healthRouter } from "./routes/health.js";
+import { createPaidRouter } from "./routes/paid.js";
 
 // Initialize and validate configuration at startup
 const config = initConfig();
+
+// Create routers that depend on config
+const paidRouter = createPaidRouter(config);
 
 const app = express();
 const PORT = config.PORT;
@@ -36,6 +40,7 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
 
 // Routes
 app.use("/health", healthRouter);
+app.use("/paid", paidRouter);
 
 // 404 handler
 app.use((req: Request, res: Response) => {

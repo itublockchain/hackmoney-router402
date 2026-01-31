@@ -28,21 +28,28 @@ export const configSchema = z.object({
    * CORS origin for cross-origin requests
    * @default "http://localhost:3000"
    */
-  CORS_ORIGIN: z.string().url().default("http://localhost:3000"),
+  CORS_ORIGIN: z.url().default("http://localhost:3000"),
 
   /**
    * Database connection URL
    * PostgreSQL connection string for Neon database
    * @default "postgresql://username:password@host.neon.tech/neondb"
    */
-  DATABASE_URL: z.string(),
+  DATABASE_URL: z.url(),
 
   /**
    * Base RPC URL
    * RPC endpoint for blockchain interactions
    * @default "https://mainnet.base.org/"
    */
-  RPC_URL: z.string().default("https://mainnet.base.org/"),
+  RPC_URL: z.url().default("https://mainnet.base.org/"),
+
+  /**
+   * x402 Payment wallet address
+   * Wallet address to receive payments
+   * @default "0x5Ba55eaBD43743Ef6bB6285f393fA3CbA33FbA5e"
+   */
+  PAY_TO: z.string().default("0x5Ba55eaBD43743Ef6bB6285f393fA3CbA33FbA5e"),
 });
 
 /**

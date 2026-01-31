@@ -20,6 +20,7 @@ export function loadConfig(): Config {
       CORS_ORIGIN: process.env.CORS_ORIGIN,
       DATABASE_URL: process.env.DATABASE_URL,
       RPC_URL: process.env.RPC_URL,
+      PAY_TO: process.env.PAY_TO,
     });
 
     configLogger.info("Configuration loaded successfully");
