@@ -50,6 +50,13 @@ export const configSchema = z.object({
    * @default "0x5Ba55eaBD43743Ef6bB6285f393fA3CbA33FbA5e"
    */
   PAY_TO: z.string().default("0x5Ba55eaBD43743Ef6bB6285f393fA3CbA33FbA5e"),
+
+  /**
+   * x402 Facilitator URL
+   * URL for the x402 facilitator service
+   * @default "https://x402.org/facilitator"
+   */
+  FACILITATOR_URL: z.url().default("https://x402.org/facilitator"),
 });
 
 /**

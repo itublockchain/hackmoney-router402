@@ -21,6 +21,7 @@ export function loadConfig(): Config {
       DATABASE_URL: process.env.DATABASE_URL,
       RPC_URL: process.env.RPC_URL,
       PAY_TO: process.env.PAY_TO,
+      FACILITATOR_URL: process.env.FACILITATOR_URL,
     });
 
     configLogger.info("Configuration loaded successfully");

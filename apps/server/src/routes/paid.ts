@@ -3,19 +3,21 @@ import { registerExactEvmScheme } from "@x402/evm/exact/server";
 import { paymentMiddleware } from "@x402/express";
 import { Router as ExpressRouter, type Router } from "express";
 import type { Config } from "../config/index.js";
+import { registerX402Hooks } from "../hooks/index.js";
 
 export function createPaidRouter(config: Config): Router {
   const paidRouter: Router = ExpressRouter();
   const payTo = config.PAY_TO;
 
-  // Create facilitator client (testnet)
+  // Create facilitator client
   const facilitatorClient = new HTTPFacilitatorClient({
-    url: "https://x402.org/facilitator",
+    url: config.FACILITATOR_URL,
   });
 
-  // Create resource server and register EVM scheme
+  // Create resource server, register EVM scheme, and attach lifecycle hooks
   const server = new x402ResourceServer(facilitatorClient);
   registerExactEvmScheme(server);
+  registerX402Hooks(server);
 
   // Apply payment middleware to protected routes
   paidRouter.use(
@@ -26,7 +28,7 @@ export function createPaidRouter(config: Config): Router {
             {
               scheme: "exact",
               price: "$0.1",
-              network: "eip155:84532", // Base Sepolia (testnet)
+              network: "eip155:84532" as const,
               payTo,
             },
           ],
