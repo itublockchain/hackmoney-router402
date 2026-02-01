@@ -2,6 +2,7 @@
  * Services Module
  */
 
+export { ChatService } from "./chat.service.js";
 export {
   addUserDebt,
   getDebtThreshold,

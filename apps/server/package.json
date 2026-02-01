@@ -16,11 +16,14 @@
     "x402:build": "pnpm run build --prefix external/x402/typescript"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.72.1",
+    "@google/generative-ai": "^0.24.1",
     "@prisma/adapter-pg": "^7.3.0",
     "@prisma/client": "^7.3.0",
     "@router402/types": "workspace:*",
     "@router402/utils": "workspace:*",
     "cors": "^2.8.5",
+    "decimal.js": "^10.6.0",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "helmet": "^8.0.0",

@@ -16,6 +16,7 @@ import { paymentMiddlewareFromHTTPServer } from "../../external/x402/typescript/
 import { registerExactEvmScheme } from "../../external/x402/typescript/packages/mechanisms/evm/dist/esm/exact/server/index.mjs";
 import type { Config } from "../config/index.js";
 import { registerX402Hooks, registerX402HTTPHooks } from "../hooks/index.js";
+import { createChatRouter } from "./chat.js";
 
 const routeLogger = logger.context("x402:Routes");
 
@@ -49,6 +50,18 @@ export function createPaidRouter(config: Config): Router {
       description: "Access to protected content",
       mimeType: "application/json",
     },
+    "POST /chat/completions": {
+      accepts: [
+        {
+          scheme: "exact",
+          price: "$0.01", // Base price, actual cost calculated per request
+          network: "eip155:84532" as const,
+          payTo,
+        },
+      ],
+      description: "OpenRouter-compatible LLM chat completions",
+      mimeType: "application/json",
+    },
   };
 
   // Create HTTP resource server with routes
@@ -75,6 +88,9 @@ export function createPaidRouter(config: Config): Router {
       timestamp: new Date().toISOString(),
     });
   });
+
+  // Mount chat router for OpenRouter-compatible LLM chat completions
+  paidRouter.use("/", createChatRouter());
 
   return paidRouter;
 }

@@ -206,7 +206,7 @@ export async function verifyPaymentSignature(
     }
 
     // Extract chainId from network (e.g., "eip155:8453" -> 8453)
-    const chainId = parseInt(accepted.network.split(":")[1]);
+    const chainId = parseInt(accepted.network.split(":")[1], 10);
 
     const domain = {
       name,
@@ -223,7 +223,7 @@ export async function verifyPaymentSignature(
     const auth = payload.permit2Authorization as Permit2Authorization;
 
     // Extract chainId from network
-    const chainId = parseInt(accepted.network.split(":")[1]);
+    const chainId = parseInt(accepted.network.split(":")[1], 10);
 
     return verifyPermit2Signature(auth, signature, walletAddress, chainId);
   }

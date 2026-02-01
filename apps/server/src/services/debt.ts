@@ -5,30 +5,31 @@
  */
 
 import { logger } from "@router402/utils";
+import { Decimal } from "decimal.js";
 import { PrismaClient } from "../../generated/prisma/client.js";
 import type { Config } from "../config/index.js";
 
 const debtLogger = logger.context("DebtService");
 
 let prisma: PrismaClient | null = null;
-let debtThreshold = process.env.DEBT_THRESHOLD
-  ? Number(process.env.DEBT_THRESHOLD)
-  : 0.5;
+let defaultThreshold = new Decimal(0.5);
 
 /**
  * Initialize the debt service with Prisma client and config
  */
 export function initDebtService(client: PrismaClient, config: Config): void {
   prisma = client;
-  debtThreshold = config.DEBT_THRESHOLD;
-  debtLogger.info("Debt service initialized", { threshold: debtThreshold });
+  defaultThreshold = new Decimal(config.DEBT_THRESHOLD);
+  debtLogger.info("Debt service initialized", {
+    threshold: defaultThreshold.toString(),
+  });
 }
 
 /**
- * Get configured debt threshold
+ * Get configured default debt threshold
  */
 export function getDebtThreshold(): number {
-  return debtThreshold;
+  return defaultThreshold.toNumber();
 }
 
 /**
@@ -44,17 +45,38 @@ function getPrisma(): PrismaClient {
 }
 
 /**
- * Get user's current debt as number
+ * Get or create user by wallet address
+ */
+export async function getOrCreateUser(walletAddress: string) {
+  const db = getPrisma();
+  const normalizedAddress = walletAddress.toLowerCase();
+
+  const user = await db.user.upsert({
+    where: { walletAddress: normalizedAddress },
+    update: {},
+    create: {
+      walletAddress: normalizedAddress,
+      currentDebt: new Decimal(0),
+      totalSpent: new Decimal(0),
+      paymentThreshold: defaultThreshold,
+    },
+  });
+
+  debtLogger.debug("User retrieved/created", {
+    wallet: normalizedAddress.slice(0, 10),
+    id: user.id,
+  });
+
+  return user;
+}
+
+/**
+ * Get user's current debt as number (in dollars)
  */
 export async function getUserDebt(walletAddress: string): Promise<number> {
   try {
-    const db = getPrisma();
-    const user = await db.user.findUnique({
-      where: { walletAddress: walletAddress.toLowerCase() },
-      select: { currentDebt: true },
-    });
-
-    return user?.currentDebt.toNumber() ?? 0;
+    const user = await getOrCreateUser(walletAddress);
+    return new Decimal(user.currentDebt).toNumber();
   } catch (error) {
     debtLogger.error("Failed to get user debt", {
       wallet: walletAddress.slice(0, 10),
@@ -65,30 +87,22 @@ export async function getUserDebt(walletAddress: string): Promise<number> {
 }
 
 /**
- * Check if user's debt is below the configured threshold
+ * Check if user's debt is below their personal threshold
  */
 export async function isDebtBelowThreshold(
   walletAddress: string
 ): Promise<boolean> {
   try {
-    const db = getPrisma();
-    const user = await db.user.findUnique({
-      where: { walletAddress: walletAddress.toLowerCase() },
-      select: { currentDebt: true },
-    });
+    const user = await getOrCreateUser(walletAddress);
 
-    if (!user) {
-      // New user - no debt, below threshold
-      return true;
-    }
-
-    const debt = user.currentDebt.toNumber();
-    const belowThreshold = debt < debtThreshold;
+    const debt = new Decimal(user.currentDebt);
+    const threshold = new Decimal(user.paymentThreshold);
+    const belowThreshold = debt.lessThan(threshold);
 
     debtLogger.debug("Debt threshold check", {
       wallet: walletAddress.slice(0, 10),
-      debt,
-      threshold: debtThreshold,
+      debt: debt.toString(),
+      threshold: threshold.toString(),
       belowThreshold,
     });
 
@@ -104,20 +118,21 @@ export async function isDebtBelowThreshold(
 }
 
 /**
- * Add to user's debt
+ * Add to user's debt (amount in dollars)
  */
 export async function addUserDebt(
   walletAddress: string,
   amount: number
 ): Promise<void> {
   const db = getPrisma();
+  const user = await getOrCreateUser(walletAddress);
+  const amountDecimal = new Decimal(amount);
 
-  await db.user.upsert({
-    where: { walletAddress: walletAddress.toLowerCase() },
-    update: { currentDebt: { increment: amount } },
-    create: {
-      walletAddress: walletAddress.toLowerCase(),
-      currentDebt: amount,
+  await db.user.update({
+    where: { id: user.id },
+    data: {
+      currentDebt: { increment: amountDecimal },
+      totalSpent: { increment: amountDecimal },
     },
   });
 
@@ -132,11 +147,56 @@ export async function addUserDebt(
  */
 export async function resetUserDebt(walletAddress: string): Promise<void> {
   const db = getPrisma();
+  const user = await getOrCreateUser(walletAddress);
 
   await db.user.update({
-    where: { walletAddress: walletAddress.toLowerCase() },
-    data: { currentDebt: 0 },
+    where: { id: user.id },
+    data: { currentDebt: new Decimal(0) },
   });
 
   debtLogger.info("User debt reset", { wallet: walletAddress.slice(0, 10) });
+}
+
+/**
+ * Record usage for a user
+ */
+export async function recordUsage(
+  walletAddress: string,
+  model: string,
+  promptTokens: number,
+  completionTokens: number,
+  baseCost: number,
+  commission: number,
+  totalCost: number
+): Promise<void> {
+  const db = getPrisma();
+  const user = await getOrCreateUser(walletAddress);
+
+  await db.usageRecord.create({
+    data: {
+      userId: user.id,
+      model,
+      promptTokens,
+      completionTokens,
+      baseCost: new Decimal(baseCost),
+      commission: new Decimal(commission),
+      totalCost: new Decimal(totalCost),
+      isPaid: false,
+    },
+  });
+
+  // Also increment user's debt
+  await db.user.update({
+    where: { id: user.id },
+    data: {
+      currentDebt: { increment: new Decimal(totalCost) },
+      totalSpent: { increment: new Decimal(totalCost) },
+    },
+  });
+
+  debtLogger.info("Usage recorded", {
+    wallet: walletAddress.slice(0, 10),
+    model,
+    totalCost,
+  });
 }
