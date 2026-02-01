@@ -11,48 +11,14 @@ import type {
   HTTPRequestContext,
   RouteConfig,
 } from "../../../../external/x402/typescript/packages/core/dist/esm/server/index.mjs";
+import type { PaymentPayload } from "../../../../external/x402/typescript/packages/core/dist/esm/types/index.mjs";
 import { isDebtBelowThreshold } from "../../../services/debt.js";
+import {
+  extractWalletFromPayload,
+  verifyPaymentSignature,
+} from "../../../utils/signature.js";
 
 const hookLogger = logger.context("x402:HTTP");
-
-/**
- * Extracts wallet address from payment signature header
- * Supports both EIP-3009 and Permit2 payload formats
- */
-function extractWalletFromPaymentHeader(
-  context: HTTPRequestContext
-): string | null {
-  const paymentHeader = context.paymentHeader;
-  if (!paymentHeader) {
-    return null;
-  }
-
-  try {
-    const payload = decodePaymentSignatureHeader(paymentHeader);
-    const innerPayload = payload.payload as Record<string, unknown>;
-
-    // EIP-3009 format: payload.authorization.from
-    if (innerPayload.authorization) {
-      const auth = innerPayload.authorization as { from?: string };
-      if (auth.from) {
-        return auth.from.toLowerCase();
-      }
-    }
-
-    // Permit2 format: payload.permit2Authorization.from
-    if (innerPayload.permit2Authorization) {
-      const permit2 = innerPayload.permit2Authorization as { from?: string };
-      if (permit2.from) {
-        return permit2.from.toLowerCase();
-      }
-    }
-
-    return null;
-  } catch (error) {
-    hookLogger.debug("Failed to decode payment header", { error });
-    return null;
-  }
-}
 
 /**
  * HTTP Protected Request Hook
@@ -62,7 +28,9 @@ function extractWalletFromPaymentHeader(
  * - Return { abort: true, reason } to return 403
  * - Return undefined to continue to payment flow
  *
- * Access is granted if user's debt is below their threshold (from database)
+ * Access is granted if:
+ * 1. Payment signature is valid (wallet address matches signer)
+ * 2. User's debt is below their threshold (from database)
  */
 export async function onProtectedRequest(
   context: HTTPRequestContext,
@@ -75,14 +43,41 @@ export async function onProtectedRequest(
 
   hookLogger.debug("Processing protected request", { method, path });
 
-  // Extract wallet address from payment signature
-  const walletAddress = extractWalletFromPaymentHeader(context);
+  const paymentHeader = context.paymentHeader;
+  if (!paymentHeader) {
+    hookLogger.debug("No payment header, proceeding to payment flow");
+    return undefined;
+  }
+
+  let payload: PaymentPayload;
+  try {
+    payload = decodePaymentSignatureHeader(paymentHeader);
+  } catch (error) {
+    hookLogger.debug("Failed to decode payment header", { error });
+    return undefined;
+  }
+
+  const innerPayload = payload.payload as Record<string, unknown>;
+  const walletAddress = extractWalletFromPayload(innerPayload);
 
   if (!walletAddress) {
-    // No payment header - continue to normal payment flow
     hookLogger.debug(
-      "No wallet address in payment header, proceeding to payment flow"
+      "No wallet address in payload, proceeding to payment flow"
     );
+    return undefined;
+  }
+
+  // Verify signature matches the claimed wallet address
+  const isValidSignature = await verifyPaymentSignature(
+    innerPayload,
+    walletAddress,
+    payload.accepted
+  );
+
+  if (!isValidSignature) {
+    hookLogger.warn("Invalid signature - address mismatch", {
+      claimedWallet: walletAddress.slice(0, 10),
+    });
     return undefined;
   }
 
