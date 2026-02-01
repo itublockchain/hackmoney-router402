@@ -200,3 +200,78 @@ export async function recordUsage(
     totalCost,
   });
 }
+
+/**
+ * Process a payment settlement
+ * Creates a Payment record, marks unpaid UsageRecords as paid, and reduces currentDebt
+ */
+export async function processPayment(
+  walletAddress: string,
+  amount: string,
+  txHash?: string
+): Promise<void> {
+  const db = getPrisma();
+  const user = await getOrCreateUser(walletAddress);
+  const paymentAmount = new Decimal(amount.replace("$", ""));
+
+  // Create payment and update records in a transaction
+  await db.$transaction(async (tx) => {
+    // Create the payment record
+    const payment = await tx.payment.create({
+      data: {
+        userId: user.id,
+        amount: paymentAmount,
+        txHash: txHash || null,
+        status: "SETTLED",
+        settledAt: new Date(),
+      },
+    });
+
+    // Get all unpaid usage records for this user
+    const unpaidRecords = await tx.usageRecord.findMany({
+      where: {
+        userId: user.id,
+        isPaid: false,
+      },
+      orderBy: { createdAt: "asc" },
+    });
+
+    // Calculate total unpaid amount
+    const totalUnpaid = unpaidRecords.reduce(
+      (sum, record) => sum.plus(new Decimal(record.totalCost)),
+      new Decimal(0)
+    );
+
+    // Mark all unpaid records as paid and link to this payment
+    if (unpaidRecords.length > 0) {
+      await tx.usageRecord.updateMany({
+        where: {
+          userId: user.id,
+          isPaid: false,
+        },
+        data: {
+          isPaid: true,
+          paymentId: payment.id,
+        },
+      });
+    }
+
+    // Reduce currentDebt by the lesser of payment amount or total unpaid
+    const debtReduction = Decimal.min(paymentAmount, totalUnpaid);
+
+    await tx.user.update({
+      where: { id: user.id },
+      data: {
+        currentDebt: { decrement: debtReduction },
+      },
+    });
+
+    debtLogger.info("Payment processed", {
+      wallet: walletAddress.slice(0, 10),
+      paymentId: payment.id,
+      amount: paymentAmount.toString(),
+      recordsMarkedPaid: unpaidRecords.length,
+      debtReduced: debtReduction.toString(),
+    });
+  });
+}

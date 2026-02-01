@@ -9,6 +9,7 @@
  * @see Requirements 1.1, 6.1, 6.2, 6.3, 6.4
  */
 
+import { logger } from "@router402/utils";
 import {
   type NextFunction,
   type Request,
@@ -16,9 +17,9 @@ import {
   Router,
 } from "express";
 import { ZodError } from "zod";
-
 import { ProviderError, RateLimitError } from "../providers/base.js";
 import { ChatService } from "../services/chat.service.js";
+import { recordUsage } from "../services/debt.js";
 import { ChatCompletionRequestSchema } from "../types/chat.js";
 import {
   formatValidationError,
@@ -26,6 +27,10 @@ import {
   getRateLimitHeaders,
   translateProviderError,
 } from "../utils/errors.js";
+import { calculateCost, isSupportedModel } from "../utils/pricing.js";
+import { getWalletAddress } from "../utils/request-context.js";
+
+const chatLogger = logger.context("ChatRoute");
 
 // ============================================================================
 // Chat Router Factory
@@ -80,12 +85,62 @@ export function createChatRouter(): Router {
 
         const request = parseResult.data;
 
+        // Get wallet from AsyncLocalStorage (set by x402 hook)
+        const walletAddress = getWalletAddress();
+
         if (request.stream) {
           // Handle streaming response (Requirements 6.1, 6.2, 6.3, 6.4)
-          await handleStreamingResponse(res, chatService, request);
+          await handleStreamingResponse(
+            res,
+            chatService,
+            request,
+            walletAddress
+          );
         } else {
           // Handle non-streaming response
           const response = await chatService.complete(request);
+
+          // Debug log for usage tracking
+          chatLogger.debug("Usage tracking check", {
+            walletAddress,
+            hasUsage: !!response.usage,
+            model: request.model,
+            isSupportedModel: request.model
+              ? isSupportedModel(request.model)
+              : false,
+          });
+
+          // Record usage if wallet is available
+          if (
+            walletAddress &&
+            response.usage &&
+            request.model &&
+            isSupportedModel(request.model)
+          ) {
+            const model = request.model;
+            const cost = calculateCost(
+              model,
+              response.usage.prompt_tokens,
+              response.usage.completion_tokens
+            );
+            chatLogger.info("Recording usage", {
+              wallet: walletAddress.slice(0, 10),
+              model,
+              promptTokens: response.usage.prompt_tokens,
+              completionTokens: response.usage.completion_tokens,
+              totalCost: cost.totalCost.toNumber(),
+            });
+            await recordUsage(
+              walletAddress,
+              model,
+              response.usage.prompt_tokens,
+              response.usage.completion_tokens,
+              cost.baseCost.toNumber(),
+              cost.commission.toNumber(),
+              cost.totalCost.toNumber()
+            );
+          }
+
           res.json(response);
         }
       } catch (error) {
@@ -111,6 +166,7 @@ export function createChatRouter(): Router {
  * @param res - Express response object
  * @param chatService - Chat service instance
  * @param request - Validated chat completion request
+ * @param walletAddress - Optional wallet address for usage tracking
  *
  * @see Requirement 6.1 - Set response headers for SSE
  * @see Requirement 6.3 - Format each chunk as 'data: {json}\n\n'
@@ -119,7 +175,8 @@ export function createChatRouter(): Router {
 async function handleStreamingResponse(
   res: Response,
   chatService: ChatService,
-  request: ReturnType<typeof ChatCompletionRequestSchema.parse>
+  request: ReturnType<typeof ChatCompletionRequestSchema.parse>,
+  walletAddress?: string
 ): Promise<void> {
   // Set SSE headers (Requirement 6.1)
   res.setHeader("Content-Type", "text/event-stream");
@@ -130,10 +187,43 @@ async function handleStreamingResponse(
   res.flushHeaders();
 
   try {
+    let finalUsage:
+      | { prompt_tokens: number; completion_tokens: number }
+      | undefined;
+
     // Stream chunks from the chat service (Requirements 6.2, 6.3)
     for await (const chunk of chatService.stream(request)) {
+      // Capture usage from final chunk
+      if (chunk.usage) {
+        finalUsage = chunk.usage;
+      }
+
       // Format as SSE: 'data: {json}\n\n' (Requirement 6.3)
       res.write(`data: ${JSON.stringify(chunk)}\n\n`);
+    }
+
+    // Record usage after streaming completes
+    if (
+      walletAddress &&
+      finalUsage &&
+      request.model &&
+      isSupportedModel(request.model)
+    ) {
+      const model = request.model;
+      const cost = calculateCost(
+        model,
+        finalUsage.prompt_tokens,
+        finalUsage.completion_tokens
+      );
+      await recordUsage(
+        walletAddress,
+        model,
+        finalUsage.prompt_tokens,
+        finalUsage.completion_tokens,
+        cost.baseCost.toNumber(),
+        cost.commission.toNumber(),
+        cost.totalCost.toNumber()
+      );
     }
 
     // Send termination message (Requirement 6.4)

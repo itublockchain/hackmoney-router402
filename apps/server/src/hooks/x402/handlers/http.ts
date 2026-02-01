@@ -13,12 +13,32 @@ import type {
 } from "../../../../external/x402/typescript/packages/core/dist/esm/server/index.mjs";
 import type { PaymentPayload } from "../../../../external/x402/typescript/packages/core/dist/esm/types/index.mjs";
 import { isDebtBelowThreshold } from "../../../services/debt.js";
+import { setWalletAddress } from "../../../utils/request-context.js";
 import {
   extractWalletFromPayload,
   verifyPaymentSignature,
 } from "../../../utils/signature.js";
 
 const hookLogger = logger.context("x402:HTTP");
+
+/**
+ * Extract wallet address from HTTP request context
+ * Used by routes to get the authenticated wallet for usage tracking
+ */
+export function extractWalletFromContext(
+  context: HTTPRequestContext
+): string | null {
+  const paymentHeader = context.paymentHeader;
+  if (!paymentHeader) return null;
+
+  try {
+    const payload = decodePaymentSignatureHeader(paymentHeader);
+    const innerPayload = payload.payload as Record<string, unknown>;
+    return extractWalletFromPayload(innerPayload);
+  } catch {
+    return null;
+  }
+}
 
 /**
  * HTTP Protected Request Hook
@@ -85,6 +105,9 @@ export async function onProtectedRequest(
   const belowThreshold = await isDebtBelowThreshold(walletAddress);
 
   if (belowThreshold) {
+    // Store wallet in async context for usage tracking
+    setWalletAddress(walletAddress);
+
     hookLogger.info("Access granted - debt below threshold", {
       wallet: walletAddress.slice(0, 10),
       path,

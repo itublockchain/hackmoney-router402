@@ -6,6 +6,7 @@
  */
 
 import { logger } from "@router402/utils";
+import { processPayment } from "../../../services/debt.js";
 
 const hookLogger = logger.context("x402:Settle");
 
@@ -23,39 +24,43 @@ export async function onBeforeSettle(context: {
     amount: context.requirements.amount,
   });
 
-  // Example: Check if settlement should be delayed
-  // const shouldDelay = await checkSettlementQueue();
-  // if (shouldDelay) {
-  //   return { abort: true, reason: "Settlement queue full, try again later" };
-  // }
-
   return undefined;
 }
 
 /**
  * Runs after successful payment settlement
- * Use for recording transactions, updating balances, or triggering webhooks
+ * Creates Payment record, marks UsageRecords as paid, reduces currentDebt
  */
 export async function onAfterSettle(context: {
   result: { payer?: string; transaction?: string };
   requirements: { network: string; amount: string };
 }): Promise<void> {
+  const payer = context.result.payer;
+  const txHash = context.result.transaction;
+  const amount = context.requirements.amount;
+
   hookLogger.info("Payment settled", {
-    payer: context.result.payer ?? "unknown",
-    transaction: context.result.transaction ?? "unknown",
+    payer: payer ?? "unknown",
+    transaction: txHash ?? "unknown",
     network: context.requirements.network,
-    amount: context.requirements.amount,
+    amount,
   });
 
-  // This is where you'd typically record the payment to your database
-  // The actual database recording is handled by the payment recorder service
+  if (payer) {
+    try {
+      await processPayment(payer, amount, txHash);
+    } catch (error) {
+      hookLogger.error("Failed to process payment", {
+        payer: payer.slice(0, 10),
+        error,
+      });
+    }
+  }
 }
 
 /**
  * Runs when settlement fails
  * Use to implement recovery logic or notify administrators
- *
- * @returns RecoveryResult to override failure, undefined to propagate error
  */
 export async function onSettleFailure(context: {
   error: Error;
@@ -66,12 +71,4 @@ export async function onSettleFailure(context: {
     network: context.requirements.network,
     amount: context.requirements.amount,
   });
-
-  // Example: Implement retry logic for transient failures
-  // if (context.error?.message.includes("nonce")) {
-  //   const retryResult = await retrySettlement(context);
-  //   if (retryResult) {
-  //     return { recovered: true, result: retryResult };
-  //   }
-  // }
 }
