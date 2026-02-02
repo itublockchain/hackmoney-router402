@@ -33,12 +33,35 @@ export const configSchema = z.object({
   NEXT_PUBLIC_API_URL: z.string().url().default("http://localhost:8080"),
 
   /**
+   * Pimlico API Key
+   * Used for ERC-4337 bundler and paymaster operations
+   * Get yours at: https://dashboard.pimlico.io/
+   */
+  NEXT_PUBLIC_PIMLICO_API_KEY: z.string().min(1).optional(),
+
+  /**
+   * ZeroDev Project ID
+   * Required for ZeroDev SDK operations (bundler, paymaster, session keys)
+   * Get yours at: https://dashboard.zerodev.app/
+   */
+  NEXT_PUBLIC_ZERODEV_PROJECT_ID: z.string().min(1).optional(),
+
+  /**
    * Node environment
    * @default "development"
    */
   NODE_ENV: z
     .enum(["development", "production", "test"])
     .default("development"),
+
+  /**
+   * Chain environment
+   * Determines which blockchain network to use
+   * - "testnet": Base Sepolia (for testing)
+   * - "mainnet": Base Mainnet (for production)
+   * @default "testnet"
+   */
+  NEXT_PUBLIC_CHAIN_ENV: z.enum(["testnet", "mainnet"]).default("testnet"),
 });
 
 /**

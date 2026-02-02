@@ -1,12 +1,41 @@
-import { getDefaultConfig } from "@rainbow-me/rainbowkit";
-import { base } from "wagmi/chains";
+import { getDefaultConfig } from "connectkit";
+import { createConfig, http } from "wagmi";
+import { base, baseSepolia } from "wagmi/chains";
 import { getConfig } from "@/config/index";
 
-const appConfig = getConfig();
+type WagmiConfig = ReturnType<typeof createConfig>;
+let cachedConfig: WagmiConfig | undefined;
 
-export const config = getDefaultConfig({
-  appName: "Router 402",
-  projectId: appConfig.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID,
-  chains: [base],
-  ssr: true,
-});
+/**
+ * Get the target chain based on environment configuration
+ * - testnet: Base Sepolia
+ * - mainnet: Base Mainnet
+ */
+function getTargetChain() {
+  const appConfig = getConfig();
+  return appConfig.NEXT_PUBLIC_CHAIN_ENV === "mainnet" ? base : baseSepolia;
+}
+
+export function getWagmiConfig(): WagmiConfig {
+  if (cachedConfig) {
+    return cachedConfig;
+  }
+
+  const appConfig = getConfig();
+  const targetChain = getTargetChain();
+
+  cachedConfig = createConfig(
+    getDefaultConfig({
+      appName: "Router 402",
+      walletConnectProjectId: appConfig.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID,
+      chains: [targetChain],
+      transports: {
+        [targetChain.id]: http(),
+      },
+      ssr: true,
+      enableFamily: false,
+    })
+  );
+
+  return cachedConfig;
+}

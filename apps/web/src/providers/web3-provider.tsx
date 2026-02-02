@@ -1,17 +1,18 @@
 "use client";
 
-import { darkTheme, RainbowKitProvider } from "@rainbow-me/rainbowkit";
-import * as React from "react";
+import { ConnectKitProvider } from "connectkit";
+import { useMemo } from "react";
 import { WagmiProvider } from "wagmi";
-import { config } from "@/config/wagmi";
+import { getWagmiConfig } from "@/config/wagmi";
 import { QueryProvider } from "./query-provider";
-import "@rainbow-me/rainbowkit/styles.css";
 
 export function Web3Provider({ children }: { children: React.ReactNode }) {
+  const config = useMemo(() => getWagmiConfig(), []);
+
   return (
     <WagmiProvider config={config}>
       <QueryProvider>
-        <RainbowKitProvider theme={darkTheme()}>{children}</RainbowKitProvider>
+        <ConnectKitProvider mode="dark">{children}</ConnectKitProvider>
       </QueryProvider>
     </WagmiProvider>
   );

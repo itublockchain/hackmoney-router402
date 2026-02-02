@@ -77,3 +77,68 @@ export class ApiClientError extends Error {
     Object.setPrototypeOf(this, ApiClientError.prototype);
   }
 }
+
+// Smart Account Types
+// Note: Address and Hex types are strings with specific formats
+
+/**
+ * Smart Account information
+ */
+export interface SmartAccountInfo {
+  /** Smart Account address (0x prefixed hex string) */
+  address: string;
+  /** Owner EOA address */
+  eoaAddress: string;
+  /** Whether the account is deployed on-chain */
+  isDeployed: boolean;
+  /** Chain ID */
+  chainId: number;
+}
+
+/**
+ * Session Key information (public data only - no private key)
+ */
+export interface SessionKeyInfo {
+  /** Session key public address */
+  address: string;
+  /** Associated Smart Account address */
+  smartAccountAddress: string;
+  /** Timestamp when key expires */
+  expiresAt: number;
+  /** Whether the key is authorized on the Smart Account */
+  isAuthorized: boolean;
+  /** Whether the key is currently active (not expired) */
+  isActive: boolean;
+}
+
+/**
+ * Registration payload for backend
+ */
+export interface SessionKeyRegistration {
+  /** Session key public address */
+  sessionKeyAddress: string;
+  /** Smart Account address */
+  smartAccountAddress: string;
+  /** EOA address (owner) */
+  eoaAddress: string;
+  /** Expiration timestamp */
+  expiresAt: number;
+  /** Chain ID */
+  chainId: number;
+}
+
+/**
+ * Smart Account status for API responses
+ */
+export interface SmartAccountStatus {
+  /** Smart Account address */
+  address: string;
+  /** Whether deployed on-chain */
+  isDeployed: boolean;
+  /** Current staked amount in USDC (as string for precision) */
+  stakedAmount: string;
+  /** Outstanding debt amount in USDC (as string for precision) */
+  outstandingDebt: string;
+  /** Whether the account has an active session */
+  hasActiveSession: boolean;
+}

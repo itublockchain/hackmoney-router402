@@ -20,7 +20,11 @@ function loadConfig(): Config {
         process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID,
       NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
       NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+      NEXT_PUBLIC_PIMLICO_API_KEY: process.env.NEXT_PUBLIC_PIMLICO_API_KEY,
+      NEXT_PUBLIC_ZERODEV_PROJECT_ID:
+        process.env.NEXT_PUBLIC_ZERODEV_PROJECT_ID,
       NODE_ENV: process.env.NODE_ENV,
+      NEXT_PUBLIC_CHAIN_ENV: process.env.NEXT_PUBLIC_CHAIN_ENV,
     });
 
     return config;

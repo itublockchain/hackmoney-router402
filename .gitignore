@@ -85,3 +85,4 @@ packages/cli/bin/agent/
 
 # Locus runtime
 .locus/
+.tmp/
