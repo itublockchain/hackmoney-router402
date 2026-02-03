@@ -57,8 +57,24 @@
 }
 
 @layer base {
-  * {
+  *,
+  *::before,
+  *::after {
     @apply border-border;
+    cursor: none !important;
+  }
+  html,
+  body {
+    cursor: none !important;
+  }
+  a,
+  button,
+  input,
+  textarea,
+  select,
+  label,
+  [role="button"] {
+    cursor: none !important;
   }
   body {
     @apply bg-background text-foreground;

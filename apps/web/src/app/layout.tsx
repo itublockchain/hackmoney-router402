@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import clsx from "clsx";
+import { CustomCursor } from "@/components/ui/custom-cursor";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider, Web3Provider } from "@/providers";
 
@@ -41,6 +42,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
           <Web3Provider>
             {children}
             <Toaster />
+            <CustomCursor />
           </Web3Provider>
         </ThemeProvider>
       </body>

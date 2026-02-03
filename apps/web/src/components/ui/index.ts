@@ -15,6 +15,7 @@ export type { ConfirmationDialogProps } from "./confirmation-dialog";
 export { ConfirmationDialog } from "./confirmation-dialog";
 export type { CopyButtonProps } from "./copy-button";
 export { CopyButton } from "./copy-button";
+export { CustomCursor } from "./custom-cursor";
 export type { EmptyStateProps } from "./empty-state";
 export { EmptyState } from "./empty-state";
 export type { ErrorStateProps } from "./error-state";
