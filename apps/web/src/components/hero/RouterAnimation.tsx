@@ -43,7 +43,16 @@ export function RouterAnimation() {
           p.stroke(255);
           p.rect(x, y, w, h, 8); // main frame
           p.line(x, y + 28, x + w, y + 28); // top bar
-          p.rect(x + 10, y + 6, 20, 16, 4); // small tab
+          // macOS-style window dots
+          const dotY = y + 14;
+          const dotR = 5;
+          p.fill(255);
+          p.noStroke();
+          p.circle(x + 16, dotY, dotR * 2);
+          p.circle(x + 32, dotY, dotR * 2);
+          p.circle(x + 48, dotY, dotR * 2);
+          p.noFill();
+          p.stroke(255);
         };
 
         p.draw = () => {
