@@ -1,6 +1,7 @@
 {
-  "name": "@router402/utils",
+  "name": "@router402/sdk",
   "version": "0.1.0",
+  "description": "Router402 SDK for Kernel smart accounts with session keys",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -21,12 +22,17 @@
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
-  "devDependencies": {
-    "@types/express": "^5.0.6",
-    "typescript": "^5.7.3"
+  "peerDependencies": {
+    "viem": "^2.0.0"
   },
   "dependencies": {
-    "@router402/types": "workspace:*",
-    "zod": "^4.3.6"
+    "@zerodev/ecdsa-validator": "^5.4.9",
+    "@zerodev/permissions": "^5.6.3",
+    "@zerodev/sdk": "^5.5.7",
+    "permissionless": "^0.3.4"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3",
+    "viem": "^2.23.7"
   }
 }

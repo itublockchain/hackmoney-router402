@@ -1,14 +1,18 @@
+import type { SessionKeyData, SessionKeyForBackend } from "@router402/sdk";
+import { exportSessionKeyForBackend as sdkExportSessionKeyForBackend } from "@router402/sdk";
 import type { Address } from "viem";
 import {
   SESSION_KEY_CONFIG,
   SMART_ACCOUNT_CONFIG,
 } from "@/config/smart-account";
-import type {
-  SessionKeyData,
-  SessionKeyForBackend,
-  SessionKeyStorage,
-} from "@/lib/smart-account/types";
 import { isSessionKeyExpired } from "./generate";
+
+/**
+ * Session Key storage structure (indexed by smart account address)
+ */
+export interface SessionKeyStorage {
+  [smartAccountAddress: Address]: SessionKeyData[];
+}
 
 const STORAGE_KEY = SESSION_KEY_CONFIG.storageKey;
 
@@ -30,7 +34,6 @@ function isLocalStorageAvailable(): boolean {
 
 /**
  * Load all session keys from LocalStorage
- * @returns The session key storage object
  */
 export function loadSessionKeys(): SessionKeyStorage {
   if (!isLocalStorageAvailable()) return {};
@@ -47,7 +50,6 @@ export function loadSessionKeys(): SessionKeyStorage {
 
 /**
  * Save session keys to LocalStorage
- * @param storage - The session key storage object to save
  */
 export function saveSessionKeys(storage: SessionKeyStorage): void {
   if (!isLocalStorageAvailable()) return;
@@ -61,8 +63,6 @@ export function saveSessionKeys(storage: SessionKeyStorage): void {
 
 /**
  * Get session keys for a specific Smart Account
- * @param smartAccountAddress - The Smart Account address
- * @returns Array of session keys for this account
  */
 export function getSessionKeysForAccount(
   smartAccountAddress: Address
@@ -73,15 +73,12 @@ export function getSessionKeysForAccount(
 
 /**
  * Get the most recent valid and approved session key for a Smart Account
- * @param smartAccountAddress - The Smart Account address
- * @returns The most recent valid session key, or undefined if none exists
  */
 export function getActiveSessionKey(
   smartAccountAddress: Address
 ): SessionKeyData | undefined {
   const keys = getSessionKeysForAccount(smartAccountAddress);
 
-  // Filter out expired keys and non-approved keys, sort by creation time (newest first)
   const validKeys = keys
     .filter(
       (key) =>
@@ -94,16 +91,13 @@ export function getActiveSessionKey(
 
 /**
  * Store a new session key for a Smart Account
- * @param sessionKey - The session key to store
  */
 export function storeSessionKey(sessionKey: SessionKeyData): void {
   const storage = loadSessionKeys();
   const accountKeys = storage[sessionKey.smartAccountAddress] || [];
 
-  // Add new key
   accountKeys.push(sessionKey);
 
-  // Prune old/expired keys, keeping only the most recent ones
   const prunedKeys = accountKeys
     .filter((key) => !isSessionKeyExpired(key))
     .sort((a, b) => b.createdAt - a.createdAt)
@@ -115,9 +109,6 @@ export function storeSessionKey(sessionKey: SessionKeyData): void {
 
 /**
  * Update a session key with serialized approval data
- * @param smartAccountAddress - The Smart Account address
- * @param publicKey - The session key's public address
- * @param serializedSessionKey - The serialized permission account from ZeroDev
  */
 export function updateSessionKeyApproval(
   smartAccountAddress: Address,
@@ -139,8 +130,6 @@ export function updateSessionKeyApproval(
 
 /**
  * Remove a specific session key
- * @param smartAccountAddress - The Smart Account address
- * @param publicKey - The session key's public address to remove
  */
 export function removeSessionKey(
   smartAccountAddress: Address,
@@ -158,7 +147,6 @@ export function removeSessionKey(
 
 /**
  * Clear all session keys for a Smart Account
- * @param smartAccountAddress - The Smart Account address
  */
 export function clearSessionKeys(smartAccountAddress: Address): void {
   const storage = loadSessionKeys();
@@ -176,21 +164,12 @@ export function clearAllSessionKeys(): void {
 
 /**
  * Export session key data for backend use
- * Returns the data needed by the backend to send transactions
- * @param sessionKey - The session key data
- * @returns Data for backend or null if session key is not approved
  */
 export function exportSessionKeyForBackend(
   sessionKey: SessionKeyData
 ): SessionKeyForBackend | null {
-  if (!sessionKey.isApproved || !sessionKey.serializedSessionKey) {
-    return null;
-  }
-
-  return {
-    privateKey: sessionKey.privateKey,
-    serializedSessionKey: sessionKey.serializedSessionKey,
-    smartAccountAddress: sessionKey.smartAccountAddress,
-    chainId: SMART_ACCOUNT_CONFIG.chainId,
-  };
+  return sdkExportSessionKeyForBackend(
+    sessionKey,
+    SMART_ACCOUNT_CONFIG.chainId
+  );
 }

@@ -10,8 +10,10 @@
     "lint": "biome check ."
   },
   "dependencies": {
+    "@router402/sdk": "workspace:*",
     "@router402/types": "workspace:*",
     "@router402/utils": "workspace:*",
+    "viem": "^2.23.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",

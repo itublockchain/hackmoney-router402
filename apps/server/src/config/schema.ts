@@ -29,6 +29,17 @@ export const configSchema = z.object({
    * @default "http://localhost:3000"
    */
   CORS_ORIGIN: z.string().url().default("http://localhost:3000"),
+
+  /**
+   * Pimlico API key for smart account operations
+   */
+  PIMLICO_API_KEY: z.string().min(1),
+
+  /**
+   * Chain environment
+   * @default "testnet"
+   */
+  CHAIN_ENV: z.enum(["testnet", "mainnet"]).default("testnet"),
 });
 
 /**

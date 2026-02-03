@@ -1,93 +1,72 @@
 import type { Address, Hex, WalletClient } from "viem";
-import { createPublicClient, http } from "viem";
-import { SMART_ACCOUNT_CONFIG } from "@/config/smart-account";
-import { createKernelAccountFromWallet, sendOwnerTransaction } from "./kernel";
+import { router402Sdk } from "@/config/smart-account";
 import type { SmartAccountInfo, TransactionResult } from "./types";
 import { SmartAccountError } from "./types";
 
 /**
- * Create a public client for reading blockchain data
+ * Ensure SDK is configured
  */
-export function createBasePublicClient() {
-  return createPublicClient({
-    chain: SMART_ACCOUNT_CONFIG.chain,
-    transport: http(),
-  });
+function assertSdkConfigured() {
+  if (!router402Sdk) {
+    throw new SmartAccountError(
+      "NOT_CONFIGURED",
+      "Router402 SDK is not configured. Set NEXT_PUBLIC_PIMLICO_API_KEY."
+    );
+  }
+  return router402Sdk;
 }
 
 /**
  * Create a Smart Account instance using Kernel
- * @param walletClient - The wallet client (owner/signer)
- * @returns The Kernel account instance
  */
 export async function createSmartAccount(walletClient: WalletClient) {
-  return createKernelAccountFromWallet(walletClient);
+  const sdk = assertSdkConfigured();
+  return sdk.getSmartAccountAddress(walletClient);
 }
 
 /**
  * Get the deterministic Smart Account address for a wallet
- * @param walletClient - The wallet client (owner/signer)
- * @returns The computed Smart Account address
  */
 export async function getSmartAccountAddress(
   walletClient: WalletClient
 ): Promise<Address> {
-  const account = await createSmartAccount(walletClient);
-  return account.address;
+  const sdk = assertSdkConfigured();
+  return sdk.getSmartAccountAddress(walletClient);
 }
 
 /**
  * Check if a Smart Account is deployed on-chain
- * @param address - The Smart Account address to check
- * @returns Whether the account has code deployed
  */
 export async function isSmartAccountDeployed(
   address: Address
 ): Promise<boolean> {
-  const publicClient = createBasePublicClient();
-  const code = await publicClient.getCode({ address });
-  return code !== undefined && code !== "0x";
+  const sdk = assertSdkConfigured();
+  return sdk.isSmartAccountDeployed(address);
 }
 
 /**
  * Get complete Smart Account information
- * @param walletClient - The wallet client (owner/signer)
- * @param eoaAddress - The EOA address of the owner
- * @returns Smart Account info including address and deployment status
  */
 export async function getSmartAccountInfo(
   walletClient: WalletClient,
   eoaAddress: Address
 ): Promise<SmartAccountInfo> {
-  const account = await createSmartAccount(walletClient);
-  const smartAccountAddress = account.address;
-  const isDeployed = await account.isDeployed();
-
-  return {
-    address: smartAccountAddress,
-    eoaAddress,
-    isDeployed,
-    chainId: SMART_ACCOUNT_CONFIG.chainId,
-  };
+  const sdk = assertSdkConfigured();
+  return sdk.getSmartAccountInfo(walletClient, eoaAddress);
 }
 
 /**
  * Get the ETH balance of a Smart Account
- * @param address - The Smart Account address
- * @returns Balance in wei
  */
 export async function getSmartAccountBalance(
   address: Address
 ): Promise<bigint> {
-  const publicClient = createBasePublicClient();
-  return publicClient.getBalance({ address });
+  const sdk = assertSdkConfigured();
+  return sdk.getSmartAccountBalance(address);
 }
 
 /**
  * Send a sponsored transaction using the owner wallet
- * @param walletClient - The wallet client/owner
- * @param calls - The calls to execute
- * @returns The transaction result with tx hash
  */
 export async function sendUserOperation(
   walletClient: WalletClient,
@@ -97,7 +76,8 @@ export async function sendUserOperation(
     data?: Hex;
   }>
 ): Promise<TransactionResult> {
-  const result = await sendOwnerTransaction(walletClient, calls);
+  const sdk = assertSdkConfigured();
+  const result = await sdk.sendOwnerTransaction(walletClient, calls);
 
   if (!result.success) {
     throw new SmartAccountError(
@@ -110,4 +90,19 @@ export async function sendUserOperation(
     txHash: result.txHash,
     success: result.success,
   };
+}
+
+/**
+ * Create a public client for reading blockchain data
+ */
+export function createBasePublicClient() {
+  const sdk = assertSdkConfigured();
+  const config = sdk.getConfig();
+
+  // Import dynamically to avoid issues
+  const { createPublicClient, http } = require("viem");
+  return createPublicClient({
+    chain: config.chain,
+    transport: http(),
+  });
 }

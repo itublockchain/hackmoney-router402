@@ -29,7 +29,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html
+      lang="en"
+      className="dark"
+      style={{ colorScheme: "dark" }}
+      suppressHydrationWarning
+    >
       <body
         suppressHydrationWarning
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
@@ -37,6 +42,7 @@ export default function RootLayout({
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
+          forcedTheme="dark"
           enableSystem={false}
           disableTransitionOnChange
         >

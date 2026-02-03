@@ -12,7 +12,7 @@ export function ConnectWalletButton() {
             aria-label={isConnected ? "Open account details" : "Connect wallet"}
             disabled={isConnecting}
             onClick={show}
-            className="flex items-center gap-3 rounded-full border border-border/50 bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/30 transition hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-70"
+            className="flex items-center gap-3 rounded-3xl border border-border/50 bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition disabled:cursor-not-allowed disabled:opacity-70 cursor-pointer"
           >
             <div className="flex flex-col items-center leading-tight">
               <div className="flex flex-row items-center space-x-1">

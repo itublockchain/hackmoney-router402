@@ -1,9 +1,10 @@
 "use client";
 
+import type { SessionKeyData, SessionKeyForBackend } from "@router402/sdk";
 import { useCallback, useEffect, useState } from "react";
 import type { Address } from "viem";
 import { useSwitchChain, useWalletClient } from "wagmi";
-import { SMART_ACCOUNT_CONFIG } from "@/config/smart-account";
+import { router402Sdk, SMART_ACCOUNT_CONFIG } from "@/config/smart-account";
 import {
   canUseSessionKey,
   exportSessionKeyForBackend,
@@ -15,14 +16,6 @@ import {
   storeSessionKey,
   updateSessionKeyApproval,
 } from "@/lib/session-keys";
-import {
-  createSessionKeyApproval,
-  sendSessionKeyTransaction,
-} from "@/lib/smart-account";
-import type {
-  SessionKeyData,
-  SessionKeyForBackend,
-} from "@/lib/smart-account/types";
 
 interface UseSessionKeysReturn {
   /** All session keys for the smart account */
@@ -59,9 +52,6 @@ interface UseSessionKeysReturn {
 
 /**
  * Hook to manage session keys for a Smart Account
- *
- * @param smartAccountAddress - The Smart Account address
- * @returns Session key state and utilities
  */
 export function useSessionKeys(
   smartAccountAddress: Address | undefined
@@ -106,7 +96,7 @@ export function useSessionKeys(
   /**
    * Create a new session key
    */
-  const createSessionKey = useCallback(() => {
+  const handleCreateSessionKey = useCallback(() => {
     if (!smartAccountAddress) {
       setError(new Error("Smart account address is required"));
       return;
@@ -146,6 +136,11 @@ export function useSessionKeys(
         return;
       }
 
+      if (!router402Sdk) {
+        setError(new Error("Router402 SDK is not configured"));
+        return;
+      }
+
       const sessionKey = sessionKeys.find((key) => key.publicKey === publicKey);
       if (!sessionKey) {
         setError(new Error("Session key not found"));
@@ -162,15 +157,19 @@ export function useSessionKeys(
       try {
         await ensureCorrectChain();
 
-        const serializedApproval = await createSessionKeyApproval(
+        const approvedKey = await router402Sdk.approveSessionKey(
           walletClient,
-          publicKey
+          sessionKey
         );
+
+        if (!approvedKey.serializedSessionKey) {
+          throw new Error("Failed to approve session key");
+        }
 
         updateSessionKeyApproval(
           smartAccountAddress,
           publicKey,
-          serializedApproval
+          approvedKey.serializedSessionKey
         );
 
         refreshSessionKeys();
@@ -196,7 +195,7 @@ export function useSessionKeys(
   /**
    * Remove a session key
    */
-  const removeSessionKey = useCallback(
+  const handleRemoveSessionKey = useCallback(
     (publicKey: Address) => {
       if (!smartAccountAddress) {
         setError(new Error("Smart account address is required"));
@@ -232,6 +231,11 @@ export function useSessionKeys(
         return;
       }
 
+      if (!router402Sdk) {
+        setError(new Error("Router402 SDK is not configured"));
+        return;
+      }
+
       const sessionKey = sessionKeys.find((key) => key.publicKey === publicKey);
       if (!sessionKey) {
         setError(new Error("Session key not found"));
@@ -252,9 +256,8 @@ export function useSessionKeys(
       setLastTestTransferHash(undefined);
 
       try {
-        const result = await sendSessionKeyTransaction(
-          sessionKey.privateKey,
-          sessionKey.serializedSessionKey,
+        const result = await router402Sdk.sendSessionKeyTransaction(
+          sessionKey,
           [
             {
               to: toAddress,
@@ -340,9 +343,9 @@ export function useSessionKeys(
     isSendingTestTransfer,
     lastTestTransferHash,
     error,
-    createSessionKey,
+    createSessionKey: handleCreateSessionKey,
     approveSessionKey,
-    removeSessionKey,
+    removeSessionKey: handleRemoveSessionKey,
     refreshSessionKeys,
     sendTestTransfer,
     formatRemainingTime,

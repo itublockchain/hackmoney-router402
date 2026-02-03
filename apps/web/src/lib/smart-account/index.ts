@@ -9,7 +9,7 @@ export {
   sendUserOperation,
 } from "./client";
 
-// Kernel utilities
+// Re-export kernel utilities from SDK
 export {
   createEcdsaValidator,
   createKernelAccountFromWallet,
@@ -19,8 +19,7 @@ export {
   createSessionKeyApproval,
   getKernelAccountAddress,
   isKernelAccountDeployed,
-  sendOwnerTransaction,
-  sendSessionKeyTransaction,
 } from "./kernel";
 
+// Re-export types from SDK
 export * from "./types";
