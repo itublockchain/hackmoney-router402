@@ -4,6 +4,7 @@ import {
   Hero402Animation,
   HeroWaveAnimation,
   LandingInfoSection,
+  LandingProductsSection,
 } from "@/components/hero";
 import { Navbar } from "@/components/layout";
 
@@ -15,6 +16,7 @@ export default function Home() {
         <Hero402Animation />
         <HeroWaveAnimation />
         <LandingInfoSection />
+        <LandingProductsSection />
       </main>
     </>
   );

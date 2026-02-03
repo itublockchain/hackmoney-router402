@@ -1,4 +1,6 @@
+import { ExternalLink } from "lucide-react";
 import Image from "next/image";
+import { Button } from "@/components/ui/button";
 
 const features = [
   {
@@ -85,7 +87,7 @@ export function LandingInfoSection() {
         <div className="mt-8 grid grid-cols-1 gap-8 md:grid-cols-2 md:px-[16.67%]">
           {features.slice(3).map((feature, index) => (
             <div key={index + 3} className="flex gap-4">
-              <div className="flex-shrink-0">
+              <div className="shrink-0">
                 <div className="h-10 w-10 rounded-full bg-blue-600" />
               </div>
               <div>
@@ -98,6 +100,14 @@ export function LandingInfoSection() {
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Learn Details Button */}
+        <div className="mt-12 flex justify-center">
+          <Button>
+            Learn Details
+            <ExternalLink size={16} />
+          </Button>
         </div>
       </div>
     </section>
