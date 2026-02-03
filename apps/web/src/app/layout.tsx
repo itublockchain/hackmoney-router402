@@ -1,9 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { PageTransition } from "@/components/animations/page-transition";
-import { Footer } from "@/components/layout/footer";
-import { Navbar } from "@/components/layout/navbar";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { Web3Provider } from "@/providers/web3-provider";
@@ -47,13 +44,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <Web3Provider>
-            <div className="relative flex min-h-screen flex-col">
-              <Navbar />
-              <PageTransition>
-                <main className="flex-1">{children}</main>
-              </PageTransition>
-              <Footer />
-            </div>
+            {children}
             <Toaster />
           </Web3Provider>
         </ThemeProvider>
