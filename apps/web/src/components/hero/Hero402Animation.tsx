@@ -77,7 +77,7 @@ export function Hero402Animation() {
           g.pixelDensity(1);
           g.noSmooth();
           g.background(0);
-          g.fill(255);
+          g.fill(1);
           g.noStroke();
           g.textAlign(p.CENTER, p.CENTER);
           g.textSize(72);
@@ -245,25 +245,29 @@ export function Hero402Animation() {
     <div className="relative w-full h-[calc(100vh-120px)]">
       {/* Input box overlay - centered in the middle of the animation, slightly lower on mobile */}
       <div className="absolute inset-0 z-10 flex items-center justify-center px-3 pt-16 sm:px-4 sm:pt-0">
-        <div className="flex w-full max-w-2xl flex-col items-center gap-3 sm:gap-5">
+        <div className="flex w-full max-w-2xl flex-col items-center gap-3 rounded-2xl p-4 sm:gap-5 sm:p-6">
           {/* Heading */}
-          <h1 className="text-center text-xl font-medium tracking-tight text-white sm:text-2xl md:text-3xl">
-            What would you like to create?
+          <h1 className="text-center text-lg font-medium tracking-tight text-blue-100 sm:text-xl md:text-2xl">
+            Where should we start?
           </h1>
 
           {/* Input container */}
           <div className="group relative w-full">
             <div
               className={`
-                relative overflow-hidden rounded-xl border bg-neutral-900/80
+                relative overflow-hidden rounded-xl border
                 shadow-2xl shadow-black/20 backdrop-blur-xl transition-all duration-300
                 sm:rounded-2xl
                 ${
                   hasContent
                     ? "border-indigo-500/50 ring-1 ring-indigo-500/20"
-                    : "border-neutral-700/50 hover:border-neutral-600/50"
+                    : "hover:border-indigo-900/70"
                 }
               `}
+              style={{
+                backgroundColor: "rgba(0, 2, 47, 0.6)",
+                borderColor: "#00022F",
+              }}
             >
               {/* Textarea */}
               <textarea
@@ -275,12 +279,12 @@ export function Hero402Animation() {
                 onKeyDown={handleKeyDown}
                 placeholder="Describe your idea..."
                 rows={1}
-                className="max-h-[150px] min-h-[48px] w-full resize-none bg-transparent px-3 py-3 pr-20 text-sm text-white placeholder-neutral-500 focus:outline-none sm:max-h-[200px] sm:min-h-[56px] sm:px-4 sm:py-4 sm:pr-24 sm:text-base"
+                className="max-h-[150px] min-h-[48px] w-full resize-none bg-transparent px-3 py-3 pr-20 text-sm text-neutral-300 placeholder:text-gray-500 focus:outline-none sm:max-h-[200px] sm:min-h-[56px] sm:px-4 sm:py-4 sm:pr-24 sm:text-base"
                 aria-label="Message input"
               />
 
               {/* Action buttons - positioned absolute on the right */}
-              <div className="absolute bottom-1.5 right-1.5 flex items-center gap-0.5 sm:bottom-2 sm:right-2 sm:gap-1">
+              <div className="absolute bottom-1.5 right-1.5 flex items-center gap-0.5 sm:bottom-3 sm:right-2 sm:gap-1">
                 {/* Attachment button */}
                 <button
                   type="button"
@@ -314,8 +318,8 @@ export function Hero402Animation() {
                     sm:h-9 sm:w-9
                     ${
                       hasContent
-                        ? "bg-white text-neutral-900 hover:bg-neutral-200"
-                        : "cursor-not-allowed bg-neutral-800 text-neutral-600"
+                        ? "bg-blue-600 text-white hover:bg-blue-500"
+                        : "cursor-not-allowed bg-blue-900/30 text-blue-800"
                     }
                   `}
                   aria-label="Send message"
@@ -340,13 +344,13 @@ export function Hero402Animation() {
             </div>
 
             {/* Helper text - hidden on mobile, visible on larger screens */}
-            <p className="mt-2 hidden text-center text-xs text-neutral-500 sm:block">
+            <p className="mt-4 hidden text-center text-xs text-blue-400/70 sm:block">
               Press{" "}
-              <kbd className="rounded bg-neutral-800 px-1.5 py-0.5 font-mono text-neutral-400">
+              <kbd className="rounded bg-blue-900/30 px-1.5 py-0.5 font-mono text-blue-400">
                 Enter
               </kbd>{" "}
               to send,{" "}
-              <kbd className="rounded bg-neutral-800 px-1.5 py-0.5 font-mono text-neutral-400">
+              <kbd className="rounded bg-blue-900/30 px-1.5 py-0.5 font-mono text-blue-400">
                 Shift + Enter
               </kbd>{" "}
               for new line
