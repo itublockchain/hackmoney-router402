@@ -7,10 +7,12 @@ import {
   LandingProductsSection,
 } from "@/components/hero";
 import { Navbar } from "@/components/layout";
+import { CustomCursor } from "@/components/ui/custom-cursor";
 
 export default function Home() {
   return (
-    <>
+    <div className="custom-cursor-area">
+      <CustomCursor />
       <Navbar />
       <main>
         <Hero402Animation />
@@ -18,6 +20,6 @@ export default function Home() {
         <LandingInfoSection />
         <LandingProductsSection />
       </main>
-    </>
+    </div>
   );
 }

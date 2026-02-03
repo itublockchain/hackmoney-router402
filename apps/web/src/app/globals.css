@@ -61,20 +61,6 @@
   *::before,
   *::after {
     @apply border-border;
-    cursor: none !important;
-  }
-  html,
-  body {
-    cursor: none !important;
-  }
-  a,
-  button,
-  input,
-  textarea,
-  select,
-  label,
-  [role="button"] {
-    cursor: none !important;
   }
   body {
     @apply bg-background text-foreground font-sans;
@@ -82,4 +68,12 @@
       "rlig" 1,
       "calt" 1;
   }
+}
+
+/* Scoped custom cursor — only hides the native cursor inside .custom-cursor-area */
+.custom-cursor-area,
+.custom-cursor-area *,
+.custom-cursor-area *::before,
+.custom-cursor-area *::after {
+  cursor: none !important;
 }

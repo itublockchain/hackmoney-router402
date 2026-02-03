@@ -16,12 +16,11 @@ export function ConnectWalletButton() {
           >
             <div className="flex flex-col items-center leading-tight">
               <div className="flex flex-row items-center space-x-1">
-                <span className="text-xs">
-                  {isConnected ? "Connected" : "Connect"}
-                </span>
-                <span className="text-xs">
-                  {isConnected ? (ensName ?? truncatedAddress) : "Wallet"}
-                </span>
+                {isConnected ? (
+                  <span className="text-xs">{ensName ?? truncatedAddress}</span>
+                ) : (
+                  <span className="text-xs">Connect Wallet</span>
+                )}
               </div>
             </div>
           </button>
