@@ -18,8 +18,35 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Router 402 | Decentralized Payment Routing",
-  description: "Decentralized payment routing on Base",
+  title: "Router 402 | Access AI Models with Your Smart Account",
+  description:
+    "Router 402 lets you access OpenRouter AI models through your smart account on Base. Use crypto to pay for AI inference with session keys and smart wallets.",
+  openGraph: {
+    title: "Router 402 | Access AI Models with Your Smart Account",
+    description:
+      "Router 402 lets you access OpenRouter AI models through your smart account on Base. Use crypto to pay for AI inference with session keys and smart wallets.",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Router 402",
+      },
+    ],
+    type: "website",
+    siteName: "Router 402",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Router 402 | Access AI Models with Your Smart Account",
+    description:
+      "Router 402 lets you access OpenRouter AI models through your smart account on Base. Use crypto to pay for AI inference with session keys and smart wallets.",
+    images: ["/og-image.png"],
+  },
+  icons: {
+    icon: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 type RootLayoutProps = {
