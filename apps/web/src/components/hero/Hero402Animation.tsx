@@ -242,7 +242,7 @@ export function Hero402Animation() {
   const hasContent = inputValue.trim().length > 0;
 
   return (
-    <div className="relative w-full h-[calc(100vh-120px)]">
+    <div className="relative z-20 w-full h-[calc(100vh-120px)]">
       {/* Input box overlay - centered in the middle of the animation, slightly lower on mobile */}
       <div className="absolute inset-0 z-10 flex items-center justify-center px-3 pt-16 sm:px-4 sm:pt-0">
         <div className="flex w-full max-w-2xl flex-col items-center gap-3 rounded-2xl p-4 sm:gap-5 sm:p-6">

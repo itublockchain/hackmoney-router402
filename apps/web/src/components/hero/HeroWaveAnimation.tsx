@@ -103,7 +103,7 @@ export function HeroWaveAnimation() {
   }, [createSketch]);
 
   return (
-    <div className="-mt-80 h-screen w-full">
+    <div className="relative z-10 -mt-[28rem] md:-mt-80 h-screen w-full">
       <div ref={containerRef} className="h-full w-full" />
     </div>
   );
