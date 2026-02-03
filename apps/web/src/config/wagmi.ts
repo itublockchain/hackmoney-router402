@@ -1,7 +1,7 @@
 import { getDefaultConfig } from "connectkit";
 import { createConfig, http } from "wagmi";
 import { base, baseSepolia } from "wagmi/chains";
-import { getConfig } from "@/config/index";
+import { getConfig } from "./get-config";
 
 type WagmiConfig = ReturnType<typeof createConfig>;
 let cachedConfig: WagmiConfig | undefined;

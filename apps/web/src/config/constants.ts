@@ -1,5 +1,5 @@
 import { base } from "wagmi/chains";
-import { getConfig } from "@/config/index";
+import { getConfig } from "./get-config";
 
 /**
  * Base Mainnet Chain Configuration

@@ -3,7 +3,7 @@
 import { ConnectKitProvider } from "connectkit";
 import { useMemo } from "react";
 import { WagmiProvider } from "wagmi";
-import { getWagmiConfig } from "@/config/wagmi";
+import { getWagmiConfig } from "@/config";
 import { QueryProvider } from "./query-provider";
 
 export function Web3Provider({ children }: { children: React.ReactNode }) {

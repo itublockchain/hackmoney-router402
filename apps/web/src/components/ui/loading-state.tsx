@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Spinner, type SpinnerProps } from "@/components/primitives";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib";
 
 interface LoadingStateProps extends React.HTMLAttributes<HTMLDivElement> {
   message?: string;

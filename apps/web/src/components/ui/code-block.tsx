@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { ScrollArea, ScrollBar } from "@/components/primitives";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib";
 import { CopyButton } from "./copy-button";
 
 interface CodeBlockProps extends React.HTMLAttributes<HTMLDivElement> {

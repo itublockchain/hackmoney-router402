@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Address } from "viem";
 import { useAccount, useSwitchChain, useWalletClient } from "wagmi";
-import { SMART_ACCOUNT_CONFIG } from "@/config/smart-account";
+import { SMART_ACCOUNT_CONFIG } from "@/config";
 import {
   getSmartAccountInfo,
   isSmartAccountDeployed,

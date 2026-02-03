@@ -11,7 +11,7 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect } from "react";
-import { useUIStore } from "@/stores/ui.store";
+import { useUIStore } from "@/stores";
 
 export function Sidebar() {
   const { sidebarOpen, setSidebarOpen, toggleSidebar } = useUIStore();

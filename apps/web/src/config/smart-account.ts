@@ -4,7 +4,7 @@ import {
   type Router402Config,
 } from "@router402/sdk";
 import { base, baseSepolia } from "wagmi/chains";
-import { getConfig } from "@/config/index";
+import { getConfig } from "./get-config";
 
 const config = getConfig();
 

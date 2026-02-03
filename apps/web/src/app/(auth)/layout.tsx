@@ -1,4 +1,4 @@
-import { AuthLayout } from "@/components/layout/auth-layout";
+import { AuthLayout } from "@/components/layout";
 
 export default function AuthGroupLayout({
   children,

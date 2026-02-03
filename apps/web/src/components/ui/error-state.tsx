@@ -1,7 +1,7 @@
 import { AlertCircle } from "lucide-react";
 import * as React from "react";
 import { Button } from "@/components/primitives";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib";
 
 interface ErrorStateProps extends React.HTMLAttributes<HTMLDivElement> {
   title?: string;

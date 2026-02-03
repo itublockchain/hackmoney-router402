@@ -1,10 +1,7 @@
 import type { SessionKeyData, SessionKeyForBackend } from "@router402/sdk";
 import { exportSessionKeyForBackend as sdkExportSessionKeyForBackend } from "@router402/sdk";
 import type { Address } from "viem";
-import {
-  SESSION_KEY_CONFIG,
-  SMART_ACCOUNT_CONFIG,
-} from "@/config/smart-account";
+import { SESSION_KEY_CONFIG, SMART_ACCOUNT_CONFIG } from "@/config";
 import { isSessionKeyExpired } from "./generate";
 
 /**

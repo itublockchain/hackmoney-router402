@@ -1,7 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import * as React from "react";
 import { Button, type ButtonProps } from "@/components/primitives";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib";
 
 interface EmptyStateProps extends React.HTMLAttributes<HTMLDivElement> {
   icon?: LucideIcon;

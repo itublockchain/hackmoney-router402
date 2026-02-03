@@ -1,5 +1,5 @@
 import type { Address, Hex, WalletClient } from "viem";
-import { router402Sdk } from "@/config/smart-account";
+import { router402Sdk } from "@/config";
 import type { SmartAccountInfo, TransactionResult } from "./types";
 import { SmartAccountError } from "./types";
 

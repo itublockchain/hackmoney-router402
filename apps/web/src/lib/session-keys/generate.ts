@@ -7,7 +7,7 @@ import {
   isSessionKeyValid as sdkIsSessionKeyValid,
 } from "@router402/sdk";
 import type { Address } from "viem";
-import { router402Sdk } from "@/config/smart-account";
+import { router402Sdk } from "@/config";
 
 // Re-export types
 export type { SessionKeyData };

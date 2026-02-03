@@ -3,7 +3,7 @@
 import { Search, X } from "lucide-react";
 import * as React from "react";
 import { Button, Input } from "@/components/primitives";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib";
 
 interface SearchInputProps
   extends Omit<React.ComponentProps<"input">, "onChange"> {

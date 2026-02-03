@@ -2,10 +2,10 @@
 
 import { CheckCircle, Loader2, MessageSquare, Wallet } from "lucide-react";
 import Link from "next/link";
-import { ConnectWalletButton } from "@/components/layout/connect-wallet-button";
+import { ConnectWalletButton } from "@/components/layout";
 import { Button } from "@/components/primitives/button";
-import type { Router402Status } from "@/hooks/use-router402";
-import { useRouter402 } from "@/hooks/use-router402";
+import type { Router402Status } from "@/hooks";
+import { useRouter402 } from "@/hooks";
 
 const steps = [
   { id: "connect", label: "Connect Wallet" },

@@ -3,7 +3,7 @@
 import { Menu } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useState } from "react";
-import { useUIStore } from "@/stores/ui.store";
+import { useUIStore } from "@/stores";
 import { ConnectWalletButton } from "./connect-wallet-button";
 import { PanelResizer } from "./panel-resizer";
 import { Sidebar } from "./sidebar";

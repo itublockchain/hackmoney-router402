@@ -1,7 +1,7 @@
 "use client";
 
 import { Hero402Animation } from "@/components/hero";
-import { Navbar } from "@/components/layout/navbar";
+import { Navbar } from "@/components/layout";
 
 export default function Home() {
   return (

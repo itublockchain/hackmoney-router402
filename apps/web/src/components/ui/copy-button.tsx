@@ -10,7 +10,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/primitives";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib";
 
 interface CopyButtonProps extends Omit<ButtonProps, "onClick"> {
   value: string;
