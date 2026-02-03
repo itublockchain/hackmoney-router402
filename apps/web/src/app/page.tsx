@@ -6,7 +6,7 @@ import {
   LandingInfoSection,
   LandingProductsSection,
 } from "@/components/hero";
-import { Navbar } from "@/components/layout";
+import { Footer, Navbar } from "@/components/layout";
 import { CustomCursor } from "@/components/ui/custom-cursor";
 
 export default function Home() {
@@ -20,6 +20,7 @@ export default function Home() {
         <LandingInfoSection />
         <LandingProductsSection />
       </main>
+      <Footer />
     </div>
   );
 }

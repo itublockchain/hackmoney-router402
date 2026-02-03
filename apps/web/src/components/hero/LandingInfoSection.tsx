@@ -61,7 +61,7 @@ export function LandingInfoSection() {
 
         {/* Demo Placeholder */}
         <div className="mb-20 flex justify-center">
-          <div className="aspect-video w-full max-w-4xl rounded-lg border border-blue-600" />
+          <div className="aspect-video w-full max-w-3xl rounded-lg border border-blue-600" />
         </div>
 
         {/* Feature Items - Row 1 */}

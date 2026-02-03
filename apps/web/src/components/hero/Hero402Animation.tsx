@@ -59,6 +59,12 @@ export function Hero402Animation() {
           };
         };
 
+        const updateScale = (width: number, height: number) => {
+          const isMobile = width < 768;
+          const scaleMultiplier = isMobile ? 1.5 : 1;
+          scale = Math.min(width / W, height / H) * scaleMultiplier;
+        };
+
         p.setup = () => {
           const dims = getContainerDimensions();
           containerHeight = dims.height;
@@ -67,11 +73,7 @@ export function Hero402Animation() {
           p.pixelDensity(1);
           p.noSmooth();
 
-          // Calculate scale to fit the animation
-          // Use 2x scale multiplier on mobile (< 768px) for better visibility
-          const isMobile = dims.width < 768;
-          const scaleMultiplier = isMobile ? 1.5 : 1;
-          scale = Math.min(dims.width / W, dims.height / H) * scaleMultiplier;
+          updateScale(dims.width, dims.height);
 
           g = p.createGraphics(W, H);
           g.pixelDensity(1);
@@ -108,10 +110,7 @@ export function Hero402Animation() {
           const dims = getContainerDimensions();
           containerHeight = dims.height;
           p.resizeCanvas(dims.width, dims.height);
-          // Use 2x scale multiplier on mobile (< 768px) for better visibility
-          const isMobile = dims.width < 768;
-          const scaleMultiplier = isMobile ? 1.2 : 0.6;
-          scale = Math.min(dims.width / W, dims.height / H) * scaleMultiplier;
+          updateScale(dims.width, dims.height);
         };
 
         p.draw = () => {
@@ -198,7 +197,31 @@ export function Hero402Animation() {
   useEffect(() => {
     createSketch();
 
+    // Re-sync canvas when navigating back to the tab
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible" && p5InstanceRef.current) {
+        p5InstanceRef.current.windowResized();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    // Use ResizeObserver to catch container size changes reliably
+    const container = containerRef.current;
+    let resizeObserver: ResizeObserver | null = null;
+    if (container) {
+      resizeObserver = new ResizeObserver(() => {
+        if (p5InstanceRef.current) {
+          p5InstanceRef.current.windowResized();
+        }
+      });
+      resizeObserver.observe(container);
+    }
+
     return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
       if (p5InstanceRef.current) {
         p5InstanceRef.current.remove();
         p5InstanceRef.current = null;
@@ -242,7 +265,7 @@ export function Hero402Animation() {
   const hasContent = inputValue.trim().length > 0;
 
   return (
-    <div className="relative z-20 w-full h-[calc(100vh-120px)]">
+    <div className="relative z-20 w-full h-[calc(100vh-40px)]">
       {/* Input box overlay - centered in the middle of the animation, slightly lower on mobile */}
       <div className="absolute inset-0 z-10 flex items-center justify-center px-3 pt-16 sm:px-4 sm:pt-0">
         <div className="flex w-full max-w-2xl flex-col items-center gap-3 rounded-2xl p-4 sm:gap-5 sm:p-6">
@@ -360,7 +383,7 @@ export function Hero402Animation() {
       </div>
 
       {/* p5.js canvas container */}
-      <div ref={containerRef} className="h-full w-full opacity-30" />
+      <div ref={containerRef} className="h-full w-full opacity-10" />
     </div>
   );
 }

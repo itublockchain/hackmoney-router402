@@ -2,13 +2,14 @@ import Image from "next/image";
 import { RouterAnimation } from "./RouterAnimation";
 
 const products = [
+  { name: "OpenRouter", logo: "/product/openrouter.png", size: 160 },
   { name: "x402", logo: "/product/x402.png", size: 96 },
-  { name: "Claude", logo: "/product/claude.png", size: 144 },
-  { name: "base", logo: "/product/base.png", size: 112 },
-  { name: "ChatGPT", logo: "/product/chatgpt.png", size: 160 },
   { name: "ZeroDev", logo: "/product/zerodev.png", size: 160 },
-  { name: "Uniswap", logo: "/product/uniswap.png", size: 160 },
+  { name: "base", logo: "/product/base.png", size: 112 },
+  { name: "Claude", logo: "/product/claude.png", size: 144 },
   { name: "LI.FI", logo: "/product/lifi.png", size: 112 },
+  { name: "ChatGPT", logo: "/product/chatgpt.png", size: 160 },
+  { name: "Uniswap", logo: "/product/uniswap.png", size: 160 },
 ];
 
 const sizeClasses: Record<number, string> = {
@@ -59,7 +60,25 @@ export function LandingProductsSection() {
 
         {/* Product Logos - Row 2 (centered) */}
         <div className="mt-10 flex flex-wrap items-center justify-center gap-12 md:gap-16">
-          {products.slice(4).map((product) => (
+          {products.slice(4, 7).map((product) => (
+            <div
+              key={product.name}
+              className="flex items-center justify-center"
+            >
+              <Image
+                src={product.logo}
+                alt={product.name}
+                width={product.size}
+                height={product.size}
+                className={`${sizeClasses[product.size]} h-auto object-contain`}
+              />
+            </div>
+          ))}
+        </div>
+
+        {/* Product Logos - Row 3 (centered) */}
+        <div className="mt-10 flex flex-wrap items-center justify-center gap-12 md:gap-16">
+          {products.slice(7).map((product) => (
             <div
               key={product.name}
               className="flex items-center justify-center"

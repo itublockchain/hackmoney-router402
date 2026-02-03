@@ -1,9 +1,48 @@
+import { ArrowUpRight } from "lucide-react";
+import Image from "next/image";
+
+const FOOTER_LINKS = [
+  { label: "GitHub", href: "https://github.com/route402" },
+  { label: "Docs", href: "https://docs.route402.com" },
+  { label: "Showcase", href: "https://showcase.route402.com" },
+];
+
 export function Footer() {
   return (
-    <footer className="border-t border-border/40 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
-      <div className="container flex h-16 max-w-screen-2xl mx-auto items-center justify-between px-4">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span>© 2026 Router 402</span>
+    <footer className="mt-32 border-t border-[#000389] bg-background">
+      <div className="container mx-auto max-w-screen-2xl px-4 pb-12 pt-[95px]">
+        <div className="flex flex-col items-center gap-6">
+          <Image
+            src="/logo-text.png"
+            alt="Router 402"
+            width={180}
+            height={80}
+            className="object-contain"
+          />
+
+          <div className="flex items-center gap-3">
+            {FOOTER_LINKS.map((link) => (
+              <a
+                key={link.label}
+                href={link.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm text-black transition-colors hover:bg-primary/90"
+              >
+                {link.label}
+                <ArrowUpRight className="h-3.5 w-3.5" />
+              </a>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-10 flex flex-col items-center justify-between gap-4 pt-6 sm:flex-row">
+          <p className="text-sm text-muted-foreground">
+            Build with <span className="text-red-500">❤</span> for ETHGlobal.
+          </p>
+          <p className="text-sm text-muted-foreground">
+            All rights reserved &copy; 2026
+          </p>
         </div>
       </div>
     </footer>
