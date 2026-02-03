@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 
-const DOT_SIZE = 8;
+const DOT_SIZE = 6;
 const RING_SIZE = 50;
 const LERP_FACTOR = 0.15;
 
@@ -93,8 +93,7 @@ export function CustomCursor() {
           width: RING_SIZE,
           height: RING_SIZE,
           borderRadius: "50%",
-          border: "2px solid #fff",
-          boxSizing: "border-box",
+          backgroundColor: "#fff",
           transition: "width 0.2s, height 0.2s, margin 0.2s",
         }}
       />
