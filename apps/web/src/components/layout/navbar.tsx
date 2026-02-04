@@ -1,3 +1,5 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -19,7 +21,7 @@ export function Navbar() {
             </a>
           </Button>
           <Button asChild>
-            <Link href="/app">Launch App</Link>
+            <Link href="/chat">Launch App</Link>
           </Button>
         </nav>
       </div>
