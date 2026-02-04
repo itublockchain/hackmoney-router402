@@ -32,8 +32,9 @@ export const configSchema = z.object({
 
   /**
    * Pimlico API key for smart account operations
+   * Optional in development to allow running without external services
    */
-  PIMLICO_API_KEY: z.string().min(1),
+  PIMLICO_API_KEY: z.string().min(1).optional(),
 
   /**
    * Chain environment

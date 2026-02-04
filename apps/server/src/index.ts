@@ -8,6 +8,7 @@ import express, {
 } from "express";
 import helmet from "helmet";
 import { initConfig } from "./config/index.js";
+import { chatRouter } from "./routes/chat.js";
 import { healthRouter } from "./routes/health.js";
 
 // Initialize and validate configuration at startup
@@ -36,6 +37,7 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
 
 // Routes
 app.use("/health", healthRouter);
+app.use("/v1/chat/completions", chatRouter);
 
 // 404 handler
 app.use((req: Request, res: Response) => {

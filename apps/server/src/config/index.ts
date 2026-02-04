@@ -18,6 +18,7 @@ export function loadConfig(): Config {
       PORT: process.env.PORT,
       NODE_ENV: process.env.NODE_ENV,
       CORS_ORIGIN: process.env.CORS_ORIGIN,
+      PIMLICO_API_KEY: process.env.PIMLICO_API_KEY,
     });
 
     configLogger.info("Configuration loaded successfully");

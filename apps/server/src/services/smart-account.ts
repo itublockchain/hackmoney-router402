@@ -21,6 +21,10 @@ function getTargetChain() {
  * Create the Router402 SDK instance
  */
 function createSdk() {
+  if (!config.PIMLICO_API_KEY) {
+    throw new Error("PIMLICO_API_KEY is not set");
+  }
+
   const sdkConfig: Router402Config = {
     chain: getTargetChain(),
     pimlicoApiKey: config.PIMLICO_API_KEY,
