@@ -1,6 +1,11 @@
-import { ExternalLink } from "lucide-react";
+"use client";
+
+import { AnimatePresence, motion } from "framer-motion";
+import { Code, ExternalLink, Globe, Terminal } from "lucide-react";
 import Image from "next/image";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib";
 
 const features = [
   {
@@ -30,9 +35,19 @@ const features = [
   },
 ];
 
+const tabs = [
+  { id: "web", label: "Web", icon: Globe },
+  { id: "vscode", label: "VS Code", icon: Code },
+  { id: "cli", label: "Terminal", icon: Terminal },
+] as const;
+
+type TabId = (typeof tabs)[number]["id"];
+
 export function LandingInfoSection() {
+  const [activeTab, setActiveTab] = useState<TabId>("web");
+
   return (
-    <section className="relative -mt-[28rem] md:-mt-[28rem] w-full bg-black px-4 py-24 sm:px-8 md:px-16 lg:px-24">
+    <section className="relative -mt-[32rem] md:-mt-[32rem] w-full bg-black px-4 py-24 sm:px-8 md:px-16 lg:px-24">
       <div className="mx-auto max-w-6xl">
         {/* Logo — relative z-20 so it floats above the wave animation (z-10) */}
         <div className="relative z-20 mb-12 flex justify-center">
@@ -49,7 +64,7 @@ export function LandingInfoSection() {
         {/* Title and Subtitle — relative z-20 so it floats above the wave animation (z-10) */}
         <div className="relative z-20 mb-16 text-center">
           <h2 className="mb-4 text-2xl font-bold text-white sm:text-3xl md:text-4xl">
-            What are the advantages of using Router402
+            What is Router402?
           </h2>
           <p className="mx-auto max-w-3xl text-sm text-neutral-400 sm:text-base">
             Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
@@ -59,9 +74,55 @@ export function LandingInfoSection() {
           </p>
         </div>
 
-        {/* Demo Placeholder */}
-        <div className="mb-20 flex justify-center">
-          <div className="aspect-video w-full max-w-3xl rounded-lg border border-blue-600" />
+        {/* Tabbed Demo */}
+        <div className="relative z-20 mb-20 flex justify-center">
+          <div className="w-full max-w-4xl">
+            {/* Tab Buttons */}
+            <div className="flex gap-1 rounded-t-lg border border-b-0 border-blue-600 bg-neutral-950 p-1">
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={cn(
+                      "flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors",
+                      activeTab === tab.id
+                        ? "bg-blue-600 text-white"
+                        : "text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200"
+                    )}
+                  >
+                    <Icon size={16} />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Tab Content */}
+            <div className="overflow-hidden rounded-b-lg border border-blue-600">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeTab}
+                  initial={{ opacity: 0, y: 40 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 300,
+                    damping: 25,
+                  }}
+                  className="aspect-video w-full bg-neutral-950"
+                >
+                  <div className="flex h-full items-center justify-center text-neutral-500">
+                    {activeTab === "web" && "Web Demo"}
+                    {activeTab === "vscode" && "VS Code Demo"}
+                    {activeTab === "cli" && "Terminal Demo"}
+                  </div>
+                </motion.div>
+              </AnimatePresence>
+            </div>
+          </div>
         </div>
 
         {/* Feature Items - Row 1 */}
@@ -105,7 +166,7 @@ export function LandingInfoSection() {
         {/* Learn Details Button */}
         <div className="mt-12 flex justify-center">
           <Button>
-            Learn Details
+            More Details
             <ExternalLink size={16} />
           </Button>
         </div>

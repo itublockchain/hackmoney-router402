@@ -15,10 +15,11 @@ export default function Home() {
       <CustomCursor />
       <Navbar />
       <main>
-        <Hero402Animation />
         <HeroWaveAnimation />
         <LandingInfoSection />
         <LandingProductsSection />
+        <div className="mb-24" />
+        <Hero402Animation />
       </main>
       <Footer />
     </div>
