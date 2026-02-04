@@ -72,13 +72,19 @@ export function LandingInfoSection() {
             ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut
             aliquip ex ea commodo consequat.
           </p>
+          <div className="mt-6 flex justify-center">
+            <Button>
+              Get Started
+              <ExternalLink size={16} />
+            </Button>
+          </div>
         </div>
 
         {/* Tabbed Demo */}
         <div className="relative z-20 mb-20 flex justify-center">
           <div className="w-full max-w-4xl">
             {/* Tab Buttons */}
-            <div className="flex gap-1 rounded-t-lg border border-b-0 border-blue-600 bg-neutral-950 p-1">
+            <div className="flex gap-1 rounded-t-lg border border-b-0 border-neutral-700 bg-neutral-950 p-1">
               {tabs.map((tab) => {
                 return (
                   <button
@@ -87,7 +93,7 @@ export function LandingInfoSection() {
                     className={cn(
                       "flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors",
                       activeTab === tab.id
-                        ? "bg-blue-600 text-white"
+                        ? "bg-neutral-900 text-white"
                         : "text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200"
                     )}
                   >
@@ -98,7 +104,7 @@ export function LandingInfoSection() {
             </div>
 
             {/* Tab Content */}
-            <div className="overflow-hidden rounded-b-lg border border-blue-600">
+            <div className="overflow-hidden rounded-b-lg border border-neutral-700">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={activeTab}
