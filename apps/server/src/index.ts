@@ -8,8 +8,10 @@ import express, {
 } from "express";
 import helmet from "helmet";
 import { initConfig } from "./config/index.js";
+import { authorizeRouter } from "./routes/authorize.js";
 import { healthRouter } from "./routes/health.js";
 import { createPaidRouter } from "./routes/paid.js";
+import { initAuthService } from "./services/auth.service.js";
 import { initDebtService } from "./services/debt.js";
 import { disconnectPrisma, getPrismaClient } from "./utils/prisma.js";
 
@@ -21,6 +23,9 @@ const prisma = getPrismaClient(config.DATABASE_URL);
 
 // Initialize debt service
 initDebtService(prisma, config);
+
+// Initialize auth service
+initAuthService(prisma, config.JWT_SECRET);
 
 // Create routers that depend on config
 const paidRouter = createPaidRouter(config);
@@ -48,6 +53,7 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
 
 // Routes
 app.use("/health", healthRouter);
+app.use("/authorize", authorizeRouter);
 app.use("/paid", paidRouter);
 
 // 404 handler

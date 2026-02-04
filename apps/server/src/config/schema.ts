@@ -68,6 +68,12 @@ export const configSchema = z.object({
     .default("0.50")
     .transform((val) => Number.parseFloat(val))
     .pipe(z.number().nonnegative()),
+
+  /**
+   * JWT Secret for signing authorization tokens
+   * Should be a strong random string in production
+   */
+  JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters"),
 });
 
 /**
