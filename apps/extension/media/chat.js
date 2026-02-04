@@ -33,6 +33,10 @@
   btnSend.addEventListener("click", sendMessage);
 
   btnNewChat.addEventListener("click", function () {
+    // Abort any in-flight request before clearing
+    if (isGenerating) {
+      vscode.postMessage({ type: "stopGeneration" });
+    }
     vscode.postMessage({ type: "clearChat" });
     // Clear all messages from the UI
     var messages = messagesContainer.querySelectorAll(".message, .loading-indicator");

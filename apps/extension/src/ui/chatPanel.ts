@@ -53,6 +53,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
           this.abortController?.abort();
           break;
         case "clearChat":
+          this.abortController?.abort();
           this.conversationHistory = [];
           break;
       }

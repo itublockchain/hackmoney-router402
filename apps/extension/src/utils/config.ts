@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 
-export const API_ENDPOINT = "https://api.router402.xyz";
+export const API_ENDPOINT = "http://localhost:8080";
 export const DASHBOARD_URL = "https://router402.xyz/chat";
 
 export interface Router402Config {
