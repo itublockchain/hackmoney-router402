@@ -164,6 +164,7 @@ authorizeRouter.post("/", async (req: Request, res: Response) => {
       smartAccountAddress,
       privateKey,
       serializedSessionKey,
+      eoaAddress,
       chainId,
       nonce,
     } = validationResult.data;
@@ -175,6 +176,7 @@ authorizeRouter.post("/", async (req: Request, res: Response) => {
         smartAccountAddress: smartAccountAddress as `0x${string}`,
         privateKey,
         serializedSessionKey,
+        eoaAddress: eoaAddress as `0x${string}`,
         chainId: BigInt(chainId),
         nonce: BigInt(nonce),
       },

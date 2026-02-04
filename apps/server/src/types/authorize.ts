@@ -8,6 +8,9 @@ export const AuthorizeRequestSchema = z.object({
     .regex(ethereumAddressRegex, "Invalid Smart Account address format"),
   privateKey: z.string().min(1, "Private key is required"),
   serializedSessionKey: z.string().min(1, "Serialized session key is required"),
+  eoaAddress: z
+    .string()
+    .regex(ethereumAddressRegex, "Invalid EOA address format"),
   chainId: z
     .number()
     .int("Chain ID must be an integer")

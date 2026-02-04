@@ -5,7 +5,7 @@
  */
 
 import { logger } from "@router402/utils";
-import { recoverTypedDataAddress } from "viem";
+import { isAddressEqual, recoverTypedDataAddress } from "viem";
 
 const sigLogger = logger.context("auth-signature");
 
@@ -21,6 +21,7 @@ export const AUTHORIZATION_TYPES = {
     { name: "smartAccountAddress", type: "address" },
     { name: "privateKey", type: "string" },
     { name: "serializedSessionKey", type: "string" },
+    { name: "eoaAddress", type: "address" },
     { name: "chainId", type: "uint256" },
     { name: "nonce", type: "uint256" },
   ],
@@ -30,6 +31,7 @@ export interface AuthorizationMessage {
   smartAccountAddress: `0x${string}`;
   privateKey: string;
   serializedSessionKey: string;
+  eoaAddress: `0x${string}`;
   chainId: bigint;
   nonce: bigint;
 }
@@ -67,11 +69,24 @@ export async function verifyAuthorizationSignature(
         smartAccountAddress: message.smartAccountAddress,
         privateKey: message.privateKey,
         serializedSessionKey: message.serializedSessionKey,
+        eoaAddress: message.eoaAddress,
         chainId: message.chainId,
         nonce: message.nonce,
       },
       signature: signature as `0x${string}`,
     });
+
+    // Verify that recovered address matches the eoaAddress in the message
+    if (!isAddressEqual(walletAddress, message.eoaAddress)) {
+      sigLogger.debug("EOA address mismatch", {
+        recovered: walletAddress,
+        expected: message.eoaAddress,
+      });
+      return {
+        isValid: false,
+        error: "Recovered address does not match eoaAddress",
+      };
+    }
 
     sigLogger.debug("EIP-712 signature verified successfully", {
       walletAddress,
@@ -104,6 +119,7 @@ export function getAuthorizationTypedData(
   smartAccountAddress: string,
   privateKey: string,
   serializedSessionKey: string,
+  eoaAddress: string,
   chainId: number,
   nonce: number
 ) {
@@ -118,6 +134,7 @@ export function getAuthorizationTypedData(
       smartAccountAddress: smartAccountAddress as `0x${string}`,
       privateKey,
       serializedSessionKey,
+      eoaAddress: eoaAddress as `0x${string}`,
       chainId: BigInt(chainId),
       nonce: BigInt(nonce),
     },
