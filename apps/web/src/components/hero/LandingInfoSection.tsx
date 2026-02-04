@@ -80,31 +80,51 @@ export function LandingInfoSection() {
           </div>
         </div>
 
-        {/* Tabbed Demo */}
+        {/* Tab Selector */}
+        <div className="relative z-20 mb-24 flex items-center justify-center gap-4">
+          <div className="inline-flex gap-1 rounded-full border border-neutral-700 bg-neutral-900 p-1">
+            {tabs.map((tab) => {
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={cn(
+                    "rounded-full px-5 py-1.5 text-sm font-medium transition-colors",
+                    activeTab === tab.id
+                      ? "bg-white text-black"
+                      : "text-neutral-400 hover:text-neutral-200"
+                  )}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Demo Terminal with Decorative Background */}
         <div className="relative z-20 mb-20 flex justify-center">
-          <div className="w-full max-w-4xl">
-            {/* Tab Buttons */}
-            <div className="flex gap-1 rounded-t-lg border border-b-0 border-neutral-700 bg-neutral-950 p-1">
-              {tabs.map((tab) => {
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={cn(
-                      "flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors",
-                      activeTab === tab.id
-                        ? "bg-neutral-900 text-white"
-                        : "text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200"
-                    )}
-                  >
-                    {tab.label}
-                  </button>
-                );
-              })}
+          <div className="relative w-full max-w-4xl">
+            {/* Decorative background image */}
+            <div className="absolute -inset-y-8 -inset-x-24 sm:-inset-y-12 sm:-inset-x-32 rounded-3xl overflow-hidden">
+              <Image
+                src="/frame.png"
+                alt=""
+                fill
+                className="object-cover"
+                priority
+              />
             </div>
 
-            {/* Tab Content */}
-            <div className="overflow-hidden rounded-b-lg border border-neutral-700">
+            {/* Terminal */}
+            <div className="relative overflow-hidden rounded-lg border border-neutral-700">
+              {/* macOS window title bar */}
+              <div className="flex items-center gap-2 bg-neutral-900 px-4 py-3">
+                <div className="h-3 w-3 rounded-full bg-[#FF5F57]" />
+                <div className="h-3 w-3 rounded-full bg-[#FEBC2E]" />
+                <div className="h-3 w-3 rounded-full bg-[#28C840]" />
+              </div>
+
               <AnimatePresence mode="wait">
                 <motion.div
                   key={activeTab}
@@ -130,7 +150,7 @@ export function LandingInfoSection() {
         </div>
 
         {/* Feature Items - Row 1 */}
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-3 mt-50">
           {features.slice(0, 3).map((feature, index) => (
             <div key={index} className="flex gap-4">
               <div className="flex-shrink-0">
