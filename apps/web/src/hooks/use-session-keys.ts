@@ -1,27 +1,29 @@
 "use client";
 
-import type { SessionKeyData, SessionKeyForBackend } from "@router402/sdk";
+import {
+  canUseSessionKey,
+  getSessionKeyRemainingTime,
+  isSessionKeyExpired,
+  type SessionKeyData,
+  type SessionKeyForBackend,
+} from "@router402/sdk";
 import { useCallback, useEffect, useState } from "react";
 import type { Address } from "viem";
 import { useSwitchChain, useWalletClient } from "wagmi";
 import { router402Sdk, SMART_ACCOUNT_CONFIG } from "@/config";
 import {
-  canUseSessionKey,
   exportSessionKeyForBackend,
-  generateSessionKey,
-  getSessionKeyRemainingTime,
-  getSessionKeysForAccount,
-  isSessionKeyExpired,
+  getSessionKeyForAccount,
   removeSessionKey as removeSessionKeyFromStorage,
   storeSessionKey,
   updateSessionKeyApproval,
 } from "@/lib/session-keys";
 
 interface UseSessionKeysReturn {
-  /** All session keys for the smart account */
-  sessionKeys: SessionKeyData[];
-  /** The active (most recent valid and approved) session key */
-  activeSessionKey: SessionKeyData | undefined;
+  /** The session key for the smart account (if any) */
+  sessionKey: SessionKeyData | undefined;
+  /** Whether the session key is active (valid and approved) */
+  isActive: boolean;
   /** Whether Pimlico is configured (required for session keys) */
   isConfigured: boolean;
   /** Whether a session key operation is in progress */
@@ -34,24 +36,25 @@ interface UseSessionKeysReturn {
   lastTestTransferHash: string | undefined;
   /** Error from last operation */
   error: Error | undefined;
-  /** Create a new session key */
+  /** Create a new session key (replaces existing one) */
   createSessionKey: () => void;
-  /** Approve a session key (creates serialized permission account) */
-  approveSessionKey: (publicKey: Address) => Promise<void>;
-  /** Remove a session key by its public address */
-  removeSessionKey: (publicKey: Address) => void;
-  /** Refresh session keys from storage */
-  refreshSessionKeys: () => void;
-  /** Send a test ETH transfer using a session key */
-  sendTestTransfer: (publicKey: Address, toAddress: Address) => Promise<void>;
-  /** Format remaining time for a session key */
+  /** Approve the current session key (creates serialized permission account) */
+  approveSessionKey: () => Promise<void>;
+  /** Remove the session key */
+  removeSessionKey: () => void;
+  /** Refresh session key from storage */
+  refreshSessionKey: () => void;
+  /** Send a test ETH transfer using the session key */
+  sendTestTransfer: (toAddress: Address) => Promise<void>;
+  /** Format remaining time for the session key */
   formatRemainingTime: (sessionKey: SessionKeyData) => string;
   /** Export session key data for backend use */
-  getSessionKeyForBackend: (publicKey: Address) => SessionKeyForBackend | null;
+  getSessionKeyForBackend: () => SessionKeyForBackend | null;
 }
 
 /**
- * Hook to manage session keys for a Smart Account
+ * Hook to manage the session key for a Smart Account.
+ * Each account has exactly one session key.
  */
 export function useSessionKeys(
   smartAccountAddress: Address | undefined
@@ -59,8 +62,10 @@ export function useSessionKeys(
   const { data: walletClient } = useWalletClient({
     chainId: SMART_ACCOUNT_CONFIG.chainId,
   });
-  const { switchChainAsync } = useSwitchChain();
-  const [sessionKeys, setSessionKeys] = useState<SessionKeyData[]>([]);
+  const switchChainAsync = useSwitchChain();
+  const [sessionKey, setSessionKey] = useState<SessionKeyData | undefined>(
+    undefined
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
   const [isSendingTestTransfer, setIsSendingTestTransfer] = useState(false);
@@ -74,27 +79,28 @@ export function useSessionKeys(
    */
   const ensureCorrectChain = useCallback(async () => {
     const targetChainId = SMART_ACCOUNT_CONFIG.chainId;
-    await switchChainAsync({ chainId: targetChainId });
-  }, [switchChainAsync]);
+    await switchChainAsync.mutateAsync({ chainId: targetChainId });
+  }, [switchChainAsync.mutateAsync]);
 
   /**
-   * Load session keys from storage
+   * Load session key from storage
    */
-  const refreshSessionKeys = useCallback(() => {
+  const refreshSessionKey = useCallback(() => {
     if (!smartAccountAddress) {
-      setSessionKeys([]);
+      setSessionKey(undefined);
       return;
     }
 
-    const keys = getSessionKeysForAccount(smartAccountAddress);
-    const validKeys = keys
-      .filter((key) => !isSessionKeyExpired(key))
-      .sort((a, b) => b.createdAt - a.createdAt);
-    setSessionKeys(validKeys);
+    const key = getSessionKeyForAccount(smartAccountAddress);
+    if (key && !isSessionKeyExpired(key)) {
+      setSessionKey(key);
+    } else {
+      setSessionKey(undefined);
+    }
   }, [smartAccountAddress]);
 
   /**
-   * Create a new session key
+   * Create a new session key (replaces existing one)
    */
   const handleCreateSessionKey = useCallback(() => {
     if (!smartAccountAddress) {
@@ -111,10 +117,16 @@ export function useSessionKeys(
     setError(undefined);
 
     try {
+      if (!router402Sdk) {
+        throw new Error("Router402 SDK is not configured");
+      }
       const ownerAddress = walletClient.account.address;
-      const newKey = generateSessionKey(smartAccountAddress, ownerAddress);
+      const newKey = router402Sdk.generateSessionKey(
+        smartAccountAddress,
+        ownerAddress
+      );
       storeSessionKey(newKey);
-      refreshSessionKeys();
+      refreshSessionKey();
     } catch (err) {
       const error =
         err instanceof Error ? err : new Error("Failed to create session key");
@@ -122,110 +134,99 @@ export function useSessionKeys(
     } finally {
       setIsLoading(false);
     }
-  }, [smartAccountAddress, walletClient, refreshSessionKeys]);
+  }, [smartAccountAddress, walletClient, refreshSessionKey]);
 
   /**
-   * Approve a session key by creating a serialized permission account
+   * Approve the current session key
    */
-  const approveSessionKey = useCallback(
-    async (publicKey: Address) => {
-      if (!smartAccountAddress || !walletClient) {
-        setError(
-          new Error("Smart account address and wallet client are required")
-        );
-        return;
+  const handleApproveSessionKey = useCallback(async () => {
+    if (!smartAccountAddress || !walletClient) {
+      setError(
+        new Error("Smart account address and wallet client are required")
+      );
+      return;
+    }
+
+    if (!router402Sdk) {
+      setError(new Error("Router402 SDK is not configured"));
+      return;
+    }
+
+    if (!sessionKey) {
+      setError(new Error("No session key to approve"));
+      return;
+    }
+
+    if (sessionKey.isApproved) {
+      return;
+    }
+
+    setIsApproving(true);
+    setError(undefined);
+
+    try {
+      await ensureCorrectChain();
+
+      const approvedKey = await router402Sdk.approveSessionKey(
+        walletClient,
+        sessionKey
+      );
+
+      if (!approvedKey.serializedSessionKey) {
+        throw new Error("Failed to approve session key");
       }
 
-      if (!router402Sdk) {
-        setError(new Error("Router402 SDK is not configured"));
-        return;
-      }
+      updateSessionKeyApproval(
+        smartAccountAddress,
+        sessionKey.publicKey,
+        approvedKey.serializedSessionKey
+      );
 
-      const sessionKey = sessionKeys.find((key) => key.publicKey === publicKey);
-      if (!sessionKey) {
-        setError(new Error("Session key not found"));
-        return;
-      }
-
-      if (sessionKey.isApproved) {
-        return;
-      }
-
-      setIsApproving(true);
-      setError(undefined);
-
-      try {
-        await ensureCorrectChain();
-
-        const approvedKey = await router402Sdk.approveSessionKey(
-          walletClient,
-          sessionKey
-        );
-
-        if (!approvedKey.serializedSessionKey) {
-          throw new Error("Failed to approve session key");
-        }
-
-        updateSessionKeyApproval(
-          smartAccountAddress,
-          publicKey,
-          approvedKey.serializedSessionKey
-        );
-
-        refreshSessionKeys();
-      } catch (err) {
-        const error =
-          err instanceof Error
-            ? err
-            : new Error("Failed to approve session key");
-        setError(error);
-      } finally {
-        setIsApproving(false);
-      }
-    },
-    [
-      smartAccountAddress,
-      walletClient,
-      sessionKeys,
-      refreshSessionKeys,
-      ensureCorrectChain,
-    ]
-  );
+      refreshSessionKey();
+    } catch (err) {
+      const error =
+        err instanceof Error ? err : new Error("Failed to approve session key");
+      setError(error);
+    } finally {
+      setIsApproving(false);
+    }
+  }, [
+    smartAccountAddress,
+    walletClient,
+    sessionKey,
+    refreshSessionKey,
+    ensureCorrectChain,
+  ]);
 
   /**
-   * Remove a session key
+   * Remove the session key
    */
-  const handleRemoveSessionKey = useCallback(
-    (publicKey: Address) => {
-      if (!smartAccountAddress) {
-        setError(new Error("Smart account address is required"));
-        return;
-      }
+  const handleRemoveSessionKey = useCallback(() => {
+    if (!smartAccountAddress) {
+      setError(new Error("Smart account address is required"));
+      return;
+    }
 
-      setIsLoading(true);
-      setError(undefined);
+    setIsLoading(true);
+    setError(undefined);
 
-      try {
-        removeSessionKeyFromStorage(smartAccountAddress, publicKey);
-        refreshSessionKeys();
-      } catch (err) {
-        const error =
-          err instanceof Error
-            ? err
-            : new Error("Failed to remove session key");
-        setError(error);
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [smartAccountAddress, refreshSessionKeys]
-  );
+    try {
+      removeSessionKeyFromStorage(smartAccountAddress);
+      refreshSessionKey();
+    } catch (err) {
+      const error =
+        err instanceof Error ? err : new Error("Failed to remove session key");
+      setError(error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [smartAccountAddress, refreshSessionKey]);
 
   /**
-   * Send a test ETH transfer using a session key
+   * Send a test ETH transfer using the session key
    */
   const sendTestTransfer = useCallback(
-    async (publicKey: Address, toAddress: Address) => {
+    async (toAddress: Address) => {
       if (!smartAccountAddress) {
         setError(new Error("Smart account address is required"));
         return;
@@ -236,13 +237,11 @@ export function useSessionKeys(
         return;
       }
 
-      const sessionKey = sessionKeys.find((key) => key.publicKey === publicKey);
-      if (!sessionKey) {
-        setError(new Error("Session key not found"));
-        return;
-      }
-
-      if (!canUseSessionKey(sessionKey) || !sessionKey.serializedSessionKey) {
+      if (
+        !sessionKey ||
+        !canUseSessionKey(sessionKey) ||
+        !sessionKey.serializedSessionKey
+      ) {
         setError(
           new Error(
             "Session key is not approved or has expired. Please approve it first."
@@ -281,62 +280,54 @@ export function useSessionKeys(
         setIsSendingTestTransfer(false);
       }
     },
-    [smartAccountAddress, sessionKeys]
+    [smartAccountAddress, sessionKey]
   );
 
   /**
    * Format remaining time for display
    */
-  const formatRemainingTime = useCallback(
-    (sessionKey: SessionKeyData): string => {
-      const remainingMs = getSessionKeyRemainingTime(sessionKey);
-      if (remainingMs === 0) return "Expired";
+  const formatRemainingTime = useCallback((key: SessionKeyData): string => {
+    const remainingMs = getSessionKeyRemainingTime(key);
+    if (remainingMs === 0) return "Expired";
 
-      const seconds = Math.floor(remainingMs / 1000);
-      const minutes = Math.floor(seconds / 60);
-      const hours = Math.floor(minutes / 60);
-      const days = Math.floor(hours / 24);
+    const seconds = Math.floor(remainingMs / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
 
-      if (days > 0) {
-        return `${days}d ${hours % 24}h`;
-      }
-      if (hours > 0) {
-        return `${hours}h ${minutes % 60}m`;
-      }
-      if (minutes > 0) {
-        return `${minutes}m`;
-      }
-      return `${seconds}s`;
-    },
-    []
-  );
+    if (days > 0) {
+      return `${days}d ${hours % 24}h`;
+    }
+    if (hours > 0) {
+      return `${hours}h ${minutes % 60}m`;
+    }
+    if (minutes > 0) {
+      return `${minutes}m`;
+    }
+    return `${seconds}s`;
+  }, []);
 
   /**
    * Get session key data for backend use
    */
-  const getSessionKeyForBackend = useCallback(
-    (publicKey: Address): SessionKeyForBackend | null => {
-      const sessionKey = sessionKeys.find((key) => key.publicKey === publicKey);
+  const getSessionKeyForBackendFn =
+    useCallback((): SessionKeyForBackend | null => {
       if (!sessionKey) return null;
       return exportSessionKeyForBackend(sessionKey);
-    },
-    [sessionKeys]
-  );
+    }, [sessionKey]);
 
   /**
-   * Get active session key (most recent valid AND approved)
+   * Whether the session key is active (valid and approved)
    */
-  const activeSessionKey = smartAccountAddress
-    ? sessionKeys.find((key) => canUseSessionKey(key))
-    : undefined;
+  const isActive = !!sessionKey && canUseSessionKey(sessionKey);
 
   useEffect(() => {
-    refreshSessionKeys();
-  }, [refreshSessionKeys]);
+    refreshSessionKey();
+  }, [refreshSessionKey]);
 
   return {
-    sessionKeys,
-    activeSessionKey,
+    sessionKey,
+    isActive,
     isConfigured: SMART_ACCOUNT_CONFIG.isConfigured,
     isLoading,
     isApproving,
@@ -344,11 +335,11 @@ export function useSessionKeys(
     lastTestTransferHash,
     error,
     createSessionKey: handleCreateSessionKey,
-    approveSessionKey,
+    approveSessionKey: handleApproveSessionKey,
     removeSessionKey: handleRemoveSessionKey,
-    refreshSessionKeys,
+    refreshSessionKey,
     sendTestTransfer,
     formatRemainingTime,
-    getSessionKeyForBackend,
+    getSessionKeyForBackend: getSessionKeyForBackendFn,
   };
 }

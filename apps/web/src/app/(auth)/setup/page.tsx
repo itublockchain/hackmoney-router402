@@ -2,6 +2,7 @@
 
 import { CheckCircle, Loader2, MessageSquare, Wallet } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useRef } from "react";
 import { ConnectWalletButton } from "@/components/layout";
 import { Button } from "@/components/primitives/button";
 import type { Router402Status } from "@/hooks";
@@ -11,6 +12,7 @@ const steps = [
   { id: "connect", label: "Connect Wallet" },
   { id: "smart-account", label: "Smart Account Setup" },
   { id: "session-key", label: "Session Key Authorization" },
+  { id: "backend", label: "Authorization" },
 ] as const;
 
 const statusToStep: Record<Router402Status, number> = {
@@ -18,10 +20,11 @@ const statusToStep: Record<Router402Status, number> = {
   not_configured: 1,
   initializing: 1,
   deploying: 1,
+  error: 1,
   creating_session_key: 2,
   approving_session_key: 2,
-  error: 1,
-  ready: 3,
+  sending_to_backend: 3,
+  ready: 4,
 };
 
 export default function SetupPage() {
@@ -33,6 +36,36 @@ export default function SetupPage() {
     initialize,
     error,
   } = useRouter402();
+
+  // Ref to ensure initialize is called at most once automatically
+  const hasAutoInitialized = useRef(false);
+
+  // Auto-initialize once when the wallet is connected and setup is needed.
+  // Uses a ref to guarantee this fires at most once — no sign request duplicates.
+  useEffect(() => {
+    if (!isConnected) {
+      // Reset when wallet disconnects so re-connect can auto-init again
+      hasAutoInitialized.current = false;
+      return;
+    }
+
+    // Don't auto-init if already ready or already ran
+    if (isReady || hasAutoInitialized.current) return;
+
+    // Don't auto-init if already in an active flow state
+    if (
+      status === "initializing" ||
+      status === "deploying" ||
+      status === "creating_session_key" ||
+      status === "approving_session_key" ||
+      status === "sending_to_backend"
+    ) {
+      return;
+    }
+
+    hasAutoInitialized.current = true;
+    initialize();
+  }, [isConnected, isReady, status, initialize]);
 
   const currentStep = !isConnected ? 0 : statusToStep[status];
 
@@ -125,13 +158,17 @@ export default function SetupPage() {
           </div>
         )}
 
-        {isConnected &&
-          !isReady &&
-          (status === "error" || status === "not_configured") && (
-            <Button onClick={() => initialize?.()} className="w-full">
-              Initialize Smart Account
-            </Button>
-          )}
+        {isConnected && status === "error" && (
+          <Button
+            onClick={() => {
+              hasAutoInitialized.current = true;
+              initialize();
+            }}
+            className="w-full"
+          >
+            Retry Setup
+          </Button>
+        )}
 
         {error && (
           <p className="mt-3 text-center text-sm text-destructive">

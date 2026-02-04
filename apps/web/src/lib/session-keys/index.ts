@@ -1,23 +1,11 @@
-// Generation utilities
 export {
-  canUseSessionKey,
-  generateSessionKey,
-  getSessionKeyAccount,
-  getSessionKeyRemainingTime,
-  isSessionKeyExpired,
-  isSessionKeyValid,
-} from "./generate";
-
-// Storage utilities
-export {
-  clearAllSessionKeys,
-  clearSessionKeys,
   exportSessionKeyForBackend,
   getActiveSessionKey,
-  getSessionKeysForAccount,
-  loadSessionKeys,
+  getAuthToken,
+  getSessionKeyForAccount,
+  removeAuthToken,
   removeSessionKey,
-  saveSessionKeys,
+  storeAuthToken,
   storeSessionKey,
   updateSessionKeyApproval,
 } from "./storage";

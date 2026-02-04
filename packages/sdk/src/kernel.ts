@@ -4,7 +4,11 @@ import {
   serializePermissionAccount,
   toPermissionValidator,
 } from "@zerodev/permissions";
-import { toSudoPolicy } from "@zerodev/permissions/policies";
+import {
+  toSignatureCallerPolicy,
+  toSudoPolicy,
+  toTimestampPolicy,
+} from "@zerodev/permissions/policies";
 import { toECDSASigner } from "@zerodev/permissions/signers";
 import { addressToEmptyAccount, createKernelAccount } from "@zerodev/sdk";
 import { getEntryPoint } from "@zerodev/sdk/constants";
@@ -151,11 +155,19 @@ export async function isKernelAccountDeployed(
 /**
  * Create a session key approval (serialized permission account).
  * This creates an approval that the session key holder can use to send transactions.
+ *
+ * @param walletClient - The owner wallet client
+ * @param sessionKeyAddress - The session key's public address
+ * @param config - Resolved SDK configuration
+ * @param expiresAt - Expiry timestamp in milliseconds (enforced on-chain via toTimestampPolicy)
+ * @param allowedCallers - Optional array of addresses allowed to use this session key (enforced on-chain via toSignatureCallerPolicy)
  */
 export async function createSessionKeyApproval(
   walletClient: WalletClient,
   sessionKeyAddress: Address,
-  config: ResolvedConfig
+  config: ResolvedConfig,
+  expiresAt: number,
+  allowedCallers?: Address[]
 ): Promise<string> {
   const publicClient = createKernelPublicClient(config);
   const entryPoint = getEntryPoint(config.entryPointVersion);
@@ -165,11 +177,23 @@ export async function createSessionKeyApproval(
   const emptyAccount = addressToEmptyAccount(sessionKeyAddress);
   const emptySessionKeySigner = await toECDSASigner({ signer: emptyAccount });
 
-  // Create permission plugin with sudo policy (allows all actions)
+  // Convert expiresAt from milliseconds to seconds for on-chain uint48
+  const validUntil = Math.floor(expiresAt / 1000);
+
+  // Build policies: sudo (allows all actions) + timestamp (on-chain expiry)
+  const policies = [
+    toSudoPolicy({}),
+    toTimestampPolicy({ validUntil }),
+    ...(allowedCallers && allowedCallers.length > 0
+      ? [toSignatureCallerPolicy({ allowedCallers })]
+      : []),
+  ];
+
+  // Create permission plugin with combined policies
   const permissionPlugin = await toPermissionValidator(publicClient, {
     entryPoint,
     signer: emptySessionKeySigner,
-    policies: [toSudoPolicy({})],
+    policies,
     kernelVersion: KERNEL_VERSION,
   });
 

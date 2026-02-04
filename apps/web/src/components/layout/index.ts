@@ -4,4 +4,5 @@ export { ConnectWalletButton } from "./connect-wallet-button";
 export { Footer } from "./footer";
 export { Navbar } from "./navbar";
 export { PanelResizer } from "./panel-resizer";
+export { Router402Guard } from "./router402-guard";
 export { Sidebar } from "./sidebar";

@@ -1,14 +1,16 @@
 import type { SessionKeyData, SessionKeyForBackend } from "@router402/sdk";
-import { exportSessionKeyForBackend as sdkExportSessionKeyForBackend } from "@router402/sdk";
+import {
+  isSessionKeyExpired,
+  exportSessionKeyForBackend as sdkExportSessionKeyForBackend,
+} from "@router402/sdk";
 import type { Address } from "viem";
 import { SESSION_KEY_CONFIG, SMART_ACCOUNT_CONFIG } from "@/config";
-import { isSessionKeyExpired } from "./generate";
 
 /**
- * Session Key storage structure (indexed by smart account address)
+ * Session Key storage structure (one session key per smart account)
  */
-export interface SessionKeyStorage {
-  [smartAccountAddress: Address]: SessionKeyData[];
+interface SessionKeyStorage {
+  [smartAccountAddress: Address]: SessionKeyData;
 }
 
 const STORAGE_KEY = SESSION_KEY_CONFIG.storageKey;
@@ -32,7 +34,7 @@ function isLocalStorageAvailable(): boolean {
 /**
  * Load all session keys from LocalStorage
  */
-export function loadSessionKeys(): SessionKeyStorage {
+function loadSessionKeys(): SessionKeyStorage {
   if (!isLocalStorageAvailable()) return {};
 
   try {
@@ -48,7 +50,7 @@ export function loadSessionKeys(): SessionKeyStorage {
 /**
  * Save session keys to LocalStorage
  */
-export function saveSessionKeys(storage: SessionKeyStorage): void {
+function saveSessionKeys(storage: SessionKeyStorage): void {
   if (!isLocalStorageAvailable()) return;
 
   try {
@@ -59,48 +61,39 @@ export function saveSessionKeys(storage: SessionKeyStorage): void {
 }
 
 /**
- * Get session keys for a specific Smart Account
- */
-export function getSessionKeysForAccount(
-  smartAccountAddress: Address
-): SessionKeyData[] {
-  const storage = loadSessionKeys();
-  return storage[smartAccountAddress] || [];
-}
-
-/**
- * Get the most recent valid and approved session key for a Smart Account
+ * Get the session key for a specific Smart Account.
+ * Returns the key only if it is valid (not expired, approved, and has serialized data).
  */
 export function getActiveSessionKey(
   smartAccountAddress: Address
 ): SessionKeyData | undefined {
-  const keys = getSessionKeysForAccount(smartAccountAddress);
+  const storage = loadSessionKeys();
+  const key = storage[smartAccountAddress];
 
-  const validKeys = keys
-    .filter(
-      (key) =>
-        !isSessionKeyExpired(key) && key.isApproved && key.serializedSessionKey
-    )
-    .sort((a, b) => b.createdAt - a.createdAt);
+  if (!key) return undefined;
+  if (isSessionKeyExpired(key)) return undefined;
+  if (!key.isApproved || !key.serializedSessionKey) return undefined;
 
-  return validKeys[0];
+  return key;
 }
 
 /**
- * Store a new session key for a Smart Account
+ * Get the raw session key for a Smart Account (regardless of approval/expiry status).
+ */
+export function getSessionKeyForAccount(
+  smartAccountAddress: Address
+): SessionKeyData | undefined {
+  const storage = loadSessionKeys();
+  return storage[smartAccountAddress];
+}
+
+/**
+ * Store a session key for a Smart Account.
+ * Replaces any existing key for this account.
  */
 export function storeSessionKey(sessionKey: SessionKeyData): void {
   const storage = loadSessionKeys();
-  const accountKeys = storage[sessionKey.smartAccountAddress] || [];
-
-  accountKeys.push(sessionKey);
-
-  const prunedKeys = accountKeys
-    .filter((key) => !isSessionKeyExpired(key))
-    .sort((a, b) => b.createdAt - a.createdAt)
-    .slice(0, SESSION_KEY_CONFIG.maxKeysPerAccount);
-
-  storage[sessionKey.smartAccountAddress] = prunedKeys;
+  storage[sessionKey.smartAccountAddress] = sessionKey;
   saveSessionKeys(storage);
 }
 
@@ -113,50 +106,25 @@ export function updateSessionKeyApproval(
   serializedSessionKey: string
 ): void {
   const storage = loadSessionKeys();
-  const accountKeys = storage[smartAccountAddress] || [];
+  const key = storage[smartAccountAddress];
 
-  const updatedKeys = accountKeys.map((key) =>
-    key.publicKey === publicKey
-      ? { ...key, isApproved: true, serializedSessionKey }
-      : key
-  );
+  if (!key || key.publicKey !== publicKey) return;
 
-  storage[smartAccountAddress] = updatedKeys;
+  storage[smartAccountAddress] = {
+    ...key,
+    isApproved: true,
+    serializedSessionKey,
+  };
   saveSessionKeys(storage);
 }
 
 /**
- * Remove a specific session key
+ * Remove the session key for a Smart Account
  */
-export function removeSessionKey(
-  smartAccountAddress: Address,
-  publicKey: Address
-): void {
-  const storage = loadSessionKeys();
-  const accountKeys = storage[smartAccountAddress] || [];
-
-  storage[smartAccountAddress] = accountKeys.filter(
-    (key) => key.publicKey !== publicKey
-  );
-
-  saveSessionKeys(storage);
-}
-
-/**
- * Clear all session keys for a Smart Account
- */
-export function clearSessionKeys(smartAccountAddress: Address): void {
+export function removeSessionKey(smartAccountAddress: Address): void {
   const storage = loadSessionKeys();
   delete storage[smartAccountAddress];
   saveSessionKeys(storage);
-}
-
-/**
- * Clear all stored session keys
- */
-export function clearAllSessionKeys(): void {
-  if (!isLocalStorageAvailable()) return;
-  localStorage.removeItem(STORAGE_KEY);
 }
 
 /**
@@ -169,4 +137,30 @@ export function exportSessionKeyForBackend(
     sessionKey,
     SMART_ACCOUNT_CONFIG.chainId
   );
+}
+
+const AUTH_TOKEN_KEY = "router402_auth_token";
+
+/**
+ * Store the authentication token received from the backend
+ */
+export function storeAuthToken(token: string): void {
+  if (!isLocalStorageAvailable()) return;
+  localStorage.setItem(AUTH_TOKEN_KEY, token);
+}
+
+/**
+ * Get the stored authentication token
+ */
+export function getAuthToken(): string | null {
+  if (!isLocalStorageAvailable()) return null;
+  return localStorage.getItem(AUTH_TOKEN_KEY);
+}
+
+/**
+ * Remove the stored authentication token
+ */
+export function removeAuthToken(): void {
+  if (!isLocalStorageAvailable()) return;
+  localStorage.removeItem(AUTH_TOKEN_KEY);
 }

@@ -1,7 +1,7 @@
+import type { SessionKeyData } from "@router402/sdk";
 import type { Address, Hash } from "viem";
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
-import type { SessionKeyData } from "@/lib/smart-account/types";
 
 interface SmartAccountState {
   /** Smart Account address (deterministic) */

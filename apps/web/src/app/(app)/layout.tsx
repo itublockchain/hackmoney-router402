@@ -1,9 +1,13 @@
-import { AppLayout } from "@/components/layout";
+import { AppLayout, Router402Guard } from "@/components/layout";
 
 export default function AppGroupLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <AppLayout>{children}</AppLayout>;
+  return (
+    <AppLayout>
+      <Router402Guard>{children}</Router402Guard>
+    </AppLayout>
+  );
 }

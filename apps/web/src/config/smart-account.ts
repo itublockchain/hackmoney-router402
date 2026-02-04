@@ -57,10 +57,7 @@ export const SESSION_KEY_CONFIG = {
   validityPeriod: DEFAULT_SESSION_KEY_VALIDITY,
 
   /** Storage key for session keys in LocalStorage */
-  storageKey: "route402_session_keys_v2",
-
-  /** Maximum number of session keys to store per smart account */
-  maxKeysPerAccount: 5,
+  storageKey: "router402_session_keys",
 } as const;
 
 /**

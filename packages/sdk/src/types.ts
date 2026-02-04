@@ -100,6 +100,8 @@ export interface SessionKeyData {
   serializedSessionKey?: string;
   /** Whether the key has been approved (serializedSessionKey is set) */
   isApproved: boolean;
+  /** Addresses allowed to use this session key (enforced on-chain via toSignatureCallerPolicy) */
+  allowedCallers?: Address[];
 }
 
 /**

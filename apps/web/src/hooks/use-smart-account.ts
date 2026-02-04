@@ -1,5 +1,6 @@
 "use client";
 
+import { SmartAccountError } from "@router402/sdk";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Address } from "viem";
 import { useAccount, useSwitchChain, useWalletClient } from "wagmi";
@@ -7,9 +8,8 @@ import { SMART_ACCOUNT_CONFIG } from "@/config";
 import {
   getSmartAccountInfo,
   isSmartAccountDeployed,
-  SmartAccountError,
   sendUserOperation,
-} from "@/lib/smart-account";
+} from "@/lib/smart-account/client";
 import { useSmartAccountStore } from "@/stores";
 
 interface UseSmartAccountReturn {

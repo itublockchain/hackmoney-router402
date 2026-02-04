@@ -215,19 +215,35 @@ export class Router402Sdk {
 
   /**
    * Approve a session key (requires owner signature)
-   * Returns the updated session key with approval data
+   * Returns the updated session key with approval data.
+   *
+   * The session key's expiresAt is enforced on-chain via toTimestampPolicy.
+   * If allowedCallers are provided (or already set on the session key),
+   * only those addresses can submit transactions with this session key.
+   *
+   * @param walletClient - The owner wallet client
+   * @param sessionKey - The session key to approve
+   * @param allowedCallers - Optional addresses allowed to use this session key (enforced on-chain)
    */
   async approveSessionKey(
     walletClient: WalletClient,
-    sessionKey: SessionKeyData
+    sessionKey: SessionKeyData,
+    allowedCallers?: Address[]
   ): Promise<SessionKeyData> {
+    const callers = allowedCallers ?? sessionKey.allowedCallers;
+
     const serializedApproval = await createSessionKeyApproval(
       walletClient,
       sessionKey.publicKey,
-      this.config
+      this.config,
+      sessionKey.expiresAt,
+      callers
     );
 
-    return markSessionKeyApproved(sessionKey, serializedApproval);
+    return {
+      ...markSessionKeyApproved(sessionKey, serializedApproval),
+      allowedCallers: callers,
+    };
   }
 
   /**

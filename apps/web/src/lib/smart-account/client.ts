@@ -1,7 +1,10 @@
+import {
+  SmartAccountError,
+  type SmartAccountInfo,
+  type TransactionResult,
+} from "@router402/sdk";
 import type { Address, Hex, WalletClient } from "viem";
 import { router402Sdk } from "@/config";
-import type { SmartAccountInfo, TransactionResult } from "./types";
-import { SmartAccountError } from "./types";
 
 /**
  * Ensure SDK is configured
@@ -17,34 +20,6 @@ function assertSdkConfigured() {
 }
 
 /**
- * Create a Smart Account instance using Kernel
- */
-export async function createSmartAccount(walletClient: WalletClient) {
-  const sdk = assertSdkConfigured();
-  return sdk.getSmartAccountAddress(walletClient);
-}
-
-/**
- * Get the deterministic Smart Account address for a wallet
- */
-export async function getSmartAccountAddress(
-  walletClient: WalletClient
-): Promise<Address> {
-  const sdk = assertSdkConfigured();
-  return sdk.getSmartAccountAddress(walletClient);
-}
-
-/**
- * Check if a Smart Account is deployed on-chain
- */
-export async function isSmartAccountDeployed(
-  address: Address
-): Promise<boolean> {
-  const sdk = assertSdkConfigured();
-  return sdk.isSmartAccountDeployed(address);
-}
-
-/**
  * Get complete Smart Account information
  */
 export async function getSmartAccountInfo(
@@ -56,13 +31,13 @@ export async function getSmartAccountInfo(
 }
 
 /**
- * Get the ETH balance of a Smart Account
+ * Check if a Smart Account is deployed on-chain
  */
-export async function getSmartAccountBalance(
+export async function isSmartAccountDeployed(
   address: Address
-): Promise<bigint> {
+): Promise<boolean> {
   const sdk = assertSdkConfigured();
-  return sdk.getSmartAccountBalance(address);
+  return sdk.isSmartAccountDeployed(address);
 }
 
 /**
@@ -90,19 +65,4 @@ export async function sendUserOperation(
     txHash: result.txHash,
     success: result.success,
   };
-}
-
-/**
- * Create a public client for reading blockchain data
- */
-export function createBasePublicClient() {
-  const sdk = assertSdkConfigured();
-  const config = sdk.getConfig();
-
-  // Import dynamically to avoid issues
-  const { createPublicClient, http } = require("viem");
-  return createPublicClient({
-    chain: config.chain,
-    transport: http(),
-  });
 }
