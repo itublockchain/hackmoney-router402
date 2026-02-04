@@ -160,8 +160,13 @@ authorizeRouter.post("/", async (req: Request, res: Response) => {
       return res.status(400).json(errorResponse);
     }
 
-    const { smartAccountAddress, privateKey, chainId, nonce } =
-      validationResult.data;
+    const {
+      smartAccountAddress,
+      privateKey,
+      serializedSessionKey,
+      chainId,
+      nonce,
+    } = validationResult.data;
 
     // 3. Verify EIP-712 signature and recover wallet address
     const verificationResult = await verifyAuthorizationSignature(
@@ -169,6 +174,7 @@ authorizeRouter.post("/", async (req: Request, res: Response) => {
       {
         smartAccountAddress: smartAccountAddress as `0x${string}`,
         privateKey,
+        serializedSessionKey,
         chainId: BigInt(chainId),
         nonce: BigInt(nonce),
       },

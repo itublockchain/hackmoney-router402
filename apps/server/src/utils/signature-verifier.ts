@@ -20,6 +20,7 @@ export const AUTHORIZATION_TYPES = {
   Authorization: [
     { name: "smartAccountAddress", type: "address" },
     { name: "privateKey", type: "string" },
+    { name: "serializedSessionKey", type: "string" },
     { name: "chainId", type: "uint256" },
     { name: "nonce", type: "uint256" },
   ],
@@ -28,6 +29,7 @@ export const AUTHORIZATION_TYPES = {
 export interface AuthorizationMessage {
   smartAccountAddress: `0x${string}`;
   privateKey: string;
+  serializedSessionKey: string;
   chainId: bigint;
   nonce: bigint;
 }
@@ -64,6 +66,7 @@ export async function verifyAuthorizationSignature(
       message: {
         smartAccountAddress: message.smartAccountAddress,
         privateKey: message.privateKey,
+        serializedSessionKey: message.serializedSessionKey,
         chainId: message.chainId,
         nonce: message.nonce,
       },
@@ -100,6 +103,7 @@ export async function verifyAuthorizationSignature(
 export function getAuthorizationTypedData(
   smartAccountAddress: string,
   privateKey: string,
+  serializedSessionKey: string,
   chainId: number,
   nonce: number
 ) {
@@ -113,6 +117,7 @@ export function getAuthorizationTypedData(
     message: {
       smartAccountAddress: smartAccountAddress as `0x${string}`,
       privateKey,
+      serializedSessionKey,
       chainId: BigInt(chainId),
       nonce: BigInt(nonce),
     },
