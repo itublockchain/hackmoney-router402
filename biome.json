@@ -17,7 +17,9 @@
       "!**/coverage",
       "!**/*.min.js",
       "!**/*.min.css",
-      "!bun.lock"
+      "!bun.lock",
+      "!**/media/chat.js",
+      "!**/media/chat.html"
     ]
   },
   "formatter": {

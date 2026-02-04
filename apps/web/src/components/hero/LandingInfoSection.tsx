@@ -47,7 +47,7 @@ export function LandingInfoSection() {
   const [activeTab, setActiveTab] = useState<TabId>("web");
 
   return (
-    <section className="relative -mt-[32rem] md:-mt-[32rem] w-full bg-black px-4 pt-32 pb-24 sm:px-8 sm:pt-40 md:px-16 lg:px-24">
+    <section className="relative -mt-[26rem] md:-mt-[32rem] w-full bg-black px-4 pt-32 pb-24 sm:px-8 sm:pt-40 md:px-16 lg:px-24">
       <div className="mx-auto max-w-6xl">
         {/* Logo — relative z-20 so it floats above the wave animation (z-10) */}
         <div className="relative z-20 mb-12 flex justify-center">
