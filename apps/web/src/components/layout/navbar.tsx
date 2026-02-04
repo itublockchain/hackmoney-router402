@@ -1,7 +1,6 @@
-"use client";
-
 import Image from "next/image";
-import { ConnectWalletButton } from "./connect-wallet-button";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export function Navbar() {
   return (
@@ -9,8 +8,19 @@ export function Navbar() {
       <div className="container flex h-16 max-w-screen-2xl mx-auto items-center justify-between px-4">
         <Image src="/logo.png" alt="Router 402" width={128} height={17.24} />
 
-        <nav className="flex items-center gap-6">
-          <ConnectWalletButton />
+        <nav className="flex items-center gap-3">
+          <Button variant="ghost" asChild>
+            <a
+              href="https://docs.route402.com"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Docs
+            </a>
+          </Button>
+          <Button asChild>
+            <Link href="/app">Launch App</Link>
+          </Button>
         </nav>
       </div>
     </header>

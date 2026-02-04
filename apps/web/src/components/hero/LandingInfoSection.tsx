@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Code, ExternalLink, Globe, Terminal } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -36,9 +36,9 @@ const features = [
 ];
 
 const tabs = [
-  { id: "web", label: "Web", icon: Globe },
-  { id: "vscode", label: "VS Code", icon: Code },
-  { id: "cli", label: "Terminal", icon: Terminal },
+  { id: "web", label: "Web" },
+  { id: "vscode", label: "VS Code" },
+  { id: "cli", label: "Terminal" },
 ] as const;
 
 type TabId = (typeof tabs)[number]["id"];
@@ -80,7 +80,6 @@ export function LandingInfoSection() {
             {/* Tab Buttons */}
             <div className="flex gap-1 rounded-t-lg border border-b-0 border-blue-600 bg-neutral-950 p-1">
               {tabs.map((tab) => {
-                const Icon = tab.icon;
                 return (
                   <button
                     key={tab.id}
@@ -92,7 +91,6 @@ export function LandingInfoSection() {
                         : "text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200"
                     )}
                   >
-                    <Icon size={16} />
                     {tab.label}
                   </button>
                 );
