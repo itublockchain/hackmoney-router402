@@ -117,9 +117,9 @@ export function LandingInfoSection() {
             </div>
 
             {/* Terminal */}
-            <div className="relative overflow-hidden rounded-lg border border-neutral-700">
+            <div className="relative overflow-hidden rounded-lg">
               {/* macOS window title bar */}
-              <div className="flex items-center gap-2 bg-neutral-900 px-4 py-3">
+              <div className="flex items-center gap-2 bg-black px-4 py-3">
                 <div className="h-3 w-3 rounded-full bg-[#FF5F57]" />
                 <div className="h-3 w-3 rounded-full bg-[#FEBC2E]" />
                 <div className="h-3 w-3 rounded-full bg-[#28C840]" />
@@ -136,7 +136,7 @@ export function LandingInfoSection() {
                     stiffness: 300,
                     damping: 25,
                   }}
-                  className="aspect-video w-full bg-neutral-950"
+                  className="aspect-video w-full bg-black"
                 >
                   <div className="flex h-full items-center justify-center text-neutral-500">
                     {activeTab === "web" && "Web Demo"}
