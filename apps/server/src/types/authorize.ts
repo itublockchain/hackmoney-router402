@@ -12,6 +12,10 @@ export const AuthorizeRequestSchema = z.object({
     .number()
     .int("Chain ID must be an integer")
     .positive("Chain ID must be positive"),
+  nonce: z
+    .number()
+    .int("Nonce must be an integer")
+    .nonnegative("Nonce must be non-negative"),
 });
 
 export type AuthorizeRequestBody = z.infer<typeof AuthorizeRequestSchema>;

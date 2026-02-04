@@ -1,7 +1,7 @@
 /**
  * Authorization Router
  *
- * Handles session key authorization requests.
+ * Handles session key authorization requests with EIP-712 signature verification.
  */
 
 import type { ApiResponse } from "@router402/types";
@@ -40,15 +40,17 @@ function formatZodError(error: ZodError): Record<string, string> {
  * POST /authorize
  *
  * Authorizes a session key and returns an authorization token.
+ * Uses EIP-712 typed data signature verification.
  *
  * Headers:
- *   x-authorization-signature: Signature of the request body
+ *   x-authorization-signature: EIP-712 signature of the authorization message
  *
  * Body:
- *   saAddress: Smart Account address
+ *   smartAccountAddress: Smart Account address
  *   privateKey: Private key for session key
  *   serializedSessionKey: Serialized session key data
  *   chainId: Blockchain network ID
+ *   nonce: Unique nonce for replay protection
  */
 authorizeRouter.post("/", async (req: Request, res: Response) => {
   try {
@@ -66,31 +68,7 @@ authorizeRouter.post("/", async (req: Request, res: Response) => {
       return res.status(400).json(errorResponse);
     }
 
-    // 2. Verify signature and recover wallet address
-    const message = JSON.stringify(req.body);
-    const verificationResult = await verifyAuthorizationSignature(
-      signature,
-      message
-    );
-
-    if (!verificationResult.isValid || !verificationResult.walletAddress) {
-      authLogger.warn("Invalid signature", {
-        error: verificationResult.error,
-      });
-      const errorResponse: ApiResponse = {
-        data: null,
-        error: "Invalid signature",
-        meta: {
-          timestamp: new Date().toISOString(),
-          path: req.path,
-        },
-      };
-      return res.status(401).json(errorResponse);
-    }
-
-    const walletAddress = verificationResult.walletAddress;
-
-    // 3. Validate request body
+    // 2. Validate request body first to get chainId and nonce
     const validationResult = AuthorizeRequestSchema.safeParse(req.body);
     if (!validationResult.success) {
       const details = formatZodError(validationResult.error);
@@ -105,6 +83,38 @@ authorizeRouter.post("/", async (req: Request, res: Response) => {
       };
       return res.status(400).json(errorResponse);
     }
+
+    const { smartAccountAddress, privateKey, chainId, nonce } =
+      validationResult.data;
+
+    // 3. Verify EIP-712 signature and recover wallet address
+    const verificationResult = await verifyAuthorizationSignature(
+      signature,
+      {
+        smartAccountAddress: smartAccountAddress as `0x${string}`,
+        privateKey,
+        chainId: BigInt(chainId),
+        nonce: BigInt(nonce),
+      },
+      chainId
+    );
+
+    if (!verificationResult.isValid || !verificationResult.walletAddress) {
+      authLogger.warn("Invalid EIP-712 signature", {
+        error: verificationResult.error,
+      });
+      const errorResponse: ApiResponse = {
+        data: null,
+        error: "Invalid signature",
+        meta: {
+          timestamp: new Date().toISOString(),
+          path: req.path,
+        },
+      };
+      return res.status(401).json(errorResponse);
+    }
+
+    const walletAddress = verificationResult.walletAddress;
 
     // 4. Authorize and create session key record
     const result = await authorize(walletAddress, validationResult.data);
