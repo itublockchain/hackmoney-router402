@@ -74,6 +74,11 @@ export const configSchema = z.object({
    * Should be a strong random string in production
    */
   JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters"),
+
+  /**
+   * Pimlico API Key for account abstraction
+   */
+  PIMLICO_API_KEY: z.string().min(1, "PIMLICO_API_KEY is required"),
 });
 
 /**

@@ -23,6 +23,8 @@ export function loadConfig(): Config {
       PAY_TO: process.env.PAY_TO,
       FACILITATOR_URL: process.env.FACILITATOR_URL,
       DEBT_THRESHOLD: process.env.DEBT_THRESHOLD,
+      JWT_SECRET: process.env.JWT_SECRET,
+      PIMLICO_API_KEY: process.env.PIMLICO_API_KEY,
     });
 
     configLogger.info("Configuration loaded successfully");
