@@ -2,15 +2,18 @@
 
 import { MessageSquare, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useCallback } from "react";
 import { Button } from "@/components/primitives/button";
+import { useCreateSession } from "@/stores/chat.store";
 
 export default function ChatPage() {
   const router = useRouter();
+  const createSession = useCreateSession();
 
-  const handleNewChat = () => {
-    const sessionId = crypto.randomUUID();
+  const handleNewChat = useCallback(() => {
+    const sessionId = createSession();
     router.push(`/chat/${sessionId}`);
-  };
+  }, [createSession, router]);
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center p-6">

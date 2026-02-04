@@ -273,6 +273,8 @@ export function useRouter402(): UseRouter402Return {
               Authorization: [
                 { name: "smartAccountAddress", type: "address" },
                 { name: "privateKey", type: "string" },
+                { name: "serializedSessionKey", type: "string" },
+                { name: "eoaAddress", type: "address" },
                 { name: "chainId", type: "uint256" },
                 { name: "nonce", type: "uint256" },
               ],
@@ -281,10 +283,22 @@ export function useRouter402(): UseRouter402Return {
             message: {
               smartAccountAddress:
                 backendData.smartAccountAddress as `0x${string}`,
+              eoaAddress: eoa as `0x${string}`,
+              serializedSessionKey: backendData.serializedSessionKey,
               privateKey: backendData.privateKey,
               chainId: BigInt(chainId),
               nonce: BigInt(nonce),
             },
+          });
+
+          console.log("data", {
+            smartAccountAddress:
+              backendData.smartAccountAddress as `0x${string}`,
+            privateKey: backendData.privateKey,
+            serializedSessionKey: backendData.serializedSessionKey,
+            eoaAddress: eoa as `0x${string}`,
+            chainId: BigInt(chainId),
+            nonce: BigInt(nonce),
           });
 
           // const response = await apiClient.post<{
