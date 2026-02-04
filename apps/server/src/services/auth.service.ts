@@ -158,3 +158,94 @@ export function verifyToken(token: string): JwtPayload | null {
     return null;
   }
 }
+
+export interface CheckUserStatusResult {
+  exists: boolean;
+  hasSessionKey: boolean;
+  fieldsComplete: boolean;
+  ready: boolean;
+  user?: {
+    walletAddress: string;
+    hasPaymentThreshold: boolean;
+    currentDebt: string;
+    totalSpent: string;
+  };
+  sessionKey?: {
+    chainId: number;
+    smartAccountAddress: string;
+    createdAt: Date;
+  };
+}
+
+/**
+ * Check user status by wallet address.
+ * Returns information about whether the user exists, has a session key,
+ * and has all required fields populated.
+ *
+ * @param walletAddress - The wallet address to check
+ * @returns CheckUserStatusResult with user status information
+ */
+export async function checkUserStatus(
+  walletAddress: string
+): Promise<CheckUserStatusResult> {
+  const db = getPrisma();
+  const normalizedAddress = walletAddress.toLowerCase();
+
+  // Find user by wallet address
+  const user = await db.user.findUnique({
+    where: { walletAddress: normalizedAddress },
+    include: {
+      sessionKeyRecords: true,
+    },
+  });
+
+  // User doesn't exist
+  if (!user) {
+    return {
+      exists: false,
+      hasSessionKey: false,
+      fieldsComplete: false,
+      ready: false,
+    };
+  }
+
+  // Check if session key exists
+  const sessionKeyRecord = user.sessionKeyRecords[0] || null;
+  const hasSessionKey = sessionKeyRecord !== null;
+
+  // Check if all required fields are populated
+  const hasWalletAddress = !!user.walletAddress;
+  const hasPaymentThreshold = user.paymentThreshold !== null;
+  const fieldsComplete = hasWalletAddress && hasPaymentThreshold;
+
+  // User is ready if all conditions are met
+  const ready = hasSessionKey && fieldsComplete;
+
+  authLogger.debug("User status checked", {
+    wallet: normalizedAddress.slice(0, 10),
+    exists: true,
+    hasSessionKey,
+    fieldsComplete,
+    ready,
+  });
+
+  return {
+    exists: true,
+    hasSessionKey,
+    fieldsComplete,
+    ready,
+    user: {
+      walletAddress: user.walletAddress,
+      hasPaymentThreshold,
+      currentDebt: user.currentDebt.toString(),
+      totalSpent: user.totalSpent.toString(),
+    },
+    sessionKey: sessionKeyRecord
+      ? {
+          chainId: sessionKeyRecord.chainId,
+          smartAccountAddress: sessionKeyRecord.smartAccountAddress,
+          createdAt: sessionKeyRecord.createdAt,
+        }
+      : undefined,
+  };
+}

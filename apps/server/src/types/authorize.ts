@@ -29,3 +29,30 @@ export interface AuthorizeErrorResponse {
   error: string;
   details?: Record<string, string>;
 }
+
+// User Status Check Types
+export const CheckUserStatusSchema = z.object({
+  walletAddress: z
+    .string()
+    .regex(ethereumAddressRegex, "Invalid Ethereum address format"),
+});
+
+export type CheckUserStatusQuery = z.infer<typeof CheckUserStatusSchema>;
+
+export interface UserStatusResponse {
+  exists: boolean;
+  hasSessionKey: boolean;
+  fieldsComplete: boolean;
+  ready: boolean;
+  user?: {
+    walletAddress: string;
+    hasPaymentThreshold: boolean;
+    currentDebt: string;
+    totalSpent: string;
+  };
+  sessionKey?: {
+    chainId: number;
+    smartAccountAddress: string;
+    createdAt: string;
+  };
+}

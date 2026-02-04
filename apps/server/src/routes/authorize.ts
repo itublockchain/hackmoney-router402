@@ -13,10 +13,12 @@ import {
   type Router,
 } from "express";
 import { ZodError } from "zod";
-import { authorize } from "../services/auth.service.js";
+import { authorize, checkUserStatus } from "../services/auth.service.js";
 import {
   AuthorizeRequestSchema,
   type AuthorizeResponse,
+  CheckUserStatusSchema,
+  type UserStatusResponse,
 } from "../types/authorize.js";
 import { verifyAuthorizationSignature } from "../utils/signature-verifier.js";
 
@@ -35,6 +37,80 @@ function formatZodError(error: ZodError): Record<string, string> {
   }
   return details;
 }
+
+/**
+ * GET /authorize/check
+ *
+ * Checks user status by wallet address.
+ * Returns whether the user exists, has a session key, and is fully configured.
+ *
+ * Query Parameters:
+ *   walletAddress: Ethereum wallet address to check
+ */
+authorizeRouter.get("/check", async (req: Request, res: Response) => {
+  try {
+    // 1. Validate query parameters
+    const validationResult = CheckUserStatusSchema.safeParse(req.query);
+    if (!validationResult.success) {
+      const details = formatZodError(validationResult.error);
+      authLogger.warn("Check validation failed", { details });
+      const errorResponse: ApiResponse = {
+        data: null,
+        error: "Invalid wallet address format",
+        meta: {
+          timestamp: new Date().toISOString(),
+          path: req.path,
+        },
+      };
+      return res.status(400).json(errorResponse);
+    }
+
+    const { walletAddress } = validationResult.data;
+
+    // 2. Check user status
+    const status = await checkUserStatus(walletAddress);
+
+    // 3. Return success response
+    const successResponse: ApiResponse<UserStatusResponse> = {
+      data: {
+        exists: status.exists,
+        hasSessionKey: status.hasSessionKey,
+        fieldsComplete: status.fieldsComplete,
+        ready: status.ready,
+        user: status.user,
+        sessionKey: status.sessionKey
+          ? {
+              ...status.sessionKey,
+              createdAt: status.sessionKey.createdAt.toISOString(),
+            }
+          : undefined,
+      },
+      error: null,
+      meta: {
+        timestamp: new Date().toISOString(),
+        path: req.path,
+      },
+    };
+
+    authLogger.debug("User status check completed", {
+      wallet: walletAddress.slice(0, 10),
+      ready: status.ready,
+    });
+
+    return res.status(200).json(successResponse);
+  } catch (error) {
+    authLogger.error("User status check error", { error });
+    const errorResponse: ApiResponse = {
+      data: null,
+      error: "Internal server error",
+      meta: {
+        timestamp: new Date().toISOString(),
+        path: req.path,
+      },
+    };
+    return res.status(500).json(errorResponse);
+  }
+});
 
 /**
  * POST /authorize
