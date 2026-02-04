@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const DOT_SIZE = 6;
 const RING_SIZE = 50;
 const LERP_FACTOR = 0.15;
 
 export function CustomCursor() {
+  const [isMobile, setIsMobile] = useState(false);
   const dotRef = useRef<HTMLDivElement>(null);
   const ringRef = useRef<HTMLDivElement>(null);
   const mouse = useRef({ x: 0, y: 0 });
@@ -15,6 +16,17 @@ export function CustomCursor() {
   const visible = useRef(false);
 
   useEffect(() => {
+    const mql = window.matchMedia("(hover: hover) and (pointer: fine)");
+    setIsMobile(!mql.matches);
+
+    const onChange = (e: MediaQueryListEvent) => setIsMobile(!e.matches);
+    mql.addEventListener("change", onChange);
+    return () => mql.removeEventListener("change", onChange);
+  }, []);
+
+  useEffect(() => {
+    if (isMobile) return;
+
     const dot = dotRef.current;
     const ring = ringRef.current;
     if (!dot || !ring) return;
@@ -57,7 +69,9 @@ export function CustomCursor() {
       document.removeEventListener("mouseleave", onMouseLeave);
       cancelAnimationFrame(rafId.current);
     };
-  }, []);
+  }, [isMobile]);
+
+  if (isMobile) return null;
 
   const shared = {
     position: "fixed" as const,

@@ -70,10 +70,12 @@
   }
 }
 
-/* Scoped custom cursor — only hides the native cursor inside .custom-cursor-area */
-.custom-cursor-area,
-.custom-cursor-area *,
-.custom-cursor-area *::before,
-.custom-cursor-area *::after {
-  cursor: none !important;
+/* Scoped custom cursor — only hides the native cursor on devices with a pointer (desktop) */
+@media (hover: hover) and (pointer: fine) {
+  .custom-cursor-area,
+  .custom-cursor-area *,
+  .custom-cursor-area *::before,
+  .custom-cursor-area *::after {
+    cursor: none !important;
+  }
 }
