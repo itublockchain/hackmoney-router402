@@ -33,10 +33,9 @@ export function LandingProductsSection() {
             Tools we use
           </h2>
           <p className="mx-auto max-w-3xl text-sm text-neutral-400 sm:text-base">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-            eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim
-            ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut
-            aliquip ex ea commodo consequat.
+            Route 402 is built on battle-tested infrastructure. We leverage
+            OpenRouter for multi-model access, x402 for trustless micropayments,
+            and account abstraction for gasless transactions on Base.
           </p>
         </div>
 

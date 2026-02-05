@@ -9,29 +9,29 @@ import { cn } from "@/lib";
 
 const features = [
   {
-    title: "Lorem Ipsum",
+    title: "No Subscriptions",
     description:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+      "Ditch monthly fees. Route 402 uses crypto-native micropayments so you only pay for what you use. Stake a small collateral and get instant access to top-tier AI models.",
   },
   {
-    title: "Lorem Ipsum",
+    title: "Account-less Access",
     description:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+      "No sign-ups, no credit cards, no passwords. Just connect your wallet, stake 3 USDC, and start using AI immediately. Your wallet is your identity.",
   },
   {
-    title: "Lorem Ipsum",
+    title: "Agent-Ready",
     description:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+      "Built for autonomous AI agents from the ground up. Programmatic session keys and the x402 protocol enable machines to pay for AI services without human intervention.",
   },
   {
-    title: "Lorem Ipsum",
+    title: "Multi-Provider",
     description:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+      "Access OpenAI, Anthropic, and Google models through a single unified API. No more juggling multiple accounts and API keys across different providers.",
   },
   {
-    title: "Lorem Ipsum",
+    title: "Gasless UX",
     description:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+      "All transactions are sponsored via account abstraction. Focus on building, not managing gas fees. Seamless, frictionless, just like traditional APIs should be.",
   },
 ];
 
@@ -67,10 +67,10 @@ export function LandingInfoSection() {
             What is Router402?
           </h2>
           <p className="mx-auto max-w-3xl text-sm text-neutral-400 sm:text-base">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-            eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim
-            ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut
-            aliquip ex ea commodo consequat.
+            Route 402 is a decentralized AI gateway that replaces traditional
+            SaaS subscriptions with crypto-native micropayments. Stake once,
+            access multiple LLM providers through a single API, and let
+            autonomous agents pay for their own compute.
           </p>
           <div className="mt-6 flex justify-center">
             <Button>
