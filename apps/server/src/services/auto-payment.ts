@@ -2,30 +2,18 @@
  * Auto-Payment Service
  *
  * Handles automatic payment processing using session keys.
- * When a user's debt exceeds their threshold, this service uses
- * the stored session key to execute a direct USDC transfer via UserOperation.
- *
- * Note: We use direct USDC transfer via UserOperation instead of ERC-3009 + facilitator
- * because smart account (kernel) signatures are not compatible with ERC-3009's
- * standard ECDSA signature verification.
+ * When a user's debt exceeds their threshold, this service:
+ * 1. Fetches payment requirements from v1/debt endpoint (402 response)
+ * 2. Creates ERC-3009 authorization payload
+ * 3. Signs with EIP-1271 (smart account signature via session key)
+ * 4. Sends to facilitator for settlement
  */
 
 import { logger } from "@router402/utils";
 import { deserializePermissionAccount } from "@zerodev/permissions";
 import { toECDSASigner } from "@zerodev/permissions/signers";
 import { getEntryPoint, KERNEL_V3_1 } from "@zerodev/sdk/constants";
-import { createSmartAccountClient } from "permissionless";
-import { createPimlicoClient } from "permissionless/clients/pimlico";
-import {
-  type Address,
-  createPublicClient,
-  encodeFunctionData,
-  erc20Abi,
-  type Hex,
-  http,
-  parseUnits,
-} from "viem";
-import { entryPoint07Address } from "viem/account-abstraction";
+import { createPublicClient, getAddress, type Hex, http, toHex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { baseSepoliaPreconf } from "viem/chains";
 import { PrismaClient } from "../../generated/prisma/client.js";
@@ -66,45 +54,62 @@ export interface AutoPaymentResult {
 }
 
 /**
- * USDC contract address on Base Sepolia
+ * EIP-3009 TransferWithAuthorization types for EIP-712 signing
  */
-const USDC_ADDRESS = "0x036CbD53842c5426634e7929541eC2318f3dCF7e" as Address;
+const authorizationTypes = {
+  TransferWithAuthorization: [
+    { name: "from", type: "address" },
+    { name: "to", type: "address" },
+    { name: "value", type: "uint256" },
+    { name: "validAfter", type: "uint256" },
+    { name: "validBefore", type: "uint256" },
+    { name: "nonce", type: "bytes32" },
+  ],
+} as const;
+
+/**
+ * Payment requirements from 402 response
+ */
+interface PaymentRequirements {
+  scheme: string;
+  network: string;
+  amount: string;
+  asset: string;
+  payTo: string;
+  maxTimeoutSeconds: number;
+  extra?: {
+    name?: string;
+    version?: string;
+    [key: string]: unknown;
+  };
+}
+
+/**
+ * Generate a random 32-byte nonce for EIP-3009
+ */
+function createNonce(): Hex {
+  const randomBytes = new Uint8Array(32);
+  crypto.getRandomValues(randomBytes);
+  return toHex(randomBytes);
+}
 
 /**
  * Get chain configuration based on chainId
  */
 function getChainConfig(chainId: number) {
-  const config = getConfig();
   // Currently only supporting Base Sepolia
   if (chainId === 84532) {
     return {
       chain: baseSepoliaPreconf,
-      pimlicoUrl: `https://api.pimlico.io/v2/base-sepolia/rpc?apikey=${config.PIMLICO_API_KEY}`,
     };
   }
   throw new Error(`Unsupported chainId: ${chainId}`);
 }
 
 /**
- * Create Pimlico paymaster client
+ * Create a kernel account from stored session key data
  */
-function createPimlicoPaymasterClient(
-  chainConfig: ReturnType<typeof getChainConfig>
-) {
-  return createPimlicoClient({
-    chain: chainConfig.chain,
-    transport: http(chainConfig.pimlicoUrl),
-    entryPoint: {
-      address: entryPoint07Address,
-      version: "0.7",
-    },
-  });
-}
-
-/**
- * Create a smart account client from stored session key data using Pimlico
- */
-async function createSmartAccountClientFromSessionKey(
+async function createKernelAccountFromSessionKey(
   privateKey: string,
   serializedSessionKey: string,
   chainId: number
@@ -133,71 +138,253 @@ async function createSmartAccountClientFromSessionKey(
     ecdsaSigner
   );
 
-  // Create Pimlico client for paymaster
-  const pimlicoClient = createPimlicoPaymasterClient(chainConfig);
-
-  // Create smart account client using Pimlico
-  const smartAccountClient = createSmartAccountClient({
-    account: kernelAccount,
-    chain: chainConfig.chain,
-    bundlerTransport: http(chainConfig.pimlicoUrl),
-    paymaster: pimlicoClient,
-    userOperation: {
-      estimateFeesPerGas: async () => {
-        const prices = await pimlicoClient.getUserOperationGasPrice();
-        return prices.fast;
-      },
-    },
-  });
-
-  return smartAccountClient;
+  return kernelAccount;
 }
 
 /**
- * Execute direct USDC transfer via UserOperation
- * This bypasses the facilitator and sends USDC directly from the smart account
+ * Fetch payment requirements from v1/debt endpoint (402 response)
  */
-async function executeDirectTransfer(
-  smartAccountClient: Awaited<
-    ReturnType<typeof createSmartAccountClientFromSessionKey>
-  >,
-  payTo: Address,
-  amount: bigint
-): Promise<{ success: boolean; txHash?: string; error?: string }> {
+async function fetchPaymentRequirements(
+  debtAmount: number
+): Promise<PaymentRequirements | null> {
+  const config = getConfig();
+  const serverUrl = `http://localhost:${config.PORT}`;
+
   try {
-    autoPayLogger.debug("Executing direct USDC transfer", {
-      from: smartAccountClient.account.address.slice(0, 10),
-      to: payTo.slice(0, 10),
-      amount: amount.toString(),
+    // Make request to v1/debt - expect 402 response with payment requirements
+    const response = await fetch(`${serverUrl}/v1/debt`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
     });
 
-    // Encode the ERC20 transfer call
-    const transferData = encodeFunctionData({
-      abi: erc20Abi,
-      functionName: "transfer",
-      args: [payTo, amount],
-    });
+    if (response.status === 402) {
+      // Payment requirements are in the payment-required header (base64 encoded)
+      const paymentRequiredHeader = response.headers.get("payment-required");
 
-    // Send the UserOperation
-    const txHash = await smartAccountClient.sendTransaction({
-      to: USDC_ADDRESS,
-      data: transferData,
-      value: 0n,
-    });
+      if (paymentRequiredHeader) {
+        try {
+          const decoded = Buffer.from(paymentRequiredHeader, "base64").toString(
+            "utf-8"
+          );
+          const data = JSON.parse(decoded) as {
+            accepts?: PaymentRequirements[];
+          };
 
-    autoPayLogger.info("Direct transfer successful", {
-      txHash,
-      from: smartAccountClient.account.address.slice(0, 10),
-      to: payTo.slice(0, 10),
-      amount: amount.toString(),
-    });
+          autoPayLogger.debug("402 payment-required header decoded", {
+            hasAccepts: !!data.accepts,
+            acceptsLength: data.accepts?.length,
+          });
 
-    return { success: true, txHash };
+          // Extract payment requirements from decoded header
+          const accepts = data.accepts;
+          if (accepts && accepts.length > 0) {
+            return accepts[0];
+          }
+        } catch (parseError) {
+          autoPayLogger.error("Failed to parse payment-required header", {
+            parseError,
+          });
+        }
+      }
+    }
+
+    autoPayLogger.warn("Unexpected response from v1/debt", {
+      status: response.status,
+    });
+    return null;
   } catch (error) {
-    autoPayLogger.error("Direct transfer failed", { error });
+    autoPayLogger.error("Failed to fetch payment requirements", { error });
+    return null;
+  }
+}
+
+/**
+ * Create EIP-3009 authorization and sign with EIP-1271 (smart account)
+ */
+async function createSignedPaymentPayload(
+  kernelAccount: Awaited<ReturnType<typeof createKernelAccountFromSessionKey>>,
+  requirements: PaymentRequirements,
+  chainId: number
+): Promise<{ payload: string; authorization: Record<string, unknown> } | null> {
+  try {
+    const nonce = createNonce();
+    const now = Math.floor(Date.now() / 1000);
+
+    // Create ERC-3009 authorization
+    const authorization = {
+      from: kernelAccount.address,
+      to: getAddress(requirements.payTo),
+      value: requirements.amount,
+      validAfter: (now - 600).toString(), // 10 minutes ago
+      validBefore: (now + requirements.maxTimeoutSeconds).toString(),
+      nonce,
+    };
+
+    // Get EIP-712 domain from requirements.extra or use defaults
+    const name = requirements.extra?.name || "USD Coin";
+    const version = requirements.extra?.version || "2";
+
+    const domain = {
+      name,
+      version,
+      chainId,
+      verifyingContract: getAddress(requirements.asset),
+    };
+
+    const message = {
+      from: getAddress(authorization.from),
+      to: getAddress(authorization.to),
+      value: BigInt(authorization.value),
+      validAfter: BigInt(authorization.validAfter),
+      validBefore: BigInt(authorization.validBefore),
+      nonce: authorization.nonce,
+    };
+
+    // Sign with EIP-1271 (smart account signature)
+    const signature = await kernelAccount.signTypedData({
+      domain,
+      types: authorizationTypes,
+      primaryType: "TransferWithAuthorization",
+      message,
+    });
+
+    autoPayLogger.debug("EIP-3009 authorization signed", {
+      from: authorization.from.slice(0, 10),
+      to: authorization.to.slice(0, 10),
+      value: authorization.value,
+    });
+
+    // Create payment payload
+    const payloadObj = {
+      x402Version: 2,
+      accepted: {
+        scheme: requirements.scheme,
+        network: requirements.network,
+        asset: requirements.asset,
+        amount: requirements.amount,
+        payTo: requirements.payTo,
+        maxTimeoutSeconds: requirements.maxTimeoutSeconds,
+        extra: requirements.extra,
+      },
+      payload: {
+        authorization: {
+          from: authorization.from,
+          to: authorization.to,
+          value: authorization.value,
+          validAfter: Number(authorization.validAfter),
+          validBefore: Number(authorization.validBefore),
+          nonce: authorization.nonce,
+        },
+        signature,
+      },
+    };
+
+    // Base64 encode the payload
+    const encodedPayload = Buffer.from(JSON.stringify(payloadObj)).toString(
+      "base64"
+    );
+
+    return { payload: encodedPayload, authorization };
+  } catch (error) {
+    autoPayLogger.error("Failed to create signed payment payload", { error });
+    return null;
+  }
+}
+
+/**
+ * Send payment to facilitator for settlement
+ */
+async function settleWithFacilitator(
+  encodedPayload: string,
+  requirements: PaymentRequirements
+): Promise<{
+  success: boolean;
+  txHash?: string;
+  payer?: string;
+  error?: string;
+}> {
+  const config = getConfig();
+
+  const requestBody = {
+    x402Version: 2,
+    paymentPayload: JSON.parse(
+      Buffer.from(encodedPayload, "base64").toString("utf-8")
+    ),
+    paymentRequirements: {
+      scheme: requirements.scheme,
+      network: requirements.network,
+      amount: requirements.amount,
+      asset: requirements.asset,
+      payTo: requirements.payTo,
+      maxTimeoutSeconds: requirements.maxTimeoutSeconds,
+      extra: requirements.extra,
+    },
+  };
+
+  autoPayLogger.debug("Sending to facilitator", {
+    url: `${config.FACILITATOR_URL}/settle`,
+    payloadPreview: encodedPayload.slice(0, 100),
+    requirements: requestBody.paymentRequirements,
+  });
+
+  try {
+    const response = await fetch(`${config.FACILITATOR_URL}/settle`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    const responseText = await response.text();
+    autoPayLogger.debug("Facilitator response", {
+      status: response.status,
+      body: responseText.slice(0, 500),
+    });
+
+    let result: {
+      success: boolean;
+      transaction?: string;
+      payer?: string;
+      errorReason?: string;
+    };
+
+    try {
+      result = JSON.parse(responseText);
+    } catch {
+      return {
+        success: false,
+        error: `Invalid JSON response: ${responseText.slice(0, 200)}`,
+      };
+    }
+
+    if (result.success) {
+      autoPayLogger.info("Facilitator settlement successful", {
+        txHash: result.transaction,
+        payer: result.payer,
+      });
+      return {
+        success: true,
+        txHash: result.transaction,
+        payer: result.payer,
+      };
+    }
+
+    autoPayLogger.warn("Facilitator settlement failed", {
+      error: result.errorReason,
+    });
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Transfer failed",
+      error: result.errorReason || "Settlement failed",
+    };
+  } catch (error) {
+    autoPayLogger.error("Failed to settle with facilitator", { error });
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Settlement request failed",
     };
   }
 }
@@ -206,10 +393,12 @@ async function executeDirectTransfer(
  * Automatically pay user's debt using their stored session key
  *
  * Flow:
- * 1. Get SessionKeyRecord from DB by userId
- * 2. Create smart account client from session key using Pimlico
- * 3. Execute direct USDC transfer via UserOperation
- * 4. On success, call processPayment to update DB
+ * 1. Fetch payment requirements from v1/debt (402 response)
+ * 2. Get SessionKeyRecord from DB by userId
+ * 3. Create kernel account from session key
+ * 4. Create ERC-3009 authorization and sign with EIP-1271
+ * 5. Send to facilitator for settlement
+ * 6. On success, call processPayment to update DB
  *
  * @param userId - User ID to pay debt for
  * @param walletAddress - User's wallet address
@@ -224,7 +413,6 @@ export async function autoPayDebt(
   debtAmount: number
 ): Promise<AutoPaymentResult> {
   const db = getPrisma();
-  const config = getConfig();
 
   autoPayLogger.info("Starting auto-payment", {
     userId,
@@ -232,7 +420,23 @@ export async function autoPayDebt(
     debtAmount,
   });
 
-  // Step 1: Get SessionKeyRecord from DB
+  // Step 1: Fetch payment requirements from v1/debt
+  const requirements = await fetchPaymentRequirements(debtAmount);
+  if (!requirements) {
+    autoPayLogger.warn("Failed to fetch payment requirements", {
+      userId,
+      wallet: walletAddress.slice(0, 10),
+    });
+    return { success: false, error: "Failed to fetch payment requirements" };
+  }
+
+  autoPayLogger.debug("Payment requirements fetched", {
+    scheme: requirements.scheme,
+    network: requirements.network,
+    amount: requirements.amount,
+  });
+
+  // Step 2: Get SessionKeyRecord from DB
   const sessionKeyRecord = await db.sessionKeyRecord.findUnique({
     where: { userId },
   });
@@ -245,21 +449,21 @@ export async function autoPayDebt(
     return { success: false, error: "Session key not found" };
   }
 
-  // Step 2: Create smart account client from session key
-  let smartAccountClient: Awaited<
-    ReturnType<typeof createSmartAccountClientFromSessionKey>
+  // Step 3: Create kernel account from session key
+  let kernelAccount: Awaited<
+    ReturnType<typeof createKernelAccountFromSessionKey>
   >;
   try {
-    smartAccountClient = await createSmartAccountClientFromSessionKey(
+    kernelAccount = await createKernelAccountFromSessionKey(
       sessionKeyRecord.privateKey,
       sessionKeyRecord.serializedSessionKey,
       sessionKeyRecord.chainId
     );
-    autoPayLogger.debug("Smart account client created", {
-      account: smartAccountClient.account.address.slice(0, 10),
+    autoPayLogger.debug("Kernel account created", {
+      account: kernelAccount.address.slice(0, 10),
     });
   } catch (error) {
-    autoPayLogger.error("Failed to create smart account client", {
+    autoPayLogger.error("Failed to create kernel account", {
       userId,
       error,
     });
@@ -268,43 +472,55 @@ export async function autoPayDebt(
       error:
         error instanceof Error
           ? error.message
-          : "Smart account client creation failed",
+          : "Kernel account creation failed",
     };
   }
 
-  // Step 3: Execute direct USDC transfer
-  const payTo = config.PAY_TO as Address;
-  // Convert debt amount from dollars to USDC base units (6 decimals)
-  const amountInBaseUnits = parseUnits(debtAmount.toFixed(6), 6);
-
-  const transferResult = await executeDirectTransfer(
-    smartAccountClient,
-    payTo,
-    amountInBaseUnits
+  // Step 4: Create signed payment payload (ERC-3009 + EIP-1271)
+  const signedPayload = await createSignedPaymentPayload(
+    kernelAccount,
+    requirements,
+    sessionKeyRecord.chainId
   );
 
-  if (!transferResult.success) {
-    autoPayLogger.error("Direct transfer failed", {
+  if (!signedPayload) {
+    autoPayLogger.error("Failed to create signed payment payload", {
       userId,
-      error: transferResult.error,
     });
     return {
       success: false,
-      error: transferResult.error,
+      error: "Failed to sign payment",
     };
   }
 
-  // Step 4: Update DB with processPayment
+  // Step 5: Send to facilitator for settlement
+  const settleResult = await settleWithFacilitator(
+    signedPayload.payload,
+    requirements
+  );
+
+  if (!settleResult.success) {
+    autoPayLogger.error("Facilitator settlement failed", {
+      userId,
+      error: settleResult.error,
+    });
+    return {
+      success: false,
+      error: settleResult.error,
+    };
+  }
+
+  // Step 6: Update DB with processPayment
   try {
     await processPayment(
       walletAddress,
       `${debtAmount.toFixed(8)}`,
-      transferResult.txHash
+      settleResult.txHash
     );
     autoPayLogger.info("Auto-payment successful", {
       userId,
       wallet: walletAddress.slice(0, 10),
-      txHash: transferResult.txHash,
+      txHash: settleResult.txHash,
       amount: debtAmount,
     });
   } catch (error) {
@@ -312,13 +528,13 @@ export async function autoPayDebt(
     // Still return success since the payment went through
     autoPayLogger.error("Failed to update DB after successful payment", {
       userId,
-      txHash: transferResult.txHash,
+      txHash: settleResult.txHash,
       error,
     });
   }
 
   return {
     success: true,
-    txHash: transferResult.txHash,
+    txHash: settleResult.txHash,
   };
 }
