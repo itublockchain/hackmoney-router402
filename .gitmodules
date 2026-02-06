@@ -1,0 +1,6 @@
+[submodule "apps/server/external/x402"]
+	path = apps/server/external/x402
+	url = https://github.com/coinbase/x402.git
+[submodule "apps/facilitator"]
+	path = apps/facilitator
+	url = https://github.com/feyyazcigim/OpenFacilitator.git

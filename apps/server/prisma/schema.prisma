@@ -1,0 +1,88 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum PaymentStatus {
+  PENDING
+  SETTLED
+}
+
+model User {
+  id                String             @id @default(cuid())
+  walletAddress     String             @unique
+  currentDebt       Decimal            @default(0) @db.Decimal(18, 8)
+  totalSpent        Decimal            @default(0) @db.Decimal(18, 8)
+  paymentThreshold  Decimal            @default(0.5) @db.Decimal(18, 8)
+  lastNonce         String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  usageRecords      UsageRecord[]
+  payments          Payment[]
+  sessionKeyRecords SessionKeyRecord[]
+}
+
+model UsageRecord {
+  id               String   @id @default(cuid())
+  userId           String
+  model            String
+  promptTokens     Int
+  completionTokens Int
+  baseCost         Decimal  @db.Decimal(18, 8)
+  commission       Decimal  @db.Decimal(18, 8)
+  totalCost        Decimal  @db.Decimal(18, 8)
+  isPaid           Boolean  @default(false)
+  paymentId        String?
+  createdAt        DateTime @default(now())
+  user             User     @relation(fields: [userId], references: [id])
+  payment          Payment? @relation(fields: [paymentId], references: [id])
+
+  @@index([userId, isPaid])
+  @@index([paymentId])
+}
+
+model Payment {
+  id           String        @id @default(cuid())
+  userId       String
+  amount       Decimal       @db.Decimal(18, 8)
+  txHash       String?       @unique
+  status       PaymentStatus @default(PENDING)
+  createdAt    DateTime      @default(now())
+  settledAt    DateTime?
+  user         User          @relation(fields: [userId], references: [id])
+  usageRecords UsageRecord[]
+
+  @@index([userId])
+}
+
+model Config {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+}
+
+model SessionKeyRecord {
+  id                   String   @id @default(cuid())
+  userId               String   @unique
+  smartAccountAddress  String
+  privateKey           String
+  serializedSessionKey String   @db.Text
+  chainId              Int
+  token                String   @unique
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  user                 User     @relation(fields: [userId], references: [id])
+
+  @@index([token])
+  @@index([smartAccountAddress, chainId])
+}

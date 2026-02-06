@@ -18,6 +18,11 @@ export function loadConfig(): Config {
       PORT: process.env.PORT,
       NODE_ENV: process.env.NODE_ENV,
       CORS_ORIGIN: process.env.CORS_ORIGIN,
+      DATABASE_URL: process.env.DATABASE_URL,
+      RPC_URL: process.env.RPC_URL,
+      PAY_TO: process.env.PAY_TO,
+      FACILITATOR_URL: process.env.FACILITATOR_URL,
+      JWT_SECRET: process.env.JWT_SECRET,
       PIMLICO_API_KEY: process.env.PIMLICO_API_KEY,
     });
 

@@ -8,11 +8,31 @@ import express, {
 } from "express";
 import helmet from "helmet";
 import { initConfig } from "./config/index.js";
-import { chatRouter } from "./routes/chat.js";
+import { authorizeRouter } from "./routes/authorize.js";
 import { healthRouter } from "./routes/health.js";
+import { createPaidRouter } from "./routes/paid.js";
+import { initAuthService } from "./services/auth.service.js";
+import { initAutoPaymentService } from "./services/auto-payment.js";
+import { initDebtService } from "./services/debt.js";
+import { disconnectPrisma, getPrismaClient } from "./utils/prisma.js";
 
 // Initialize and validate configuration at startup
 const config = initConfig();
+
+// Initialize Prisma client
+const prisma = getPrismaClient(config.DATABASE_URL);
+
+// Initialize debt service
+initDebtService(prisma);
+
+// Initialize auto-payment service
+initAutoPaymentService(prisma);
+
+// Initialize auth service
+initAuthService(prisma, config.JWT_SECRET);
+
+// Create routers that depend on config
+const paidRouter = createPaidRouter(config);
 
 const app = express();
 const PORT = config.PORT;
@@ -37,7 +57,8 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
 
 // Routes
 app.use("/health", healthRouter);
-app.use("/v1/chat/completions", chatRouter);
+app.use("/v1/authorize", authorizeRouter);
+app.use("/v1", paidRouter);
 
 // 404 handler
 app.use((req: Request, res: Response) => {
@@ -81,7 +102,8 @@ const server = app.listen(PORT, () => {
 const shutdownLogger = logger.context("Shutdown");
 process.on("SIGTERM", () => {
   shutdownLogger.info("SIGTERM signal received: closing HTTP server");
-  server.close(() => {
+  server.close(async () => {
+    await disconnectPrisma();
     shutdownLogger.info("HTTP server closed");
     process.exit(0);
   });
@@ -89,7 +111,8 @@ process.on("SIGTERM", () => {
 
 process.on("SIGINT", () => {
   shutdownLogger.info("\nSIGINT signal received: closing HTTP server");
-  server.close(() => {
+  server.close(async () => {
+    await disconnectPrisma();
     shutdownLogger.info("HTTP server closed");
     process.exit(0);
   });

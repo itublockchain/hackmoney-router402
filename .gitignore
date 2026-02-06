@@ -50,6 +50,7 @@ bun-debug.log*
 next-env.d.ts
 
 # IDE
+.kiro/specs/
 .vscode/*
 !.vscode/settings.json
 !.vscode/extensions.json

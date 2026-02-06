@@ -17,6 +17,9 @@
       "!**/coverage",
       "!**/*.min.js",
       "!**/*.min.css",
+      "!**/generated",
+      "!**/external",
+      "!**/apps/facilitator"
       "!bun.lock",
       "!**/media/chat.js",
       "!**/media/chat.html"
