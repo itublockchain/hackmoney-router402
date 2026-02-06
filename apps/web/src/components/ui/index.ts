@@ -1,3 +1,20 @@
+// Re-export base primitives so consumers can import from either layer
+export type { ButtonProps } from "@/components/primitives/button";
+export { Button, buttonVariants } from "@/components/primitives/button";
+export {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogOverlay,
+  DialogPortal,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/primitives/dialog";
+export { Input } from "@/components/primitives/input";
+
 export type { AddressDisplayProps } from "./address-display";
 export { AddressDisplay, truncateAddress } from "./address-display";
 

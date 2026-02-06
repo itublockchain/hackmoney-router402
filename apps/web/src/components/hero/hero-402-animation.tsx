@@ -231,8 +231,7 @@ export function Hero402Animation() {
 
   const handleSubmit = useCallback(() => {
     if (!inputValue.trim()) return;
-    // Handle submission - for now just clear the input
-    console.log("Submit:", inputValue);
+    // TODO: Wire up submission to chat/AI integration
     setInputValue("");
     // Reset textarea height
     if (textareaRef.current) {

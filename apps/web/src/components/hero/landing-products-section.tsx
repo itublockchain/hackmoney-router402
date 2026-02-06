@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { RouterAnimation } from "./RouterAnimation";
+import { RouterAnimation } from "./router-animation";
 
 const products = [
   { name: "OpenRouter", logo: "/product/openrouter.png", size: 160 },

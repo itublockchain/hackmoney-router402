@@ -1,5 +1,5 @@
-export { Hero402Animation } from "./Hero402Animation";
-export { HeroWaveAnimation } from "./HeroWaveAnimation";
-export { LandingInfoSection } from "./LandingInfoSection";
-export { LandingProductsSection } from "./LandingProductsSection";
-export { RouterAnimation } from "./RouterAnimation";
+export { Hero402Animation } from "./hero-402-animation";
+export { HeroWaveAnimation } from "./hero-wave-animation";
+export { LandingInfoSection } from "./landing-info-section";
+export { LandingProductsSection } from "./landing-products-section";
+export { RouterAnimation } from "./router-animation";

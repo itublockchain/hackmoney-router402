@@ -21,7 +21,7 @@ interface Router402GuardProps {
  * redirects to the setup page where initialization is managed.
  */
 export function Router402Guard({ children }: Router402GuardProps) {
-  const { isConnected, isReady, status } = useRouter402();
+  const { isConnected, isReconnecting, isReady, status } = useRouter402();
   const router = useRouter();
   const hasRedirected = useRef(false);
 
@@ -55,8 +55,17 @@ export function Router402Guard({ children }: Router402GuardProps) {
     }
   }, [isConnected, isReady, status, router]);
 
-  // Wallet not connected — show connect prompt with decorative card
+  // Wallet not connected — show connect prompt with decorative card.
+  // During auto-reconnection, show loading spinner instead to avoid flash.
   if (!isConnected) {
+    if (isReconnecting) {
+      return (
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6">
+          <Loader2 size={24} className="animate-spin text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">Reconnecting...</p>
+        </div>
+      );
+    }
     return <ConnectWalletCard />;
   }
 

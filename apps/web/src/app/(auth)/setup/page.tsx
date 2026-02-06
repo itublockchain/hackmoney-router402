@@ -1,10 +1,18 @@
 "use client";
 
-import { CheckCircle, Loader2, MessageSquare } from "lucide-react";
+import { CheckCircle, Key, Loader2, MessageSquare } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { ConnectWalletCard } from "@/components/layout";
 import { Button } from "@/components/primitives/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  CopyButton,
+} from "@/components/ui";
 import type { Router402Status } from "@/hooks";
 import { useRouter402 } from "@/hooks";
 
@@ -31,8 +39,11 @@ export default function SetupPage() {
   const {
     status,
     smartAccountAddress,
+    authToken,
     isConnected,
     isReady,
+    isConnecting,
+    isReconnecting,
     initialize,
     error,
   } = useRouter402();
@@ -69,8 +80,14 @@ export default function SetupPage() {
 
   const currentStep = !isConnected ? 0 : statusToStep[status];
 
-  // Show connect wallet card when not connected
+  // Show connect wallet card when not connected.
+  // Suppress during reconnection (auto-reconnect on page load) and
+  // during active connection attempts to avoid a brief flash of the card.
   if (!isConnected) {
+    if (isConnecting || isReconnecting) {
+      return null;
+    }
+
     return (
       <ConnectWalletCard
         title="Get Started"
@@ -92,14 +109,61 @@ export default function SetupPage() {
           </h1>
           <p className="max-w-sm text-sm text-muted-foreground">
             Your wallet and smart account are configured. You&apos;re ready to
-            start chatting.
+            interact with Router402.
           </p>
-          {smartAccountAddress && (
-            <p className="text-xs text-muted-foreground">
-              Smart Account: {smartAccountAddress}
-            </p>
-          )}
-          <Button asChild className="mt-2">
+        </div>
+
+        {authToken && (
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500/10">
+                  <Key size={16} className="text-blue-500" />
+                </div>
+                <div>
+                  <CardTitle className="text-sm">API Key</CardTitle>
+                  <CardDescription className="text-xs">
+                    Use this key to authenticate with Router402
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center gap-2 rounded-lg border bg-muted/50 p-3">
+                <code className="flex-1 truncate font-mono text-xs text-foreground">
+                  {authToken}
+                </code>
+                <CopyButton
+                  value={authToken}
+                  label="Copy API key"
+                  className="h-7 w-7 shrink-0"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Include this token as a Bearer token in the{" "}
+                <code className="rounded bg-muted px-1 py-0.5 text-[11px]">
+                  Authorization
+                </code>{" "}
+                header when making requests to Router402 APIs.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {smartAccountAddress && (
+          <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+            <span>Smart Account:</span>
+            <code className="font-mono">{smartAccountAddress}</code>
+            <CopyButton
+              value={smartAccountAddress}
+              label="Copy address"
+              className="h-6 w-6"
+            />
+          </div>
+        )}
+
+        <div className="flex justify-center">
+          <Button asChild>
             <Link href="/chat">
               <MessageSquare size={16} />
               Start Chatting
