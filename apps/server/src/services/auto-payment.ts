@@ -143,19 +143,37 @@ async function createKernelAccountFromSessionKey(
 
 /**
  * Fetch payment requirements from v1/debt endpoint (402 response)
+ * Uses a dummy payment header to get proper price calculation
  */
 async function fetchPaymentRequirements(
-  debtAmount: number
+  walletAddress: string
 ): Promise<PaymentRequirements | null> {
   const config = getConfig();
   const serverUrl = `http://localhost:${config.PORT}`;
 
+  // Create a minimal payment header so getDynamicPrice can extract wallet
+  // This is a workaround since we need the wallet to calculate the debt
+  const dummyPayload = {
+    x402Version: 2,
+    accepted: {},
+    payload: {
+      authorization: {
+        from: walletAddress,
+      },
+    },
+  };
+  const paymentHeader = Buffer.from(JSON.stringify(dummyPayload)).toString(
+    "base64"
+  );
+
   try {
     // Make request to v1/debt - expect 402 response with payment requirements
+    // Add internal header to skip JWT auth flow and prevent infinite loop
     const response = await fetch(`${serverUrl}/v1/debt`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
+        "payment-signature": paymentHeader,
       },
     });
 
@@ -421,7 +439,7 @@ export async function autoPayDebt(
   });
 
   // Step 1: Fetch payment requirements from v1/debt
-  const requirements = await fetchPaymentRequirements(debtAmount);
+  const requirements = await fetchPaymentRequirements(walletAddress);
   if (!requirements) {
     autoPayLogger.warn("Failed to fetch payment requirements", {
       userId,
@@ -435,6 +453,16 @@ export async function autoPayDebt(
     network: requirements.network,
     amount: requirements.amount,
   });
+
+  // If payment amount is 0, grant access directly without settlement
+  const paymentAmount = BigInt(requirements.amount);
+  if (paymentAmount === 0n) {
+    autoPayLogger.info("Payment amount is zero, granting access directly", {
+      userId,
+      wallet: walletAddress.slice(0, 10),
+    });
+    return { success: true };
+  }
 
   // Step 2: Get SessionKeyRecord from DB
   const sessionKeyRecord = await db.sessionKeyRecord.findUnique({
