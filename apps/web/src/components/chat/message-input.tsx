@@ -60,7 +60,7 @@ export function MessageInput({
   const hasInput = input.trim().length > 0;
 
   return (
-    <div className="px-3 py-4">
+    <div className="px-3 py-3 sm:py-4">
       <div className="mx-auto max-w-4xl">
         <div className="group relative rounded-2xl border border-border/60 bg-card shadow-lg transition-all duration-200 focus-within:border-ring/40 focus-within:shadow-[0_0_0_1px_hsl(var(--ring)/0.2),0_4px_20px_-4px_hsl(var(--ring)/0.1)]">
           <div className="px-3 pt-3 sm:px-4 sm:pt-4">
@@ -105,7 +105,7 @@ export function MessageInput({
             )}
           </div>
         </div>
-        <p className="mt-2 text-center text-[11px] text-muted-foreground/50">
+        <p className="mt-2 hidden text-center text-[11px] text-muted-foreground/50 sm:block">
           <kbd className="rounded border border-border/40 bg-muted/50 px-1 py-0.5 font-mono text-[10px]">
             Enter
           </kbd>{" "}

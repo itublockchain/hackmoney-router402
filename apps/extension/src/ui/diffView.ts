@@ -95,7 +95,6 @@ export async function acceptChanges(): Promise<void> {
     doc.positionAt(0),
     doc.positionAt(doc.getText().length)
   );
-
   const edit = new vscode.WorkspaceEdit();
   edit.replace(doc.uri, fullRange, modifiedContent);
   await vscode.workspace.applyEdit(edit);

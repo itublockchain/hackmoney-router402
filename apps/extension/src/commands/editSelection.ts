@@ -7,11 +7,11 @@ import {
 } from "../context/gather";
 import { EDIT_PROMPT } from "../prompts";
 import { showDiffView } from "../ui/diffView";
-import { ensureWalletConfigured } from "../utils/config";
+import { ensureApiKeyConfigured } from "../utils/config";
 
 /** Edits the selected code based on a user-provided instruction. */
 export async function editSelection(): Promise<void> {
-  if (!(await ensureWalletConfigured())) {
+  if (!(await ensureApiKeyConfigured())) {
     return;
   }
 

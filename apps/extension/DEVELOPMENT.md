@@ -26,7 +26,7 @@ npm run compile
    - Open any project/folder you want to test with
    - Open Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`)
    - Type "Router 402" to see available commands
-   - Configure your wallet address: go to Settings (`Ctrl+,`) and search for "Router 402"
+   - Set your API key: Command Palette > "Router 402: Set API Key"
 
 ## Watch Mode (for faster development)
 
@@ -43,13 +43,13 @@ This will recompile TypeScript on every save. Combined with the F5 debug launche
 
 After launching the Extension Development Host:
 
-1. **Test settings:** Go to Settings > search "Router 402" > set your wallet address and API endpoint
+1. **Test settings:** Command Palette > "Router 402: Set API Key" to configure your API key
 2. **Test review:** Open a code file > Command Palette > "Router 402: Review Current File"
 3. **Test edit:** Select some code > Command Palette > "Router 402: Edit Selection" > type an instruction
 4. **Test explain:** Select some code > Right-click > "Router 402: Explain Selection"
 5. **Test chat:** Command Palette > "Router 402: Open Chat" > try sending messages
 6. **Test inline edit:** Select some code > Right-click > "Router 402: Inline Edit" > type an instruction
-7. **Test error handling:** Set an invalid wallet address and verify the error notification appears with an "Open Dashboard" button
+7. **Test error handling:** Remove your API key and verify the warning notification appears with "Set API Key" and "Open Dashboard" buttons
 
 ## Packaging the Extension (for distribution)
 

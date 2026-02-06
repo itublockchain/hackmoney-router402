@@ -31,7 +31,7 @@ export function MessageList({ messages, isStreaming }: MessageListProps) {
   }, [messagesLength, lastMessageContent]);
 
   return (
-    <div ref={containerRef} className="flex-1 overflow-y-auto p-4">
+    <div ref={containerRef} className="flex-1 overflow-y-auto p-3 sm:p-4">
       <div className="mx-auto max-w-4xl space-y-6">
         {messages.length === 0 ? (
           <p className="pt-8 text-center text-sm text-muted-foreground">

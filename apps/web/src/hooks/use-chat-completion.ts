@@ -157,6 +157,7 @@ export function useChatCompletion({
         }
 
         const reader = response.body?.getReader();
+        console.log();
         if (!reader) {
           updateMessage(
             sessionId,

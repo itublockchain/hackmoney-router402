@@ -16,13 +16,19 @@
         <span class="header-title">Router 402</span>
       </div>
       <div class="header-right">
-        <span class="wallet-badge" id="walletBadge"></span>
         <button class="new-chat-btn" id="btnNewChat" title="New Chat">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
             <path d="M14 1H2a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3.5l2.5 2.5L10.5 13H14a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zM8.5 8.5h-1v-1h-1v-1h1v-1h1v1h1v1h-1v1z"/>
           </svg>
         </button>
       </div>
+    </div>
+
+    <!-- API Key banner (shown when no key is set) -->
+    <div class="api-key-banner" id="apiKeyBanner" style="display: none;">
+      <span>API key not configured.</span>
+      <button class="banner-btn" id="btnSetApiKey">Set API Key</button>
+      <button class="banner-btn banner-btn-secondary" id="btnGetApiKey">Get Key from Dashboard</button>
     </div>
 
     <!-- Messages container -->
@@ -52,6 +58,17 @@
             <path d="M1 1.5L1.5 1 15 8l-13.5 7-.5-.5L4.5 8 1 1.5zM3 3l2.5 4.5H14L3 3zm2.5 5.5L3 13l11-4.5H5.5z"/>
           </svg>
         </button>
+      </div>
+      <div class="model-selector-bar">
+        <div class="model-selector" id="modelSelector">
+          <button class="model-selector-btn" id="btnModelSelector" type="button">
+            <span class="model-selector-label" id="modelSelectorLabel">Loading...</span>
+            <svg class="model-selector-chevron" width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M4.957 5.543L8 8.586l3.043-3.043.914.914L8 10.414 4.043 6.457l.914-.914z"/>
+            </svg>
+          </button>
+          <div class="model-selector-dropdown" id="modelDropdown" style="display:none;"></div>
+        </div>
       </div>
     </div>
   </div>

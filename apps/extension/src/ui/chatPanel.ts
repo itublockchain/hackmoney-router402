@@ -1,7 +1,11 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as vscode from "vscode";
-import { type ChatMessage, sendStreamingChatCompletion } from "../api/client";
+import {
+  type ChatMessage,
+  fetchModels,
+  sendStreamingChatCompletion,
+} from "../api/client";
 import {
   buildContextHeader,
   getCurrentFileContent,
@@ -9,7 +13,7 @@ import {
   getRelativeFilePath,
 } from "../context/gather";
 import { CHAT_PROMPT } from "../prompts";
-import { getConfig, truncateAddress } from "../utils/config";
+import { getApiKey, getConfig } from "../utils/config";
 
 export class ChatViewProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = "router402.chatView";
@@ -17,8 +21,15 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
   private webviewView?: vscode.WebviewView;
   private conversationHistory: ChatMessage[] = [];
   private abortController?: AbortController;
+  private selectedModel?: string;
+  private webviewReady: Promise<void>;
+  private resolveWebviewReady!: () => void;
 
-  constructor(private readonly extensionUri: vscode.Uri) {}
+  constructor(private readonly extensionUri: vscode.Uri) {
+    this.webviewReady = new Promise((resolve) => {
+      this.resolveWebviewReady = resolve;
+    });
+  }
 
   public resolveWebviewView(
     webviewView: vscode.WebviewView,
@@ -26,6 +37,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     _token: vscode.CancellationToken
   ): void {
     this.webviewView = webviewView;
+    this.resolveWebviewReady();
 
     webviewView.webview.options = {
       enableScripts: true,
@@ -34,14 +46,18 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
     webviewView.webview.html = this.getHtmlContent(webviewView.webview);
 
-    // Send initial config to webview
+    // Send initial config and available models to webview
     this.postConfig();
+    this.postModels();
 
     // Handle messages from the webview
     webviewView.webview.onDidReceiveMessage(async (message) => {
       switch (message.type) {
         case "sendMessage":
-          await this.handleUserMessage(message.text);
+          await this.handleUserMessage(message.text, message.model);
+          break;
+        case "modelChange":
+          this.selectedModel = message.model;
           break;
         case "reviewFile":
           await this.reviewCurrentFile();
@@ -56,6 +72,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
           this.abortController?.abort();
           this.conversationHistory = [];
           break;
+        case "setApiKey":
+          await vscode.commands.executeCommand("router402.setApiKey");
+          break;
+        case "openDashboard":
+          await vscode.commands.executeCommand("router402.openDashboard");
+          break;
       }
     });
 
@@ -68,34 +90,42 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
   }
 
   /** Sends current config to the webview. */
-  private postConfig(): void {
+  private async postConfig(): Promise<void> {
     const config = getConfig();
+    const apiKey = await getApiKey();
     this.webviewView?.webview.postMessage({
       type: "config",
-      walletAddress: config.walletAddress
-        ? truncateAddress(config.walletAddress)
-        : "",
       model: config.defaultModel,
+      hasApiKey: !!apiKey,
+    });
+  }
+
+  /** Fetches available models from the API and sends them to the webview. */
+  private async postModels(): Promise<void> {
+    const models = await fetchModels();
+    this.webviewView?.webview.postMessage({
+      type: "models",
+      models,
     });
   }
 
   /** Handles a user message: sends to API with streaming. */
-  private async handleUserMessage(text: string): Promise<void> {
+  private async handleUserMessage(text: string, model?: string): Promise<void> {
     if (!this.webviewView) {
       return;
     }
 
-    const config = getConfig();
-    if (!config.walletAddress) {
+    const apiKey = await getApiKey();
+    if (!apiKey) {
       const action = await vscode.window.showWarningMessage(
-        "Please configure your wallet address in Router 402 settings.",
-        "Open Settings"
+        "Please set your Router 402 API key to use the chat.",
+        "Set API Key",
+        "Open Dashboard"
       );
-      if (action === "Open Settings") {
-        await vscode.commands.executeCommand(
-          "workbench.action.openSettings",
-          "router402.walletAddress"
-        );
+      if (action === "Set API Key") {
+        await vscode.commands.executeCommand("router402.setApiKey");
+      } else if (action === "Open Dashboard") {
+        await vscode.commands.executeCommand("router402.openDashboard");
       }
       return;
     }
@@ -122,28 +152,34 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
     this.abortController = new AbortController();
 
-    const fullResponse = await sendStreamingChatCompletion(
-      this.conversationHistory,
-      (chunk) => {
-        this.webviewView?.webview.postMessage({
-          type: "streamChunk",
-          text: chunk,
+    const chatModel = model || this.selectedModel;
+
+    try {
+      const fullResponse = await sendStreamingChatCompletion(
+        this.conversationHistory,
+        (chunk) => {
+          this.webviewView?.webview.postMessage({
+            type: "streamChunk",
+            text: chunk,
+          });
+        },
+        chatModel,
+        this.abortController.signal
+      );
+
+      if (fullResponse) {
+        this.conversationHistory.push({
+          role: "assistant",
+          content: fullResponse,
         });
-      },
-      undefined,
-      this.abortController.signal
-    );
-
-    this.abortController = undefined;
-
-    if (fullResponse) {
-      this.conversationHistory.push({
-        role: "assistant",
-        content: fullResponse,
-      });
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      vscode.window.showErrorMessage(`Router 402: ${msg}`);
+    } finally {
+      this.abortController = undefined;
+      this.webviewView.webview.postMessage({ type: "endResponse" });
     }
-
-    this.webviewView.webview.postMessage({ type: "endResponse" });
   }
 
   /** Reviews the current file by gathering its content and sending it as a message. */
@@ -212,6 +248,77 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
       .replace("{{scripts}}", js);
 
     return html;
+  }
+
+  /**
+   * Streams an externally-triggered request (e.g. from explain/review commands)
+   * into the chat panel so results stream token-by-token.
+   */
+  public async addExternalMessage(
+    userLabel: string,
+    messages: ChatMessage[],
+    model?: string
+  ): Promise<void> {
+    // Focus the chat view to ensure it's open and resolved
+    await vscode.commands.executeCommand("router402.chatView.focus");
+    await this.webviewReady;
+
+    if (!this.webviewView) {
+      return;
+    }
+
+    // Show the chat panel
+    this.webviewView.show?.(true);
+
+    // Display the user message in the chat
+    this.webviewView.webview.postMessage({
+      type: "addUserMessage",
+      text: userLabel,
+    });
+
+    // Stream the response
+    this.webviewView.webview.postMessage({ type: "startResponse" });
+    this.abortController = new AbortController();
+
+    try {
+      const fullResponse = await sendStreamingChatCompletion(
+        messages,
+        (chunk) => {
+          this.webviewView?.webview.postMessage({
+            type: "streamChunk",
+            text: chunk,
+          });
+        },
+        model || this.selectedModel,
+        this.abortController.signal
+      );
+
+      // Add to conversation history so follow-ups have context
+      if (fullResponse) {
+        if (this.conversationHistory.length === 0) {
+          this.conversationHistory.push({
+            role: "system",
+            content: CHAT_PROMPT,
+          });
+        }
+        this.conversationHistory.push({ role: "user", content: userLabel });
+        this.conversationHistory.push({
+          role: "assistant",
+          content: fullResponse,
+        });
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      vscode.window.showErrorMessage(`Router 402: ${msg}`);
+    } finally {
+      this.abortController = undefined;
+      this.webviewView.webview.postMessage({ type: "endResponse" });
+    }
+  }
+
+  /** Returns whether the chat panel is currently visible. */
+  public get isVisible(): boolean {
+    return this.webviewView?.visible ?? false;
   }
 
   /** Reveals the chat panel. */

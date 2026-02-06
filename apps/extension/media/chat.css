@@ -87,14 +87,6 @@ body {
   color: var(--vscode-foreground, var(--r402-text));
 }
 
-.wallet-badge {
-  font-size: 11px;
-  color: var(--vscode-descriptionForeground, var(--r402-text-secondary));
-  background: var(--vscode-badge-background, var(--r402-card));
-  padding: 2px 8px;
-  border-radius: 10px;
-  font-family: monospace;
-}
 
 /* Messages container */
 .messages-container {
@@ -404,4 +396,132 @@ body {
 .send-btn:disabled {
   opacity: 0.4;
   cursor: default;
+}
+
+/* API Key banner */
+.api-key-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--vscode-inputValidation-warningBackground, #332b00);
+  border-bottom: 1px solid var(--vscode-inputValidation-warningBorder, #665500);
+  font-size: 12px;
+  color: var(--vscode-foreground, var(--r402-text));
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.banner-btn {
+  background: var(--vscode-button-background, var(--r402-accent));
+  color: var(--vscode-button-foreground, #000000);
+  border: none;
+  border-radius: 4px;
+  padding: 3px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.banner-btn:hover {
+  background: var(--vscode-button-hoverBackground, #cccccc);
+}
+
+.banner-btn-secondary {
+  background: var(--vscode-button-secondaryBackground, var(--r402-card));
+  color: var(--vscode-button-secondaryForeground, var(--r402-text));
+}
+
+.banner-btn-secondary:hover {
+  background: var(--vscode-button-secondaryHoverBackground, var(--r402-accent-dim));
+}
+
+/* Model selector */
+.model-selector-bar {
+  display: flex;
+  align-items: center;
+  padding-top: 4px;
+}
+
+.model-selector {
+  position: relative;
+}
+
+.model-selector-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: var(--vscode-descriptionForeground, var(--r402-text-secondary));
+  font-size: 11px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.model-selector-btn:hover {
+  background: var(--vscode-toolbar-hoverBackground, rgba(255, 255, 255, 0.1));
+  color: var(--vscode-foreground, var(--r402-text));
+}
+
+.model-selector-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.model-selector-label {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.model-selector-chevron {
+  flex-shrink: 0;
+  transition: transform 0.15s;
+}
+
+.model-selector-chevron.open {
+  transform: rotate(180deg);
+}
+
+.model-selector-dropdown {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  z-index: 50;
+  margin-bottom: 4px;
+  min-width: 200px;
+  background: var(--vscode-editorWidget-background, var(--r402-card));
+  border: 1px solid var(--vscode-editorWidget-border, var(--r402-border));
+  border-radius: 6px;
+  padding: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.model-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  color: var(--vscode-descriptionForeground, var(--r402-text-secondary));
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.model-option:hover {
+  background: var(--vscode-toolbar-hoverBackground, rgba(255, 255, 255, 0.1));
+  color: var(--vscode-foreground, var(--r402-text));
+}
+
+.model-option.selected {
+  background: var(--vscode-list-activeSelectionBackground, rgba(255, 255, 255, 0.08));
+  color: var(--vscode-foreground, var(--r402-text));
 }

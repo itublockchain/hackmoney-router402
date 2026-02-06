@@ -28,10 +28,10 @@ Search for "Router 402" in the Extensions panel.
 
 1. Open VS Code Settings (`Ctrl+,` / `Cmd+,`)
 2. Search for "Router 402"
-3. Set your **wallet address** (required) — your wallet address on Base network
-4. Optionally change the **API endpoint**, **default model**, or **dashboard URL**
+3. Set your **API key** (required) — get one from the [Router 402 Dashboard](https://router402.xyz)
+4. Optionally change the **API endpoint** or **default model**
 
-Before using the extension, you must set up a session key for your wallet on the [Router 402 Dashboard](https://dashboard.router402.com). The extension authenticates using your wallet address, and the backend resolves your session from it.
+Before using the extension, you must complete setup on the [Router 402 Dashboard](https://router402.xyz) and obtain an API key. The extension authenticates using this API key.
 
 ## Available Commands
 

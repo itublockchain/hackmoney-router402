@@ -10,11 +10,35 @@
   const messageInput = document.getElementById("messageInput");
   const btnSend = document.getElementById("btnSend");
   const btnNewChat = document.getElementById("btnNewChat");
-  const walletBadge = document.getElementById("walletBadge");
+  const apiKeyBanner = document.getElementById("apiKeyBanner");
+  const btnSetApiKey = document.getElementById("btnSetApiKey");
+  const btnGetApiKey = document.getElementById("btnGetApiKey");
+  const btnModelSelector = document.getElementById("btnModelSelector");
+  const modelSelectorLabel = document.getElementById("modelSelectorLabel");
+  const modelDropdown = document.getElementById("modelDropdown");
+  const modelSelectorChevron = btnModelSelector
+    ? btnModelSelector.querySelector(".model-selector-chevron")
+    : null;
+
+  /** Human-readable display names for supported models */
+  const MODEL_DISPLAY_NAMES = {
+    "anthropic/claude-opus-4.5": "Claude Opus 4.5",
+    "anthropic/claude-sonnet-4.5": "Claude Sonnet 4.5",
+    "anthropic/claude-haiku-4.5": "Claude Haiku 4.5",
+    "google/gemini-3-pro-preview": "Gemini 3 Pro",
+    "google/gemini-3-flash-preview": "Gemini 3 Flash",
+  };
+
+  function getModelDisplayName(model) {
+    return MODEL_DISPLAY_NAMES[model] || model;
+  }
 
   let isGenerating = false;
   let currentAssistantEl = null;
   let currentStreamText = "";
+  let selectedModel = "";
+  let availableModels = [];
+  let modelDropdownOpen = false;
 
   // Auto-resize textarea
   messageInput.addEventListener("input", function () {
@@ -51,6 +75,19 @@
     btnSend.disabled = false;
   });
 
+  // API key banner buttons
+  if (btnSetApiKey) {
+    btnSetApiKey.addEventListener("click", function () {
+      vscode.postMessage({ type: "setApiKey" });
+    });
+  }
+
+  if (btnGetApiKey) {
+    btnGetApiKey.addEventListener("click", function () {
+      vscode.postMessage({ type: "openDashboard" });
+    });
+  }
+
   // Quick action buttons
   document.querySelectorAll(".quick-action-btn").forEach(function (btn) {
     btn.addEventListener("click", function () {
@@ -60,6 +97,54 @@
       }
     });
   });
+
+  // Model selector
+  if (btnModelSelector) {
+    btnModelSelector.addEventListener("click", function () {
+      if (availableModels.length === 0) return;
+      modelDropdownOpen = !modelDropdownOpen;
+      modelDropdown.style.display = modelDropdownOpen ? "block" : "none";
+      if (modelSelectorChevron) {
+        modelSelectorChevron.classList.toggle("open", modelDropdownOpen);
+      }
+    });
+  }
+
+  // Close model dropdown on outside click
+  document.addEventListener("mousedown", function (e) {
+    var selector = document.getElementById("modelSelector");
+    if (selector && !selector.contains(e.target) && modelDropdownOpen) {
+      modelDropdownOpen = false;
+      modelDropdown.style.display = "none";
+      if (modelSelectorChevron) {
+        modelSelectorChevron.classList.remove("open");
+      }
+    }
+  });
+
+  /** Renders model options in the dropdown. */
+  function renderModelDropdown() {
+    if (!modelDropdown) return;
+    modelDropdown.innerHTML = "";
+    availableModels.forEach(function (model) {
+      var btn = document.createElement("button");
+      btn.className = "model-option" + (model === selectedModel ? " selected" : "");
+      btn.type = "button";
+      btn.textContent = getModelDisplayName(model);
+      btn.addEventListener("click", function () {
+        selectedModel = model;
+        modelSelectorLabel.textContent = getModelDisplayName(model);
+        modelDropdownOpen = false;
+        modelDropdown.style.display = "none";
+        if (modelSelectorChevron) {
+          modelSelectorChevron.classList.remove("open");
+        }
+        renderModelDropdown();
+        vscode.postMessage({ type: "modelChange", model: model });
+      });
+      modelDropdown.appendChild(btn);
+    });
+  }
 
   /** Sends the current input as a message. */
   function sendMessage() {
@@ -78,13 +163,20 @@
     messageInput.value = "";
     messageInput.style.height = "auto";
 
-    vscode.postMessage({ type: "sendMessage", text: fullText });
+    vscode.postMessage({ type: "sendMessage", text: fullText, model: selectedModel });
   }
 
   /** Hides the empty state. */
   function hideEmptyState() {
     if (emptyState) {
       emptyState.style.display = "none";
+    }
+  }
+
+  /** Updates the API key banner visibility. */
+  function updateApiKeyBanner(hasApiKey) {
+    if (apiKeyBanner) {
+      apiKeyBanner.style.display = hasApiKey ? "none" : "flex";
     }
   }
 
@@ -219,14 +311,34 @@
 
     switch (message.type) {
       case "config":
-        if (walletBadge) {
-          walletBadge.textContent = message.walletAddress || "No wallet";
+        updateApiKeyBanner(message.hasApiKey);
+        if (message.model && !selectedModel) {
+          selectedModel = message.model;
+          modelSelectorLabel.textContent = getModelDisplayName(message.model);
+        }
+        break;
+
+      case "models":
+        availableModels = message.models || [];
+        if (availableModels.length > 0) {
+          if (!selectedModel || availableModels.indexOf(selectedModel) === -1) {
+            selectedModel = availableModels[0];
+          }
+          modelSelectorLabel.textContent = getModelDisplayName(selectedModel);
+          renderModelDropdown();
+          // Ensure dropdown stays closed after populating
+          modelDropdownOpen = false;
+          modelDropdown.style.display = "none";
+          if (modelSelectorChevron) {
+            modelSelectorChevron.classList.remove("open");
+          }
         }
         break;
 
       case "startResponse":
         isGenerating = true;
         btnSend.disabled = true;
+        if (btnModelSelector) btnModelSelector.disabled = true;
         showLoading();
         currentStreamText = "";
         currentAssistantEl = null;
@@ -246,6 +358,7 @@
       case "endResponse":
         isGenerating = false;
         btnSend.disabled = false;
+        if (btnModelSelector) btnModelSelector.disabled = false;
         hideLoading();
         if (!currentAssistantEl && currentStreamText) {
           currentAssistantEl = addMessage("assistant", currentStreamText);

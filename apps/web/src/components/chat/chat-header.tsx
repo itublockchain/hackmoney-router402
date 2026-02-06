@@ -10,7 +10,7 @@ interface ChatHeaderProps {
 
 export function ChatHeader({ sessionName, onDelete }: ChatHeaderProps) {
   return (
-    <div className="flex h-12 shrink-0 items-center justify-between border-b border-border/40 px-4">
+    <div className="flex h-12 shrink-0 items-center justify-between border-b border-border/40 px-3 sm:px-4">
       <h1 className="text-sm font-medium text-foreground truncate">
         {sessionName}
       </h1>

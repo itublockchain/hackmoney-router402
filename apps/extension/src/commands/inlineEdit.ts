@@ -7,7 +7,7 @@ import {
 } from "../context/gather";
 import { EDIT_PROMPT } from "../prompts";
 import { showDiffView } from "../ui/diffView";
-import { ensureWalletConfigured } from "../utils/config";
+import { ensureApiKeyConfigured } from "../utils/config";
 
 /**
  * Inline edit triggered from the context menu.
@@ -15,7 +15,7 @@ import { ensureWalletConfigured } from "../utils/config";
  * and shows an inline diff for accept/reject.
  */
 export async function inlineEdit(): Promise<void> {
-  if (!(await ensureWalletConfigured())) {
+  if (!(await ensureApiKeyConfigured())) {
     return;
   }
 
@@ -66,7 +66,18 @@ export async function inlineEdit(): Promise<void> {
   // Extract code from response
   const editedCode = extractCode(response);
 
-  await showDiffView(selectedText, editedCode, editor);
+  // Build full file contents for a proper full-file diff
+  const fullOriginal = editor.document.getText();
+  const selection = editor.selection;
+  const beforeSelection = editor.document.getText(
+    new vscode.Range(new vscode.Position(0, 0), selection.start)
+  );
+  const afterSelection = editor.document.getText(
+    new vscode.Range(selection.end, editor.document.positionAt(fullOriginal.length))
+  );
+  const fullModified = beforeSelection + editedCode + afterSelection;
+
+  await showDiffView(fullOriginal, fullModified, editor);
 }
 
 /** Extracts code from a markdown code block, falling back to raw text. */

@@ -61,7 +61,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           {children}
         </main>
 
-        {/* Artifact panel (conditionally shown) */}
+        {/* Artifact panel — desktop: side panel with resizer */}
         {showArtifact && (
           <>
             <PanelResizer onResize={handleArtifactResize} />
@@ -74,6 +74,13 @@ export function AppLayout({ children }: AppLayoutProps) {
           </>
         )}
       </div>
+
+      {/* Artifact panel — mobile: full-screen overlay */}
+      {showArtifact && (
+        <div className="fixed inset-0 z-50 flex flex-col bg-background md:hidden">
+          <ArtifactPanel />
+        </div>
+      )}
     </div>
   );
 }

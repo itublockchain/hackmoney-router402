@@ -26,14 +26,14 @@
     "configuration": {
       "title": "Router 402",
       "properties": {
-        "router402.walletAddress": {
+        "router402.apiEndpoint": {
           "type": "string",
-          "default": "",
-          "description": "Your wallet address on Base network"
+          "default": "http://localhost:8080",
+          "description": "Router 402 API endpoint URL"
         },
         "router402.defaultModel": {
           "type": "string",
-          "default": "anthropic/claude-sonnet-4-20250514",
+          "default": "anthropic/claude-sonnet-4.5",
           "description": "Preferred AI model to use via OpenRouter"
         }
       }
@@ -60,6 +60,14 @@
         "title": "Router 402: Inline Edit"
       },
       {
+        "command": "router402.setApiKey",
+        "title": "Router 402: Set API Key"
+      },
+      {
+        "command": "router402.checkAccount",
+        "title": "Router 402: Check Account Status"
+      },
+      {
         "command": "router402.openDashboard",
         "title": "Router 402: Open Dashboard"
       },
@@ -70,6 +78,10 @@
       {
         "command": "router402.rejectChanges",
         "title": "Router 402: Reject Changes"
+      },
+      {
+        "command": "router402.toggleChat",
+        "title": "Router 402: Toggle Chat"
       }
     ],
     "keybindings": [
@@ -78,6 +90,11 @@
         "key": "ctrl+shift+r",
         "mac": "cmd+shift+r",
         "when": "editorHasSelection"
+      },
+      {
+        "command": "router402.toggleChat",
+        "key": "ctrl+shift+l",
+        "mac": "cmd+shift+l"
       }
     ],
     "menus": {

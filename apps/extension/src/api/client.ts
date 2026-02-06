@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { API_ENDPOINT, DASHBOARD_URL, getConfig } from "../utils/config";
+import { DASHBOARD_URL, getApiEndpoint, getApiKey } from "../utils/config";
 
 export interface ChatMessage {
   role: "system" | "user" | "assistant";
@@ -32,6 +32,21 @@ export interface ChatCompletionResponse {
 export type StreamCallback = (chunk: string) => void;
 
 /**
+ * Builds the authorization headers for API requests.
+ * Uses Bearer token authentication with the stored API key.
+ */
+async function getAuthHeaders(): Promise<Record<string, string>> {
+  const apiKey = await getApiKey();
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (apiKey) {
+    headers.Authorization = `Bearer ${apiKey}`;
+  }
+  return headers;
+}
+
+/**
  * Handles HTTP error responses with actionable VS Code notifications.
  * Returns true if an error was handled (caller should abort).
  */
@@ -40,17 +55,20 @@ async function handleApiError(status: number, _body: string): Promise<boolean> {
     case 401:
     case 403: {
       const action = await vscode.window.showErrorMessage(
-        "No active session found for this wallet. Please set up your session key on the Router 402 dashboard.",
+        "Invalid or expired API key. Please set a valid API key from the Router 402 dashboard.",
+        "Set API Key",
         "Open Dashboard"
       );
-      if (action === "Open Dashboard") {
+      if (action === "Set API Key") {
+        await vscode.commands.executeCommand("router402.setApiKey");
+      } else if (action === "Open Dashboard") {
         await vscode.env.openExternal(vscode.Uri.parse(DASHBOARD_URL));
       }
       return true;
     }
     case 402: {
       const action = await vscode.window.showErrorMessage(
-        "Insufficient funds. Please top up your account.",
+        "Insufficient funds. Please top up your account on the dashboard.",
         "Open Dashboard"
       );
       if (action === "Open Dashboard") {
@@ -84,8 +102,9 @@ export async function sendChatCompletion(
   messages: ChatMessage[],
   model?: string
 ): Promise<string | undefined> {
-  const config = getConfig();
-  const url = `${API_ENDPOINT}/v1/chat/completions`;
+  const config = await import("../utils/config").then((m) => m.getConfig());
+  const apiEndpoint = getApiEndpoint();
+  const url = `${apiEndpoint}/v1/chat/completions`;
 
   const body: ChatCompletionRequest = {
     model: model ?? config.defaultModel,
@@ -97,16 +116,12 @@ export async function sendChatCompletion(
   try {
     response = await fetch(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Wallet-Address": config.walletAddress,
-      },
+      headers: await getAuthHeaders(),
       body: JSON.stringify(body),
     });
   } catch {
     await vscode.window.showErrorMessage(
-      "Cannot reach Router 402 API. Check your network connection.",
-      "Open Settings"
+      "Cannot reach Router 402 API. Check your network connection."
     );
     return undefined;
   }
@@ -137,8 +152,9 @@ export async function sendStreamingChatCompletion(
   model?: string,
   signal?: AbortSignal
 ): Promise<string | undefined> {
-  const config = getConfig();
-  const url = `${API_ENDPOINT}/v1/chat/completions`;
+  const config = await import("../utils/config").then((m) => m.getConfig());
+  const apiEndpoint = getApiEndpoint();
+  const url = `${apiEndpoint}/v1/chat/completions`;
 
   const body: ChatCompletionRequest = {
     model: model ?? config.defaultModel,
@@ -150,10 +166,7 @@ export async function sendStreamingChatCompletion(
   try {
     response = await fetch(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Wallet-Address": config.walletAddress,
-      },
+      headers: await getAuthHeaders(),
       body: JSON.stringify(body),
       signal,
     });
@@ -162,8 +175,7 @@ export async function sendStreamingChatCompletion(
       return undefined;
     }
     await vscode.window.showErrorMessage(
-      "Cannot reach Router 402 API. Check your network connection.",
-      "Open Settings"
+      "Cannot reach Router 402 API. Check your network connection."
     );
     return undefined;
   }
@@ -220,7 +232,7 @@ export async function sendStreamingChatCompletion(
             onChunk(delta);
           }
         } catch {
-          // Skip malformed JSON chunks
+          // Skip malformed SSE lines
         }
       }
     }
@@ -232,17 +244,86 @@ export async function sendStreamingChatCompletion(
 }
 
 /**
+ * Fetches the list of available models from the API.
+ * Returns an array of model identifiers, or an empty array on error.
+ */
+export async function fetchModels(): Promise<string[]> {
+  const apiEndpoint = getApiEndpoint();
+  const url = `${apiEndpoint}/v1/models`;
+
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      headers: await getAuthHeaders(),
+      signal: AbortSignal.timeout(5000),
+    });
+
+    if (!response.ok) {
+      return [];
+    }
+
+    const json = (await response.json()) as { data?: string[] };
+    return Array.isArray(json.data) ? json.data : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
  * Pings the API to check connectivity.
  * Returns true if the API is reachable.
  */
 export async function pingApi(): Promise<boolean> {
+  const apiEndpoint = getApiEndpoint();
   try {
-    const response = await fetch(`${API_ENDPOINT}/health`, {
+    const response = await fetch(`${apiEndpoint}/health`, {
       method: "GET",
       signal: AbortSignal.timeout(5000),
     });
     return response.ok;
   } catch {
     return false;
+  }
+}
+
+export interface AccountStatus {
+  exists: boolean;
+  hasSessionKey: boolean;
+  ready: boolean;
+  user?: {
+    hasPaymentThreshold: boolean;
+    currentDebt: string;
+    totalSpent: string;
+  };
+  sessionKey?: {
+    chainId: number;
+    smartAccountAddress: string;
+    createdAt: string;
+  };
+}
+
+/**
+ * Checks account status using the configured API key.
+ * Returns the account status or undefined on error.
+ */
+export async function checkAccountStatus(): Promise<AccountStatus | undefined> {
+  const apiEndpoint = getApiEndpoint();
+  const url = `${apiEndpoint}/v1/authorize/check`;
+
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      headers: await getAuthHeaders(),
+      signal: AbortSignal.timeout(10000),
+    });
+
+    if (!response.ok) {
+      return undefined;
+    }
+
+    const result = (await response.json()) as { data: AccountStatus };
+    return result.data;
+  } catch {
+    return undefined;
   }
 }
