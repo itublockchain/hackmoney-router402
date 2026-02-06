@@ -1,8 +1,18 @@
 "use client";
 
-import { CheckCircle, Key, Loader2, MessageSquare } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle,
+  Coins,
+  Key,
+  Loader2,
+  MessageSquare,
+  Wallet,
+} from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
+import { erc20Abi, formatUnits } from "viem";
+import { useReadContract } from "wagmi";
 import { ConnectWalletCard } from "@/components/layout";
 import { Button } from "@/components/primitives/button";
 import {
@@ -13,6 +23,7 @@ import {
   CardTitle,
   CopyButton,
 } from "@/components/ui";
+import { SMART_ACCOUNT_CONFIG, USDC_ADDRESS } from "@/config";
 import type { Router402Status } from "@/hooks";
 import { useRouter402 } from "@/hooks";
 
@@ -50,6 +61,25 @@ export default function SetupPage() {
 
   // Ref to ensure initialize is called at most once automatically
   const hasAutoInitialized = useRef(false);
+
+  // Fetch USDC balance of the smart account (not the EOA)
+  const { data: rawBalance, isLoading: isBalanceLoading } = useReadContract({
+    address: USDC_ADDRESS,
+    abi: erc20Abi,
+    functionName: "balanceOf",
+    args: smartAccountAddress ? [smartAccountAddress] : undefined,
+    chainId: SMART_ACCOUNT_CONFIG.chainId,
+    query: {
+      enabled: isReady && !!smartAccountAddress,
+      refetchInterval: 10000,
+    },
+  });
+
+  const usdcBalance =
+    rawBalance !== undefined ? formatUnits(rawBalance, 6) : undefined;
+  const balanceNumber =
+    usdcBalance !== undefined ? parseFloat(usdcBalance) : undefined;
+  const isLowBalance = balanceNumber !== undefined && balanceNumber < 0.5;
 
   // Auto-initialize once when the wallet is connected and setup is needed.
   // Uses a ref to guarantee this fires at most once — no sign request duplicates.
@@ -113,6 +143,85 @@ export default function SetupPage() {
           </p>
         </div>
 
+        {/* Credits / USDC Balance */}
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/10">
+                <Coins size={16} className="text-emerald-500" />
+              </div>
+              <div>
+                <CardTitle className="text-sm">Credits Available</CardTitle>
+                <CardDescription className="text-xs">
+                  USDC balance on your smart account
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-baseline gap-2">
+              {isBalanceLoading ? (
+                <Loader2
+                  size={20}
+                  className="animate-spin text-muted-foreground"
+                />
+              ) : (
+                <>
+                  <span className="text-3xl font-bold tabular-nums text-foreground">
+                    {balanceNumber !== undefined
+                      ? balanceNumber.toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 6,
+                        })
+                      : "—"}
+                  </span>
+                  <span className="text-sm font-medium text-muted-foreground">
+                    USDC
+                  </span>
+                </>
+              )}
+            </div>
+
+            {isLowBalance && (
+              <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
+                <AlertTriangle
+                  size={16}
+                  className="mt-0.5 shrink-0 text-amber-500"
+                />
+                <p className="text-xs text-amber-200/80">
+                  Your balance is low. Requests may fail if you don&apos;t have
+                  enough credits. Deposit USDC to your smart account to continue
+                  using Router402.
+                </p>
+              </div>
+            )}
+
+            {smartAccountAddress && (
+              <div className="space-y-2 rounded-lg border bg-muted/50 p-3">
+                <div className="flex items-center gap-2">
+                  <Wallet size={14} className="text-muted-foreground" />
+                  <span className="text-xs font-medium text-muted-foreground">
+                    Deposit Address
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 truncate font-mono text-xs text-foreground">
+                    {smartAccountAddress}
+                  </code>
+                  <CopyButton
+                    value={smartAccountAddress}
+                    label="Copy deposit address"
+                    className="h-7 w-7 shrink-0"
+                  />
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  Send USDC on Base to this address to fund your account.
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {authToken && (
           <Card>
             <CardHeader className="pb-3">
@@ -148,18 +257,6 @@ export default function SetupPage() {
               </p>
             </CardContent>
           </Card>
-        )}
-
-        {smartAccountAddress && (
-          <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-            <span>Smart Account:</span>
-            <code className="font-mono">{smartAccountAddress}</code>
-            <CopyButton
-              value={smartAccountAddress}
-              label="Copy address"
-              className="h-6 w-6"
-            />
-          </div>
         )}
 
         <div className="flex justify-center">

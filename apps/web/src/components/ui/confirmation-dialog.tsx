@@ -13,6 +13,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/primitives";
+import { buttonVariants } from "@/components/primitives/button";
 
 interface ConfirmationDialogProps {
   open?: boolean;
@@ -22,6 +23,7 @@ interface ConfirmationDialogProps {
   description: string;
   confirmLabel?: string;
   cancelLabel?: string;
+  variant?: "default" | "destructive";
   onConfirm: () => void;
   onCancel?: () => void;
   children?: React.ReactNode;
@@ -35,6 +37,7 @@ function ConfirmationDialog({
   description,
   confirmLabel = "Confirm",
   cancelLabel = "Cancel",
+  variant = "default",
   onConfirm,
   onCancel,
 }: ConfirmationDialogProps) {
@@ -50,7 +53,14 @@ function ConfirmationDialog({
           <AlertDialogCancel onClick={onCancel}>
             {cancelLabel}
           </AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirm}>
+          <AlertDialogAction
+            onClick={onConfirm}
+            className={
+              variant === "destructive"
+                ? buttonVariants({ variant: "destructive" })
+                : undefined
+            }
+          >
             {confirmLabel}
           </AlertDialogAction>
         </AlertDialogFooter>

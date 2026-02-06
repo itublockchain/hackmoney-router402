@@ -1,4 +1,9 @@
-export { APP_CONFIG, CHAIN_ID, SUPPORTED_CHAIN } from "./constants";
+export {
+  APP_CONFIG,
+  CHAIN_ID,
+  SUPPORTED_CHAIN,
+  USDC_ADDRESS,
+} from "./constants";
 export { getConfig } from "./get-config";
 /**
  * Re-export types for convenience

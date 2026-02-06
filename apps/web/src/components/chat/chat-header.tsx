@@ -1,6 +1,7 @@
 "use client";
 
 import { Trash2 } from "lucide-react";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 
 interface ChatHeaderProps {
   sessionName: string;
@@ -13,14 +14,22 @@ export function ChatHeader({ sessionName, onDelete }: ChatHeaderProps) {
       <h1 className="text-sm font-medium text-foreground truncate">
         {sessionName}
       </h1>
-      <button
-        type="button"
-        onClick={onDelete}
-        className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-destructive cursor-pointer"
-        aria-label="Delete chat"
-      >
-        <Trash2 size={16} />
-      </button>
+      <ConfirmationDialog
+        title="Delete chat"
+        description="This will permanently delete this chat and all its messages. This action cannot be undone."
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={onDelete}
+        trigger={
+          <button
+            type="button"
+            className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-destructive cursor-pointer"
+            aria-label="Delete chat"
+          >
+            <Trash2 size={16} />
+          </button>
+        }
+      />
     </div>
   );
 }
