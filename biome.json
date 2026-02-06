@@ -19,7 +19,7 @@
       "!**/*.min.css",
       "!**/generated",
       "!**/external",
-      "!**/apps/facilitator"
+      "!**/apps/facilitator",
       "!bun.lock",
       "!**/media/chat.js",
       "!**/media/chat.html"
