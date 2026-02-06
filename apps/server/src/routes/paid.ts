@@ -75,11 +75,11 @@ export function createPaidRouter(config: Config): Router {
 
   // Define routes configuration
   const routes = {
-    "GET /protected": {
+    "GET /debt": {
       accepts: [
         {
           scheme: "exact",
-          price: "$0.01",
+          price: getDynamicPrice,
           network: "eip155:84532" as const, // Base Mainnet
           payTo,
         },
