@@ -86,3 +86,16 @@ packages/cli/bin/agent/
 
 # Locus runtime
 .locus/
+.tmp/
+
+# Locus AI - Session data (user-specific, can grow large)
+.locus/sessions/
+
+# Locus AI - Artifacts (local-only, user-specific)
+.locus/artifacts/
+
+# Locus AI - Review reports (generated per sprint)
+.locus/reviews/
+
+# Locus AI - Plans (generated per task)
+.locus/plans/

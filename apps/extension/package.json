@@ -1,0 +1,128 @@
+{
+  "name": "router402-vscode",
+  "displayName": "Router 402",
+  "description": "AI-powered coding assistant. Pay per use via smart accounts on Base network.",
+  "version": "0.1.0",
+  "publisher": "router402",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Machine Learning",
+    "Other"
+  ],
+  "keywords": [
+    "ai",
+    "coding assistant",
+    "openrouter",
+    "web3",
+    "base network"
+  ],
+  "main": "./out/extension.js",
+  "icon": "media/logo.png",
+  "contributes": {
+    "configuration": {
+      "title": "Router 402",
+      "properties": {
+        "router402.walletAddress": {
+          "type": "string",
+          "default": "",
+          "description": "Your wallet address on Base network"
+        },
+        "router402.defaultModel": {
+          "type": "string",
+          "default": "anthropic/claude-sonnet-4-20250514",
+          "description": "Preferred AI model to use via OpenRouter"
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "router402.reviewFile",
+        "title": "Router 402: Review Current File"
+      },
+      {
+        "command": "router402.editSelection",
+        "title": "Router 402: Edit Selection"
+      },
+      {
+        "command": "router402.explainSelection",
+        "title": "Router 402: Explain Selection"
+      },
+      {
+        "command": "router402.chat",
+        "title": "Router 402: Open Chat"
+      },
+      {
+        "command": "router402.inlineEdit",
+        "title": "Router 402: Inline Edit"
+      },
+      {
+        "command": "router402.openDashboard",
+        "title": "Router 402: Open Dashboard"
+      },
+      {
+        "command": "router402.acceptChanges",
+        "title": "Router 402: Accept Changes"
+      },
+      {
+        "command": "router402.rejectChanges",
+        "title": "Router 402: Reject Changes"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "router402.editSelection",
+        "key": "ctrl+shift+r",
+        "mac": "cmd+shift+r",
+        "when": "editorHasSelection"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "router402.inlineEdit",
+          "when": "editorHasSelection",
+          "group": "router402@1"
+        },
+        {
+          "command": "router402.explainSelection",
+          "when": "editorHasSelection",
+          "group": "router402@2"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "router402",
+          "title": "Router 402",
+          "icon": "media/logo.svg"
+        }
+      ]
+    },
+    "views": {
+      "router402": [
+        {
+          "type": "webview",
+          "id": "router402.chatView",
+          "name": "Chat"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "npx @biomejs/biome check src/",
+    "prepackage": "npm run compile",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.9.3"
+  }
+}

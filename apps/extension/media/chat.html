@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'none'; style-src 'nonce-{{nonce}}'; script-src 'nonce-{{nonce}}'; img-src {{cspSource}} https:;">
+  <style nonce="{{nonce}}">{{styles}}</style>
+</head>
+<body>
+  <div class="chat-container">
+    <!-- Header -->
+    <div class="chat-header">
+      <div class="header-left">
+        <img src="{{logoUri}}" alt="Router 402" class="logo" width="24" height="24">
+        <span class="header-title">Router 402</span>
+      </div>
+      <div class="header-right">
+        <span class="wallet-badge" id="walletBadge"></span>
+        <button class="new-chat-btn" id="btnNewChat" title="New Chat">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M14 1H2a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3.5l2.5 2.5L10.5 13H14a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zM8.5 8.5h-1v-1h-1v-1h1v-1h1v1h1v1h-1v1z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Messages container -->
+    <div class="messages-container" id="messagesContainer">
+      <div class="empty-state" id="emptyState">
+        <div class="empty-icon">
+          <img src="{{logoUri}}" alt="Router 402" width="48" height="48">
+        </div>
+        <h2>Welcome to Router 402</h2>
+        <p>AI-powered coding assistant. Ask me anything about your code.</p>
+        <div class="quick-actions">
+          <button class="quick-action-btn" data-action="review">Review Current File</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input area -->
+    <div class="input-area">
+      <div class="input-wrapper">
+        <textarea
+          id="messageInput"
+          placeholder="Ask Router 402 something..."
+          rows="1"
+        ></textarea>
+        <button class="send-btn" id="btnSend" title="Send message">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M1 1.5L1.5 1 15 8l-13.5 7-.5-.5L4.5 8 1 1.5zM3 3l2.5 4.5H14L3 3zm2.5 5.5L3 13l11-4.5H5.5z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script nonce="{{nonce}}">{{scripts}}</script>
+</body>
+</html>

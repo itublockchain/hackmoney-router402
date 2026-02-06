@@ -20,6 +20,9 @@
       "!**/generated",
       "!**/external",
       "!**/apps/facilitator"
+      "!bun.lock",
+      "!**/media/chat.js",
+      "!**/media/chat.html"
     ]
   },
   "formatter": {
@@ -149,7 +152,14 @@
   },
   "overrides": [
     {
-      "includes": ["**/__tests__/**/*.ts", "**/*.spec.ts", "**/*.test.ts"],
+      "includes": [
+        "**/__tests__/**/*.ts",
+        "**/__tests__/**/*.tsx",
+        "**/*.spec.ts",
+        "**/*.spec.tsx",
+        "**/*.test.ts",
+        "**/*.test.tsx"
+      ],
       "linter": {
         "rules": {
           "suspicious": {
@@ -157,6 +167,9 @@
           },
           "style": {
             "noNonNullAssertion": "off"
+          },
+          "correctness": {
+            "noUnusedFunctionParameters": "off"
           }
         }
       }
