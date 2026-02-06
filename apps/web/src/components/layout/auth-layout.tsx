@@ -15,9 +15,6 @@ export function AuthLayout({ children }: AuthLayoutProps) {
       <div className="w-full max-w-lg rounded-xl border border-border/40 bg-card p-6 shadow-lg">
         {children}
       </div>
-      <p className="mt-6 text-xs text-muted-foreground">
-        &copy; 2026 Router 402
-      </p>
     </div>
   );
 }

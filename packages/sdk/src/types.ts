@@ -84,7 +84,7 @@ export interface UserOperationResult {
  * Used for client-side storage
  */
 export interface SessionKeyData {
-  /** Private key (hex string) - only stored locally, never shared */
+  /** Private key (hex string) */
   privateKey: Hex;
   /** Public address derived from private key */
   publicKey: Address;

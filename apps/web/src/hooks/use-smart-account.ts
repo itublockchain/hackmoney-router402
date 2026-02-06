@@ -3,7 +3,7 @@
 import { SmartAccountError } from "@router402/sdk";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Address } from "viem";
-import { useAccount, useSwitchChain, useWalletClient } from "wagmi";
+import { useConnection, useSwitchChain, useWalletClient } from "wagmi";
 import { SMART_ACCOUNT_CONFIG } from "@/config";
 import {
   getSmartAccountInfo,
@@ -44,7 +44,7 @@ interface UseSmartAccountReturn {
  * @returns Smart account state and utilities
  */
 export function useSmartAccount(): UseSmartAccountReturn {
-  const { address: eoaAddress, isConnected } = useAccount();
+  const { address: eoaAddress, isConnected } = useConnection();
   const { data: walletClient } = useWalletClient({
     chainId: SMART_ACCOUNT_CONFIG.chainId,
   });

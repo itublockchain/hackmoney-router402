@@ -7,7 +7,7 @@ import {
 } from "@router402/sdk";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Address } from "viem";
-import { useAccount, useSwitchChain, useWalletClient } from "wagmi";
+import { useConnection, useSwitchChain, useWalletClient } from "wagmi";
 import { router402Sdk, SMART_ACCOUNT_CONFIG } from "@/config";
 import {
   exportSessionKeyForBackend,
@@ -74,7 +74,7 @@ interface UseRouter402Return {
  * performs synchronous state checks (fast path) — it never triggers signing.
  */
 export function useRouter402(): UseRouter402Return {
-  const { address: eoaAddress, isConnected } = useAccount();
+  const { address: eoaAddress, isConnected } = useConnection();
   const { data: walletClient } = useWalletClient({
     chainId: SMART_ACCOUNT_CONFIG.chainId,
   });

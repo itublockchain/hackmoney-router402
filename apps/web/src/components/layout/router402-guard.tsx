@@ -1,10 +1,10 @@
 "use client";
 
-import { Loader2, Wallet } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { useRouter402 } from "@/hooks";
-import { ConnectWalletButton } from "./connect-wallet-button";
+import { ConnectWalletCard } from "./connect-wallet-card";
 
 interface Router402GuardProps {
   children: React.ReactNode;
@@ -55,17 +55,9 @@ export function Router402Guard({ children }: Router402GuardProps) {
     }
   }, [isConnected, isReady, status, router]);
 
-  // Wallet not connected — show connect prompt inline
+  // Wallet not connected — show connect prompt with decorative card
   if (!isConnected) {
-    return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-4 p-6">
-        <Wallet size={32} className="text-muted-foreground" />
-        <p className="text-sm text-muted-foreground">
-          Connect your wallet to continue
-        </p>
-        <ConnectWalletButton />
-      </div>
-    );
+    return <ConnectWalletCard />;
   }
 
   // Ready — render children

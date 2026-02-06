@@ -20,6 +20,7 @@
       "!**/generated",
       "!**/external",
       "!**/apps/facilitator",
+      "!**/apps/server/external/x402",
       "!bun.lock",
       "!**/media/chat.js",
       "!**/media/chat.html"

@@ -1,6 +1,7 @@
 export { AppLayout } from "./app-layout";
 export { AuthLayout } from "./auth-layout";
 export { ConnectWalletButton } from "./connect-wallet-button";
+export { ConnectWalletCard } from "./connect-wallet-card";
 export { Footer } from "./footer";
 export { Navbar } from "./navbar";
 export { PanelResizer } from "./panel-resizer";

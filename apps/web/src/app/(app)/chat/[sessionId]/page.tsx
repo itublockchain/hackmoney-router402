@@ -1,31 +1,47 @@
 "use client";
 
-import { ArrowUp } from "lucide-react";
-import { useParams } from "next/navigation";
+import { ArrowUp, Trash2 } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   useAddMessage,
   useCreateSession,
+  useDeleteSession,
   useSession,
   useSetActiveSession,
+  useWalletAddress,
 } from "@/stores/chat.store";
+
+/** Flag to prevent session recreation during deletion */
+let isDeletingSession = false;
 
 export default function ChatSessionPage() {
   const params = useParams<{ sessionId: string }>();
+  const router = useRouter();
   const session = useSession(params.sessionId);
   const addMessage = useAddMessage();
   const setActiveSession = useSetActiveSession();
   const createSession = useCreateSession();
+  const deleteSession = useDeleteSession();
+  const walletAddress = useWalletAddress();
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
+  // Reset deletion flag on mount / when sessionId changes
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally reset on sessionId change
+  useEffect(() => {
+    isDeletingSession = false;
+  }, [params.sessionId]);
+
   // Set active session on mount; create if it doesn't exist yet
   useEffect(() => {
-    if (!session) {
+    if (!session && !isDeletingSession) {
       createSession(params.sessionId);
     }
-    setActiveSession(params.sessionId);
+    if (!isDeletingSession) {
+      setActiveSession(params.sessionId);
+    }
   }, [params.sessionId, session, setActiveSession, createSession]);
 
   // Auto-scroll to bottom when messages change
@@ -86,11 +102,34 @@ export default function ChatSessionPage() {
     [handleSendAndReset]
   );
 
+  const handleDeleteSession = useCallback(() => {
+    if (walletAddress) {
+      isDeletingSession = true;
+      deleteSession(params.sessionId, walletAddress);
+      router.push("/chat");
+    }
+  }, [deleteSession, params.sessionId, walletAddress, router]);
+
   const messages = session?.messages ?? [];
   const hasInput = input.trim().length > 0;
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
+      {/* Chat header */}
+      <div className="flex h-12 shrink-0 items-center justify-between border-b border-border/40 px-4">
+        <h1 className="text-sm font-medium text-foreground truncate">
+          {session?.name ?? "Chat"}
+        </h1>
+        <button
+          type="button"
+          onClick={handleDeleteSession}
+          className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-destructive cursor-pointer"
+          aria-label="Delete chat"
+        >
+          <Trash2 size={16} />
+        </button>
+      </div>
+
       {/* Chat messages area */}
       <div className="flex-1 overflow-y-auto p-4">
         <div className="mx-auto max-w-3xl space-y-4">

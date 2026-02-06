@@ -1,9 +1,9 @@
 "use client";
 
-import { CheckCircle, Loader2, MessageSquare, Wallet } from "lucide-react";
+import { CheckCircle, Loader2, MessageSquare } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
-import { ConnectWalletButton } from "@/components/layout";
+import { ConnectWalletCard } from "@/components/layout";
 import { Button } from "@/components/primitives/button";
 import type { Router402Status } from "@/hooks";
 import { useRouter402 } from "@/hooks";
@@ -68,6 +68,17 @@ export default function SetupPage() {
   }, [isConnected, isReady, status, initialize]);
 
   const currentStep = !isConnected ? 0 : statusToStep[status];
+
+  // Show connect wallet card when not connected
+  if (!isConnected) {
+    return (
+      <ConnectWalletCard
+        title="Get Started"
+        subtitle="Connect your wallet to set up Router 402 and start using AI with micropayments"
+        variant="compact"
+      />
+    );
+  }
 
   if (isReady) {
     return (
@@ -148,17 +159,7 @@ export default function SetupPage() {
 
       {/* Action area */}
       <div className="pt-2">
-        {!isConnected && (
-          <div className="flex flex-col items-center gap-3">
-            <Wallet size={24} className="text-muted-foreground" />
-            <p className="text-center text-sm text-muted-foreground">
-              Connect your wallet to continue
-            </p>
-            <ConnectWalletButton />
-          </div>
-        )}
-
-        {isConnected && status === "error" && (
+        {status === "error" && (
           <Button
             onClick={() => {
               hasAutoInitialized.current = true;

@@ -7,34 +7,28 @@ import {
   Plus,
   Search,
   Settings,
-  Trash2,
   X,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useConnection } from "wagmi";
 import { SearchDialog } from "@/components/chat/search-dialog";
 import { useUIStore } from "@/stores";
-import {
-  useActiveSessionId,
-  useCreateSession,
-  useDeleteSession,
-  useSessions,
-} from "@/stores/chat.store";
+import { useCreateSession, useSessions } from "@/stores/chat.store";
 
 const SIDEBAR_WIDTH_OPEN = 256;
 const SIDEBAR_WIDTH_COLLAPSED = 48;
 const MOBILE_BREAKPOINT = 768;
 
 export function Sidebar() {
+  const { isConnected } = useConnection();
   const { sidebarOpen, setSidebarOpen, toggleSidebar } = useUIStore();
   const sessionsMap = useSessions();
   const sessions = useMemo(
     () => Object.values(sessionsMap).sort((a, b) => b.updatedAt - a.updatedAt),
     [sessionsMap]
   );
-  const activeSessionId = useActiveSessionId();
-  const deleteSession = useDeleteSession();
   const createSession = useCreateSession();
   const pathname = usePathname();
   const router = useRouter();
@@ -91,20 +85,9 @@ export function Sidebar() {
     handleNavigation();
   }, [createSession, router, handleNavigation]);
 
-  const handleDeleteSession = useCallback(
-    (e: React.MouseEvent, sessionId: string) => {
-      e.preventDefault();
-      e.stopPropagation();
-      deleteSession(sessionId);
-      if (activeSessionId === sessionId) {
-        router.push("/chat");
-      }
-    },
-    [deleteSession, activeSessionId, router]
-  );
-
   // Don't render until mounted (avoids SSR/hydration flash)
-  if (!isMounted) {
+  // Also hide sidebar when wallet is not connected
+  if (!isMounted || !isConnected) {
     return null;
   }
 
@@ -205,7 +188,7 @@ export function Sidebar() {
                       key={session.id}
                       href={`/chat/${session.id}`}
                       onClick={handleNavigation}
-                      className={`group flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${
+                      className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${
                         isActive
                           ? "bg-accent text-foreground"
                           : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
@@ -213,14 +196,6 @@ export function Sidebar() {
                     >
                       <MessageSquare size={14} className="shrink-0" />
                       <span className="flex-1 truncate">{session.name}</span>
-                      <button
-                        type="button"
-                        onClick={(e) => handleDeleteSession(e, session.id)}
-                        className="shrink-0 rounded p-1.5 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-accent hover:text-destructive cursor-pointer"
-                        aria-label="Delete chat"
-                      >
-                        <Trash2 size={14} />
-                      </button>
                     </Link>
                   );
                 })

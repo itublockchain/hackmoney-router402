@@ -21,12 +21,13 @@ export function generateSessionKey(
   const account = privateKeyToAccount(privateKey);
 
   const now = Date.now();
+  const validityPeriodMs = config.sessionKeyValidityPeriod * 1000;
 
   return {
     privateKey,
     publicKey: account.address,
     createdAt: now,
-    expiresAt: now + config.sessionKeyValidityPeriod * 1000, // Convert to ms
+    expiresAt: now + validityPeriodMs,
     smartAccountAddress,
     ownerAddress,
     isApproved: false,
