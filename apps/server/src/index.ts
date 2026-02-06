@@ -10,6 +10,7 @@ import helmet from "helmet";
 import { initConfig } from "./config/index.js";
 import { authorizeRouter } from "./routes/authorize.js";
 import { healthRouter } from "./routes/health.js";
+import { modelsRouter } from "./routes/models.js";
 import { createPaidRouter } from "./routes/paid.js";
 import { initAuthService } from "./services/auth.service.js";
 import { initAutoPaymentService } from "./services/auto-payment.js";
@@ -58,6 +59,7 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
 // Routes
 app.use("/health", healthRouter);
 app.use("/v1/authorize", authorizeRouter);
+app.use("/v1/models", modelsRouter);
 app.use("/v1", paidRouter);
 
 // 404 handler

@@ -1,6 +1,6 @@
 import { KERNEL_V3_1 } from "@zerodev/sdk/constants";
-import type { ResolvedConfig, Router402Config } from "./types.js";
-import { SmartAccountError } from "./types.js";
+import type { ResolvedConfig, Router402Config } from "./types";
+import { SmartAccountError } from "./types";
 
 /**
  * ERC-4337 Entry Point v0.7

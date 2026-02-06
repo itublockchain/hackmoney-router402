@@ -2,7 +2,7 @@
 
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter402 } from "@/hooks";
 import { ConnectWalletCard } from "./connect-wallet-card";
 
@@ -25,6 +25,14 @@ export function Router402Guard({ children }: Router402GuardProps) {
   const router = useRouter();
   const hasRedirected = useRef(false);
 
+  // Small delay before showing the connect-wallet card so wagmi has time to
+  // start its auto-reconnect cycle and set `isReconnecting = true`.
+  const [hasMounted, setHasMounted] = useState(false);
+  useEffect(() => {
+    const id = setTimeout(() => setHasMounted(true), 300);
+    return () => clearTimeout(id);
+  }, []);
+
   useEffect(() => {
     if (!isConnected) {
       hasRedirected.current = false;
@@ -46,6 +54,7 @@ export function Router402Guard({ children }: Router402GuardProps) {
       status === "deploying" ||
       status === "creating_session_key" ||
       status === "approving_session_key" ||
+      status === "enabling_session_key" ||
       status === "sending_to_backend" ||
       status === "error";
 
@@ -56,9 +65,10 @@ export function Router402Guard({ children }: Router402GuardProps) {
   }, [isConnected, isReady, status, router]);
 
   // Wallet not connected — show connect prompt with decorative card.
-  // During auto-reconnection, show loading spinner instead to avoid flash.
+  // During auto-reconnection (or before mount delay elapses), show loading
+  // spinner instead to avoid flash of the connect wallet card.
   if (!isConnected) {
-    if (isReconnecting) {
+    if (isReconnecting || !hasMounted) {
       return (
         <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6">
           <Loader2 size={24} className="animate-spin text-muted-foreground" />

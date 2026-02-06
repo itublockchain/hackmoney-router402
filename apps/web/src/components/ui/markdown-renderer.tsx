@@ -56,11 +56,13 @@ const markdownComponents: Components = {
       {children}
     </blockquote>
   ),
-  code: ({ className, children, ...props }) => {
+  code: ({ className, children, node, ...props }) => {
     const match = /language-(\w+)/.exec(className || "");
-    const isInline = !match;
+    const isBlock = node?.position
+      ? node.position.start.line !== node.position.end.line
+      : !!match;
 
-    if (isInline) {
+    if (!isBlock) {
       return (
         <code
           className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm"
@@ -74,7 +76,7 @@ const markdownComponents: Components = {
     return (
       <CodeBlock
         code={String(children).replace(/\n$/, "")}
-        language={match[1]}
+        language={match?.[1]}
       />
     );
   },
@@ -107,25 +109,36 @@ interface MarkdownRendererProps extends React.HTMLAttributes<HTMLDivElement> {
   components?: Components;
 }
 
-const MarkdownRenderer = React.forwardRef<
-  HTMLDivElement,
-  MarkdownRendererProps
->(({ className, content, components, ...props }, ref) => {
-  return (
-    <div
-      ref={ref}
-      className={cn("dark:prose-invert max-w-none text-foreground", className)}
-      {...props}
-    >
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        components={{ ...markdownComponents, ...components }}
-      >
-        {content}
-      </ReactMarkdown>
-    </div>
-  );
-});
+const remarkPlugins = [remarkGfm];
+
+const MarkdownRenderer = React.memo(
+  React.forwardRef<HTMLDivElement, MarkdownRendererProps>(
+    ({ className, content, components, ...props }, ref) => {
+      const mergedComponents = React.useMemo(
+        () => ({ ...markdownComponents, ...components }),
+        [components]
+      );
+
+      return (
+        <div
+          ref={ref}
+          className={cn(
+            "dark:prose-invert max-w-none text-foreground",
+            className
+          )}
+          {...props}
+        >
+          <ReactMarkdown
+            remarkPlugins={remarkPlugins}
+            components={mergedComponents}
+          >
+            {content}
+          </ReactMarkdown>
+        </div>
+      );
+    }
+  )
+);
 MarkdownRenderer.displayName = "MarkdownRenderer";
 
 export { MarkdownRenderer, markdownComponents };

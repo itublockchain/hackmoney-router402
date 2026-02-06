@@ -62,6 +62,10 @@
   *::after {
     @apply border-border;
   }
+  html,
+  body {
+    @apply h-full overflow-hidden;
+  }
   body {
     @apply bg-background text-foreground font-sans;
     font-feature-settings:

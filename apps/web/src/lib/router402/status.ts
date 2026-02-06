@@ -10,6 +10,7 @@ export type Router402Status =
   | "deploying"
   | "creating_session_key"
   | "approving_session_key"
+  | "enabling_session_key"
   | "sending_to_backend"
   | "ready"
   | "error";

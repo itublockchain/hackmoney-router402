@@ -10,7 +10,7 @@ import {
   Wallet,
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { erc20Abi, formatUnits } from "viem";
 import { useReadContract } from "wagmi";
 import { ConnectWalletCard } from "@/components/layout";
@@ -18,7 +18,6 @@ import { Button } from "@/components/primitives/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
   CopyButton,
@@ -31,6 +30,7 @@ const steps = [
   { id: "connect", label: "Connect Wallet" },
   { id: "smart-account", label: "Smart Account Setup" },
   { id: "session-key", label: "Session Key Authorization" },
+  { id: "enable-session-key", label: "Enable Session Key On-Chain" },
   { id: "backend", label: "Authorization" },
 ] as const;
 
@@ -42,8 +42,9 @@ const statusToStep: Record<Router402Status, number> = {
   error: 1,
   creating_session_key: 2,
   approving_session_key: 2,
-  sending_to_backend: 3,
-  ready: 4,
+  enabling_session_key: 3,
+  sending_to_backend: 4,
+  ready: 5,
 };
 
 export default function SetupPage() {
@@ -58,6 +59,14 @@ export default function SetupPage() {
     initialize,
     error,
   } = useRouter402();
+
+  // Small delay before showing the connect-wallet card so wagmi has time to
+  // start its auto-reconnect cycle and set `isReconnecting = true`.
+  const [hasMounted, setHasMounted] = useState(false);
+  useEffect(() => {
+    const id = setTimeout(() => setHasMounted(true), 300);
+    return () => clearTimeout(id);
+  }, []);
 
   // Ref to ensure initialize is called at most once automatically
   const hasAutoInitialized = useRef(false);
@@ -93,12 +102,15 @@ export default function SetupPage() {
     // Don't auto-init if already ready or already ran
     if (isReady || hasAutoInitialized.current) return;
 
-    // Don't auto-init if already in an active flow state
+    // Don't auto-init if the hook hasn't settled yet (walletClient may not be
+    // available) or if already in an active flow state.
     if (
+      status === "disconnected" ||
       status === "initializing" ||
       status === "deploying" ||
       status === "creating_session_key" ||
       status === "approving_session_key" ||
+      status === "enabling_session_key" ||
       status === "sending_to_backend"
     ) {
       return;
@@ -113,9 +125,15 @@ export default function SetupPage() {
   // Show connect wallet card when not connected.
   // Suppress during reconnection (auto-reconnect on page load) and
   // during active connection attempts to avoid a brief flash of the card.
+  // Also suppress until mount delay has elapsed — wagmi may not have set
+  // isReconnecting yet on the very first render.
   if (!isConnected) {
-    if (isConnecting || isReconnecting) {
-      return null;
+    if (isConnecting || isReconnecting || !hasMounted) {
+      return (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 size={24} className="animate-spin text-muted-foreground" />
+        </div>
+      );
     }
 
     return (
@@ -143,121 +161,109 @@ export default function SetupPage() {
           </p>
         </div>
 
-        {/* Credits / USDC Balance */}
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/10">
-                <Coins size={16} className="text-emerald-500" />
-              </div>
-              <div>
-                <CardTitle className="text-sm">Credits Available</CardTitle>
-                <CardDescription className="text-xs">
-                  USDC balance on your smart account
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-baseline gap-2">
-              {isBalanceLoading ? (
-                <Loader2
-                  size={20}
-                  className="animate-spin text-muted-foreground"
-                />
-              ) : (
-                <>
-                  <span className="text-3xl font-bold tabular-nums text-foreground">
-                    {balanceNumber !== undefined
-                      ? balanceNumber.toLocaleString(undefined, {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 6,
-                        })
-                      : "—"}
-                  </span>
-                  <span className="text-sm font-medium text-muted-foreground">
-                    USDC
-                  </span>
-                </>
-              )}
-            </div>
-
-            {isLowBalance && (
-              <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
-                <AlertTriangle
-                  size={16}
-                  className="mt-0.5 shrink-0 text-amber-500"
-                />
-                <p className="text-xs text-amber-200/80">
-                  Your balance is low. Requests may fail if you don&apos;t have
-                  enough credits. Deposit USDC to your smart account to continue
-                  using Router402.
-                </p>
-              </div>
-            )}
-
-            {smartAccountAddress && (
-              <div className="space-y-2 rounded-lg border bg-muted/50 p-3">
-                <div className="flex items-center gap-2">
-                  <Wallet size={14} className="text-muted-foreground" />
-                  <span className="text-xs font-medium text-muted-foreground">
-                    Deposit Address
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <code className="flex-1 truncate font-mono text-xs text-foreground">
-                    {smartAccountAddress}
-                  </code>
-                  <CopyButton
-                    value={smartAccountAddress}
-                    label="Copy deposit address"
-                    className="h-7 w-7 shrink-0"
-                  />
-                </div>
-                <p className="text-[11px] text-muted-foreground">
-                  Send USDC on Base to this address to fund your account.
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {authToken && (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {/* Credits / USDC Balance */}
           <Card>
-            <CardHeader className="pb-3">
+            <CardHeader className="pb-2">
               <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500/10">
-                  <Key size={16} className="text-blue-500" />
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500/10">
+                  <Coins size={14} className="text-emerald-500" />
                 </div>
-                <div>
-                  <CardTitle className="text-sm">API Key</CardTitle>
-                  <CardDescription className="text-xs">
-                    Use this key to authenticate with Router402
-                  </CardDescription>
-                </div>
+                <CardTitle className="text-sm">Credits</CardTitle>
               </div>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center gap-2 rounded-lg border bg-muted/50 p-3">
-                <code className="flex-1 truncate font-mono text-xs text-foreground">
-                  {authToken}
-                </code>
-                <CopyButton
-                  value={authToken}
-                  label="Copy API key"
-                  className="h-7 w-7 shrink-0"
-                />
+            <CardContent className="space-y-2">
+              <div className="flex items-baseline gap-2">
+                {isBalanceLoading ? (
+                  <Loader2
+                    size={18}
+                    className="animate-spin text-muted-foreground"
+                  />
+                ) : (
+                  <>
+                    <span className="text-2xl font-bold tabular-nums text-foreground">
+                      {balanceNumber !== undefined
+                        ? balanceNumber.toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 6,
+                          })
+                        : "—"}
+                    </span>
+                    <span className="text-xs font-medium text-muted-foreground">
+                      USDC
+                    </span>
+                  </>
+                )}
               </div>
-              <p className="text-xs text-muted-foreground">
-                Include this token as a Bearer token in the{" "}
-                <code className="rounded bg-muted px-1 py-0.5 text-[11px]">
-                  Authorization
-                </code>{" "}
-                header when making requests to Router402 APIs.
-              </p>
+
+              {isLowBalance && (
+                <div className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/5 p-2">
+                  <AlertTriangle
+                    size={14}
+                    className="mt-0.5 shrink-0 text-amber-500"
+                  />
+                  <p className="text-[11px] leading-tight text-amber-200/80">
+                    Low balance — requests may fail. Deposit USDC to continue.
+                  </p>
+                </div>
+              )}
+
+              {smartAccountAddress && (
+                <div className="space-y-1.5 rounded-md border bg-muted/50 p-2">
+                  <div className="flex items-center gap-1.5">
+                    <Wallet size={12} className="text-muted-foreground" />
+                    <span className="text-[11px] font-medium text-muted-foreground">
+                      Deposit Address
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <code className="flex-1 truncate font-mono text-[11px] text-foreground">
+                      {smartAccountAddress}
+                    </code>
+                    <CopyButton
+                      value={smartAccountAddress}
+                      label="Copy deposit address"
+                      className="h-6 w-6 shrink-0"
+                    />
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
-        )}
+
+          {/* API Key */}
+          {authToken && (
+            <Card>
+              <CardHeader className="pb-2">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-500/10">
+                    <Key size={14} className="text-blue-500" />
+                  </div>
+                  <CardTitle className="text-sm">API Key</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="flex items-center gap-1.5 rounded-md border bg-muted/50 p-2">
+                  <code className="flex-1 truncate font-mono text-[11px] text-foreground">
+                    {authToken}
+                  </code>
+                  <CopyButton
+                    value={authToken}
+                    label="Copy API key"
+                    className="h-6 w-6 shrink-0"
+                  />
+                </div>
+                <p className="text-[11px] leading-tight text-muted-foreground">
+                  Use in the{" "}
+                  <code className="rounded bg-muted px-1 py-0.5 text-[10px]">
+                    Authorization
+                  </code>{" "}
+                  header for Router402 API requests.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
 
         <div className="flex justify-center">
           <Button asChild>
@@ -335,12 +341,6 @@ export default function SetupPage() {
         {error && (
           <p className="mt-3 text-center text-sm text-destructive">
             {error.message}
-          </p>
-        )}
-
-        {smartAccountAddress && (
-          <p className="mt-3 text-center text-xs text-muted-foreground">
-            Smart Account: {smartAccountAddress}
           </p>
         )}
       </div>

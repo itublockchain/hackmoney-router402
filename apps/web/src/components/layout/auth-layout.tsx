@@ -12,7 +12,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
       <div className="mb-8">
         <Image src="/logo.png" alt="Router 402" width={160} height={21.5} />
       </div>
-      <div className="w-full max-w-lg rounded-xl border border-border/40 bg-card p-6 shadow-lg">
+      <div className="w-full max-w-lg rounded-xl border border-border/40 bg-card p-6 shadow-lg md:max-w-2xl">
         {children}
       </div>
     </div>

@@ -7,7 +7,7 @@ export {
   KERNEL_VERSION,
   resolveConfig,
   validateConfig,
-} from "./config.js";
+} from "./config";
 // Kernel utilities (for advanced use cases)
 export {
   createEcdsaValidator,
@@ -19,8 +19,8 @@ export {
   createSessionKeyApproval,
   getKernelAccountAddress,
   isKernelAccountDeployed,
-} from "./kernel.js";
-export { createRouter402Sdk, Router402Sdk } from "./sdk.js";
+} from "./kernel";
+export { createRouter402Sdk, Router402Sdk } from "./sdk";
 // Session key utilities
 export {
   canUseSessionKey,
@@ -31,12 +31,12 @@ export {
   isSessionKeyExpired,
   isSessionKeyValid,
   markSessionKeyApproved,
-} from "./session-keys.js";
+} from "./session-keys";
 // Transaction utilities
 export {
   sendOwnerTransaction,
   sendSessionKeyTransaction,
-} from "./transactions.js";
+} from "./transactions";
 // Types
 export type {
   CallData,
@@ -50,5 +50,5 @@ export type {
   TransactionExecutionResult,
   TransactionResult,
   UserOperationResult,
-} from "./types.js";
-export { SmartAccountError } from "./types.js";
+} from "./types";
+export { SmartAccountError } from "./types";

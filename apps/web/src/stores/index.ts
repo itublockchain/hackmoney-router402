@@ -17,5 +17,5 @@ export type { PaymentFlowStore } from "./payment-flow.store";
 export { usePaymentFlowStore } from "./payment-flow.store";
 export type { SmartAccountStore } from "./smart-account.store";
 export { useSmartAccountStore } from "./smart-account.store";
-export type { UIStore } from "./ui.store";
+export type { Artifact, UIStore } from "./ui.store";
 export { useUIStore } from "./ui.store";

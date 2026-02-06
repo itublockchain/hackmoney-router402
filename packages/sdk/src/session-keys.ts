@@ -4,7 +4,7 @@ import type {
   ResolvedConfig,
   SessionKeyData,
   SessionKeyForBackend,
-} from "./types.js";
+} from "./types";
 
 /**
  * Generate a new session key pair

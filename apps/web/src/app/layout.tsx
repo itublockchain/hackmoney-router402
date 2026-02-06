@@ -57,13 +57,16 @@ export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html
       lang="en"
-      className="dark"
+      className="dark h-full overflow-hidden"
       style={{ colorScheme: "dark" }}
       suppressHydrationWarning
     >
       <body
         suppressHydrationWarning
-        className={clsx(interSans.variable, "antialiased")}
+        className={clsx(
+          interSans.variable,
+          "antialiased h-full overflow-hidden"
+        )}
       >
         <ThemeProvider
           attribute="class"

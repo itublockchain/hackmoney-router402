@@ -7,6 +7,8 @@ export {
   removeRequestInterceptor,
   removeResponseInterceptor,
 } from "./api-client";
+export type { CodeBlockInfo } from "./extract-code-blocks";
+export { extractCodeBlocks } from "./extract-code-blocks";
 export {
   apiLogger,
   configLogger,

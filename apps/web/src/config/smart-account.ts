@@ -17,20 +17,22 @@ function getTargetChain() {
 
 const targetChain = getTargetChain();
 
+if (!config.NEXT_PUBLIC_PIMLICO_API_KEY) {
+  throw new Error("Pimlico API key is not configured");
+}
+
 /**
  * SDK Configuration
  */
 const sdkConfig: Router402Config = {
   chain: targetChain,
-  pimlicoApiKey: config.NEXT_PUBLIC_PIMLICO_API_KEY ?? "",
+  pimlicoApiKey: config.NEXT_PUBLIC_PIMLICO_API_KEY,
 };
 
 /**
  * Router402 SDK instance - use this for all smart account operations
  */
-export const router402Sdk = config.NEXT_PUBLIC_PIMLICO_API_KEY
-  ? createRouter402Sdk(sdkConfig)
-  : null;
+export const router402Sdk = createRouter402Sdk(sdkConfig);
 
 /**
  * Smart Account Configuration (for backwards compatibility)

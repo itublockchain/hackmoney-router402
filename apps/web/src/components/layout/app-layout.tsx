@@ -3,6 +3,7 @@
 import { Menu } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useState } from "react";
+import { ArtifactPanel } from "@/components/chat/artifact-panel";
 import { useUIStore } from "@/stores";
 import { ConnectWalletButton } from "./connect-wallet-button";
 import { PanelResizer } from "./panel-resizer";
@@ -10,17 +11,17 @@ import { Sidebar } from "./sidebar";
 
 const MIN_ARTIFACT_WIDTH = 300;
 const MAX_ARTIFACT_WIDTH = 800;
-const DEFAULT_ARTIFACT_WIDTH = 400;
+const DEFAULT_ARTIFACT_WIDTH = 520;
 
 interface AppLayoutProps {
   children: React.ReactNode;
-  artifactPanel?: React.ReactNode;
 }
 
-export function AppLayout({ children, artifactPanel }: AppLayoutProps) {
+export function AppLayout({ children }: AppLayoutProps) {
   const { setSidebarOpen } = useUIStore();
+  const selectedArtifact = useUIStore((s) => s.selectedArtifact);
   const [artifactWidth, setArtifactWidth] = useState(DEFAULT_ARTIFACT_WIDTH);
-  const showArtifact = !!artifactPanel;
+  const showArtifact = !!selectedArtifact;
 
   const handleArtifactResize = useCallback((delta: number) => {
     setArtifactWidth((prev) => {
@@ -51,12 +52,14 @@ export function AppLayout({ children, artifactPanel }: AppLayoutProps) {
       </header>
 
       {/* Main content area */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex min-h-0 flex-1 overflow-hidden">
         {/* Sidebar */}
         <Sidebar />
 
         {/* Chat area */}
-        <main className="flex flex-1 flex-col overflow-hidden">{children}</main>
+        <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          {children}
+        </main>
 
         {/* Artifact panel (conditionally shown) */}
         {showArtifact && (
@@ -66,7 +69,7 @@ export function AppLayout({ children, artifactPanel }: AppLayoutProps) {
               className="hidden flex-col overflow-hidden border-l border-border/40 md:flex"
               style={{ width: artifactWidth }}
             >
-              {artifactPanel}
+              <ArtifactPanel />
             </aside>
           </>
         )}

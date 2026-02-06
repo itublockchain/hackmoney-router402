@@ -5,12 +5,16 @@ import { useCallback, useEffect, useRef } from "react";
 import { ChatHeader } from "@/components/chat/chat-header";
 import { MessageInput } from "@/components/chat/message-input";
 import { MessageList } from "@/components/chat/message-list";
+import { useChatCompletion } from "@/hooks/use-chat-completion";
 import {
+  DEFAULT_MODEL,
   useAddMessage,
   useCreateSession,
   useDeleteSession,
   useSession,
   useSetActiveSession,
+  useSetSessionModel,
+  useUpdateMessage,
   useWalletAddress,
 } from "@/stores/chat.store";
 
@@ -19,11 +23,31 @@ export default function ChatSessionPage() {
   const router = useRouter();
   const session = useSession(params.sessionId);
   const addMessage = useAddMessage();
+  const updateMessage = useUpdateMessage();
   const setActiveSession = useSetActiveSession();
   const createSession = useCreateSession();
   const deleteSession = useDeleteSession();
+  const setSessionModel = useSetSessionModel();
   const walletAddress = useWalletAddress();
   const isDeletingRef = useRef(false);
+
+  const messages = session?.messages ?? [];
+  const model = session?.model ?? DEFAULT_MODEL;
+
+  const { sendMessage, stop, isStreaming } = useChatCompletion({
+    sessionId: params.sessionId,
+    model,
+    addMessage,
+    updateMessage,
+    messages,
+  });
+
+  const handleModelChange = useCallback(
+    (newModel: string) => {
+      setSessionModel(params.sessionId, newModel);
+    },
+    [setSessionModel, params.sessionId]
+  );
 
   // Reset deletion flag on mount / when sessionId changes
   // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally reset on sessionId change
@@ -41,38 +65,29 @@ export default function ChatSessionPage() {
     }
   }, [params.sessionId, session, setActiveSession, createSession]);
 
-  const handleSend = useCallback(
-    (content: string) => {
-      addMessage(params.sessionId, "user", content);
-
-      // TODO: Replace with real AI API integration
-      setTimeout(() => {
-        addMessage(
-          params.sessionId,
-          "assistant",
-          "This is a placeholder response. The AI integration will be connected here."
-        );
-      }, 500);
-    },
-    [params.sessionId, addMessage]
-  );
-
   const handleDelete = useCallback(() => {
     if (walletAddress) {
+      stop();
       isDeletingRef.current = true;
       deleteSession(params.sessionId, walletAddress);
       router.push("/chat");
     }
-  }, [deleteSession, params.sessionId, walletAddress, router]);
+  }, [deleteSession, params.sessionId, walletAddress, router, stop]);
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <ChatHeader
         sessionName={session?.name ?? "Chat"}
         onDelete={handleDelete}
       />
-      <MessageList messages={session?.messages ?? []} />
-      <MessageInput onSend={handleSend} />
+      <MessageList messages={messages} isStreaming={isStreaming} />
+      <MessageInput
+        onSend={sendMessage}
+        onStop={stop}
+        isStreaming={isStreaming}
+        model={model}
+        onModelChange={handleModelChange}
+      />
     </div>
   );
 }

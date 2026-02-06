@@ -6,11 +6,16 @@ export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
   createdAt: number;
+  /** HTTP error code when the message represents an API error (e.g. 402) */
+  errorCode?: number;
 }
+
+export const DEFAULT_MODEL = "anthropic/claude-sonnet-4.5";
 
 export interface ChatSession {
   id: string;
   name: string;
+  model: string;
   messages: ChatMessage[];
   createdAt: number;
   updatedAt: number;
@@ -38,9 +43,17 @@ interface ChatActions {
   addMessage: (
     sessionId: string,
     role: "user" | "assistant",
-    content: string
+    content: string,
+    errorCode?: number
+  ) => string;
+  updateMessage: (
+    sessionId: string,
+    messageId: string,
+    content: string,
+    errorCode?: number
   ) => void;
   renameSession: (id: string, name: string) => void;
+  setSessionModel: (id: string, model: string) => void;
   getSortedSessions: () => ChatSession[];
 }
 
@@ -92,9 +105,11 @@ export const useSetWalletAddress = () =>
 export const useCreateSession = () => useChatStore((s) => s.createSession);
 export const useDeleteSession = () => useChatStore((s) => s.deleteSession);
 export const useAddMessage = () => useChatStore((s) => s.addMessage);
+export const useUpdateMessage = () => useChatStore((s) => s.updateMessage);
 export const useSetActiveSession = () =>
   useChatStore((s) => s.setActiveSession);
 export const useRenameSession = () => useChatStore((s) => s.renameSession);
+export const useSetSessionModel = () => useChatStore((s) => s.setSessionModel);
 export const useGetSortedSessions = () =>
   useChatStore((s) => s.getSortedSessions);
 
@@ -140,6 +155,7 @@ export const useChatStore = create<ChatStore>()(
                   [sessionId]: {
                     id: sessionId,
                     name: "New Chat",
+                    model: DEFAULT_MODEL,
                     messages: [],
                     createdAt: now,
                     updatedAt: now,
@@ -182,7 +198,8 @@ export const useChatStore = create<ChatStore>()(
         setActiveSession: (id) =>
           set({ activeSessionId: id }, false, "setActiveSession"),
 
-        addMessage: (sessionId, role, content) =>
+        addMessage: (sessionId, role, content, errorCode?) => {
+          const messageId = crypto.randomUUID();
           set(
             (state) => {
               const walletAddress = state.walletAddress;
@@ -194,10 +211,11 @@ export const useChatStore = create<ChatStore>()(
               if (!session) return state;
 
               const message: ChatMessage = {
-                id: crypto.randomUUID(),
+                id: messageId,
                 role,
                 content,
                 createdAt: Date.now(),
+                ...(errorCode !== undefined && { errorCode }),
               };
 
               const isFirstUserMessage =
@@ -224,6 +242,45 @@ export const useChatStore = create<ChatStore>()(
             },
             false,
             "addMessage"
+          );
+          return messageId;
+        },
+
+        updateMessage: (sessionId, messageId, content, errorCode?) =>
+          set(
+            (state) => {
+              const walletAddress = state.walletAddress;
+              if (!walletAddress) return state;
+
+              const walletSessions =
+                state.sessionsByWallet[walletAddress] ?? {};
+              const session = walletSessions[sessionId];
+              if (!session) return state;
+
+              return {
+                sessionsByWallet: {
+                  ...state.sessionsByWallet,
+                  [walletAddress]: {
+                    ...walletSessions,
+                    [sessionId]: {
+                      ...session,
+                      messages: session.messages.map((m) =>
+                        m.id === messageId
+                          ? {
+                              ...m,
+                              content,
+                              ...(errorCode !== undefined && { errorCode }),
+                            }
+                          : m
+                      ),
+                      updatedAt: Date.now(),
+                    },
+                  },
+                },
+              };
+            },
+            false,
+            "updateMessage"
           ),
 
         renameSession: (id, name) =>
@@ -251,6 +308,31 @@ export const useChatStore = create<ChatStore>()(
             "renameSession"
           ),
 
+        setSessionModel: (id, model) =>
+          set(
+            (state) => {
+              const walletAddress = state.walletAddress;
+              if (!walletAddress) return state;
+
+              const walletSessions =
+                state.sessionsByWallet[walletAddress] ?? {};
+              const session = walletSessions[id];
+              if (!session) return state;
+
+              return {
+                sessionsByWallet: {
+                  ...state.sessionsByWallet,
+                  [walletAddress]: {
+                    ...walletSessions,
+                    [id]: { ...session, model },
+                  },
+                },
+              };
+            },
+            false,
+            "setSessionModel"
+          ),
+
         getSortedSessions: () => {
           const state = get();
           const sessions = getWalletSessions(state);
@@ -260,7 +342,7 @@ export const useChatStore = create<ChatStore>()(
         },
       }),
       {
-        name: "chat-storage",
+        name: "router402_chat-storage",
       }
     ),
     { name: "ChatStore" }

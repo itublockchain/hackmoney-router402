@@ -1,10 +1,13 @@
 import type { SessionKeyData } from "@router402/sdk";
+import { sendSessionKeyTransaction } from "@router402/sdk";
 import type { Address, WalletClient } from "viem";
-import { router402Sdk } from "@/config";
+import { encodeFunctionData, erc20Abi } from "viem";
+import { router402Sdk, USDC_ADDRESS } from "@/config";
 import {
   exportSessionKeyForBackend,
   getActiveSessionKey,
   getAuthToken,
+  removeSessionKey,
   storeSessionKey,
   updateSessionKeyApproval,
 } from "@/lib/session-keys";
@@ -85,8 +88,16 @@ export async function initializeRouter402(
     onLastChecked();
   }
 
-  // Step 3: Check for existing valid session key
+  // Step 3: Check for existing valid session key.
+  // If there's no auth token yet, the previous setup didn't complete fully.
+  // In that case, discard the stale session key (its enable signature may
+  // reference an outdated on-chain nonce) and force a fresh one.
   let sessionKey = getActiveSessionKey(info.address);
+  const hasAuthToken = !!getAuthToken();
+  if (sessionKey && !hasAuthToken) {
+    removeSessionKey(info.address);
+    sessionKey = undefined;
+  }
 
   // Step 4: Create and approve session key if none exists
   if (!sessionKey) {
@@ -117,7 +128,40 @@ export async function initializeRouter402(
     sessionKey = getActiveSessionKey(info.address);
   }
 
-  // Step 6: Send session key to backend (if no token stored yet)
+  // Step 6: Enable session key on-chain by sending an empty UserOp.
+  // The first UserOp through `sendSessionKeyTransaction` activates the
+  // permission validator module on-chain via the `enableSignature` mechanism.
+  if (sessionKey?.serializedSessionKey) {
+    onStatus("enabling_session_key");
+
+    if (!router402Sdk) {
+      throw new Error("Router402 SDK is not configured");
+    }
+
+    const config = router402Sdk.getConfig();
+    const approveData = encodeFunctionData({
+      abi: erc20Abi,
+      functionName: "approve",
+      args: [info.address, BigInt(0)],
+    });
+    const enableResult = await sendSessionKeyTransaction(
+      sessionKey.privateKey,
+      sessionKey.serializedSessionKey,
+      [{ to: USDC_ADDRESS, value: BigInt(0), data: approveData }],
+      config
+    );
+
+    if (!enableResult.success) {
+      // Clear the stale session key so the next retry creates a fresh one
+      // with a new enable signature matching the current on-chain nonce.
+      removeSessionKey(info.address);
+      throw new Error(
+        `Failed to enable session key on-chain: ${enableResult.error}`
+      );
+    }
+  }
+
+  // Step 7: Send session key to backend (if no token stored yet)
   let authToken = getAuthToken() ?? undefined;
   if (sessionKey && !authToken) {
     onStatus("sending_to_backend");
