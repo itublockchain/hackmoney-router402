@@ -28,10 +28,16 @@ const routeLogger = logger.context("x402:Routes");
 /**
  * Dynamic price function that returns user's current debt
  */
+/**
+ * Dynamic price function that returns user's current debt
+ * Returns "0" when no payment header (JWT auth case - access already granted by hook)
+ */
 async function getDynamicPrice(context: HTTPRequestContext): Promise<string> {
   const paymentHeader = context.paymentHeader;
   if (!paymentHeader) {
-    throw new Error("Payment header required to calculate price");
+    // No payment header means JWT auth was used - return 0 as price
+    // The onProtectedRequest hook already granted access
+    return "0";
   }
 
   const payload = decodePaymentSignatureHeader(paymentHeader);
@@ -39,7 +45,8 @@ async function getDynamicPrice(context: HTTPRequestContext): Promise<string> {
   const wallet = extractWalletFromPayload(innerPayload);
 
   if (!wallet) {
-    throw new Error("Wallet address not found in payment header");
+    // No wallet in payload - return 0 to allow hook to handle
+    return "0";
   }
 
   const debt = await getUserDebt(wallet);
@@ -47,7 +54,7 @@ async function getDynamicPrice(context: HTTPRequestContext): Promise<string> {
     wallet: wallet.slice(0, 10),
     debt,
   });
-  return `$${debt.toFixed(8)}`;
+  return `${debt.toFixed(8)}`;
 }
 
 export function createPaidRouter(config: Config): Router {
@@ -73,7 +80,7 @@ export function createPaidRouter(config: Config): Router {
         {
           scheme: "exact",
           price: "$0.01",
-          network: "eip155:84532" as const,
+          network: "eip155:84532" as const, // Base Mainnet
           payTo,
         },
       ],
@@ -85,7 +92,7 @@ export function createPaidRouter(config: Config): Router {
         {
           scheme: "exact",
           price: getDynamicPrice, // Dynamic price based on user's debt
-          network: "eip155:84532" as const,
+          network: "eip155:84532" as const, // Base Mainnet
           payTo,
         },
       ],

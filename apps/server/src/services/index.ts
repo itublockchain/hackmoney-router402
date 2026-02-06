@@ -2,10 +2,14 @@
  * Services Module
  */
 
+export {
+  type AutoPaymentResult,
+  autoPayDebt,
+  initAutoPaymentService,
+} from "./auto-payment.js";
 export { ChatService } from "./chat.service.js";
 export {
   addUserDebt,
-  getDebtThreshold,
   getUserDebt,
   initDebtService,
   isDebtBelowThreshold,

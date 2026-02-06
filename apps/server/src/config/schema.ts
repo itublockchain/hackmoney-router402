@@ -59,17 +59,6 @@ export const configSchema = z.object({
   FACILITATOR_URL: z.url().default("https://x402.org/facilitator"),
 
   /**
-   * Debt threshold in USD
-   * Users with debt below this can access without immediate payment
-   * @default "0.50"
-   */
-  DEBT_THRESHOLD: z
-    .string()
-    .default("0.50")
-    .transform((val) => Number.parseFloat(val))
-    .pipe(z.number().nonnegative()),
-
-  /**
    * JWT Secret for signing authorization tokens
    * Should be a strong random string in production
    */

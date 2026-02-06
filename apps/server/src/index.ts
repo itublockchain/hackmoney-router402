@@ -12,6 +12,7 @@ import { authorizeRouter } from "./routes/authorize.js";
 import { healthRouter } from "./routes/health.js";
 import { createPaidRouter } from "./routes/paid.js";
 import { initAuthService } from "./services/auth.service.js";
+import { initAutoPaymentService } from "./services/auto-payment.js";
 import { initDebtService } from "./services/debt.js";
 import { disconnectPrisma, getPrismaClient } from "./utils/prisma.js";
 
@@ -22,7 +23,10 @@ const config = initConfig();
 const prisma = getPrismaClient(config.DATABASE_URL);
 
 // Initialize debt service
-initDebtService(prisma, config);
+initDebtService(prisma);
+
+// Initialize auto-payment service
+initAutoPaymentService(prisma);
 
 // Initialize auth service
 initAuthService(prisma, config.JWT_SECRET);
@@ -53,8 +57,8 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
 
 // Routes
 app.use("/health", healthRouter);
-app.use("/authorize", authorizeRouter);
-app.use("/paid", paidRouter);
+app.use("/v1/authorize", authorizeRouter);
+app.use("/v1", paidRouter);
 
 // 404 handler
 app.use((req: Request, res: Response) => {

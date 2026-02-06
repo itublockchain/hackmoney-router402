@@ -7,29 +7,17 @@
 import { logger } from "@router402/utils";
 import { Decimal } from "decimal.js";
 import { PrismaClient } from "../../generated/prisma/client.js";
-import type { Config } from "../config/index.js";
 
 const debtLogger = logger.context("DebtService");
 
 let prisma: PrismaClient | null = null;
-let defaultThreshold = new Decimal(0.5);
 
 /**
- * Initialize the debt service with Prisma client and config
+ * Initialize the debt service with Prisma client
  */
-export function initDebtService(client: PrismaClient, config: Config): void {
+export function initDebtService(client: PrismaClient): void {
   prisma = client;
-  defaultThreshold = new Decimal(config.DEBT_THRESHOLD);
-  debtLogger.info("Debt service initialized", {
-    threshold: defaultThreshold.toString(),
-  });
-}
-
-/**
- * Get configured default debt threshold
- */
-export function getDebtThreshold(): number {
-  return defaultThreshold.toNumber();
+  debtLogger.info("Debt service initialized");
 }
 
 /**
@@ -56,9 +44,7 @@ export async function getOrCreateUser(walletAddress: string) {
     update: {},
     create: {
       walletAddress: normalizedAddress,
-      currentDebt: new Decimal(0),
-      totalSpent: new Decimal(0),
-      paymentThreshold: defaultThreshold,
+      // currentDebt, totalSpent, and paymentThreshold use Prisma schema defaults
     },
   });
 
