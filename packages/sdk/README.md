@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://www.router402.xyz/og-image.png" alt="Router402" width="100%" />
+</p>
+
 # @router402/sdk
 
 TypeScript SDK for [Router402](https://router402.xyz) — an OpenRouter-compatible AI gateway with true micropayment billing via the [x402 protocol](https://www.x402.org/) on Base.
