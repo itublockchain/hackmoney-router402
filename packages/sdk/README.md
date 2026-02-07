@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://www.router402.xyz/og-image.png" alt="Router402" width="100%" />
+  <img src="https://router402.xyz/banner.gif" alt="Router402" width="100%" />
 </p>
 
 # @router402/sdk
