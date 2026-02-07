@@ -33,7 +33,7 @@
       "properties": {
         "router402.apiEndpoint": {
           "type": "string",
-          "default": "https://api.route402.xyz",
+          "default": "https://api.router402.xyz",
           "description": "Router 402 API endpoint URL"
         },
         "router402.defaultModel": {

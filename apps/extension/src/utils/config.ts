@@ -18,14 +18,14 @@ export interface Router402Config {
 /** Returns the configured API endpoint. */
 export function getApiEndpoint(): string {
   const cfg = vscode.workspace.getConfiguration("router402");
-  return cfg.get<string>("apiEndpoint", "https://api.route402.xyz");
+  return cfg.get<string>("apiEndpoint", "https://api.router402.xyz");
 }
 
 /** Reads all Router 402 extension settings (excluding secrets). */
 export function getConfig(): Router402Config {
   const cfg = vscode.workspace.getConfiguration("router402");
   return {
-    apiEndpoint: cfg.get<string>("apiEndpoint", "https://api.route402.xyz"),
+    apiEndpoint: cfg.get<string>("apiEndpoint", "https://api.router402.xyz"),
     defaultModel: cfg.get<string>(
       "defaultModel",
       "anthropic/claude-sonnet-4.5"
