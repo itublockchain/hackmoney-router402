@@ -1,6 +1,6 @@
 # Getting Started
 
-This guide covers everything you need to go from installation to making your first chat completion request with Route402.
+This guide covers everything you need to go from installation to making your first chat completion request with Router402.
 
 ## Prerequisites
 
@@ -99,7 +99,7 @@ console.log("Session Key:", setup.sessionKey.publicKey);
 
 ### Step 3: Authorize with Server
 
-Sign an EIP-712 message and send the session key data to the Route402 server to receive a JWT token:
+Sign an EIP-712 message and send the session key data to the Router402 server to receive a JWT token:
 
 ```typescript
 import { signTypedData } from "viem/actions";
@@ -308,7 +308,7 @@ async function onboard(walletClient, eoaAddress: string) {
     },
     body: JSON.stringify({
       model: "anthropic/claude-sonnet-4.5",
-      messages: [{ role: "user", content: "Hello, Route402!" }],
+      messages: [{ role: "user", content: "Hello, Router402!" }],
     }),
   });
 

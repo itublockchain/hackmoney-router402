@@ -1,15 +1,15 @@
 openapi: 3.1.0
 info:
-  title: Route402 API
+  title: Router402 API
   version: 0.8.1
   description: |
-    Route402 is a payment-gated API platform that enables developers to monetize API endpoints
+    Router402 is a payment-gated API platform that enables developers to monetize API endpoints
     using the x402 HTTP payment protocol. It combines ERC-4337 smart accounts with session keys
     to provide a seamless, gasless payment experience for AI model inference and other protected resources.
 
     ## Authentication Methods
 
-    Route402 uses multiple authentication mechanisms depending on the endpoint:
+    Router402 uses multiple authentication mechanisms depending on the endpoint:
 
     - **x402 Payment Protocol** — The chat completions endpoint is protected by the x402 payment protocol.
       Clients must include valid payment proof in their requests.
@@ -147,7 +147,7 @@ paths:
         On success, returns a JWT token for authenticated API access.
 
         The authorization message is signed using EIP-712 typed data. The domain includes:
-        - `name`: Route402 domain name
+        - `name`: Router402 domain name
         - `chainId`: The blockchain network ID
 
         The signature must be produced by the EOA that owns the smart account.

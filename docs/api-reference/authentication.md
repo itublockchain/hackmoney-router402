@@ -8,7 +8,7 @@ The authorization endpoints handle user registration, session key management, an
 sequenceDiagram
     participant User as User Wallet
     participant Client as Client App
-    participant Server as Route402 Server
+    participant Server as Router402 Server
     participant DB as Database
 
     Client->>Server: GET /v1/authorize/check?walletAddress=0x...

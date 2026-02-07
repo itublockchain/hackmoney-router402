@@ -1,12 +1,12 @@
-# Route402
+# Router402
 
-![Route402 Logo](../apps/web/public/logo-large.png)
+![Router402 Logo](../apps/web/public/logo-large.png)
 
-Route402 is a payment-gated API platform that enables developers to access AI models using the [x402 HTTP payment protocol](https://www.x402.org/). It combines ERC-4337 smart accounts with session keys to provide a seamless, gasless payment experience for AI model inference.
+Router402 is a payment-gated API platform that enables developers to access AI models using the [x402 HTTP payment protocol](https://www.x402.org/). It combines ERC-4337 smart accounts with session keys to provide a seamless, gasless payment experience for AI model inference.
 
-## What is Route402?
+## What is Router402?
 
-Route402 provides:
+Router402 provides:
 
 - **Payment-Gated AI APIs** -- Access top AI models (Claude, Gemini) through a single API with automatic billing via on-chain payments.
 - **Smart Account Abstraction** -- Users interact through Kernel v3.1 smart accounts powered by ZeroDev, with gas fees sponsored by Pimlico.
@@ -18,26 +18,26 @@ Route402 provides:
 ```mermaid
 graph TB
     subgraph Clients
-        WebApp["Web App<br/>(Next.js)"]
+        WebApp["Web App\n(Next.js)"]
         Extension["VS Code Extension"]
-        HTTPClient["HTTP Client<br/>(curl, SDK)"]
+        HTTPClient["HTTP Client\n(curl, SDK)"]
     end
 
-    subgraph Route402["Route402 Server"]
+    subgraph Router402["Router402 Server"]
         API["Express.js API"]
         Auth["EIP-712 Auth"]
-        x402["x402 Payment<br/>Middleware"]
+        x402["x402 Payment\nMiddleware"]
     end
 
     subgraph External["External Services"]
-        LLM["LLM Providers<br/>(Anthropic, Google)"]
+        LLM["LLM Providers\n(Anthropic, Google)"]
         DB["PostgreSQL"]
-        Pimlico["Pimlico<br/>(Bundler + Paymaster)"]
+        Pimlico["Pimlico\n(Bundler + Paymaster)"]
     end
 
     subgraph SDK["@router402/sdk"]
-        SmartAccount["Smart Account<br/>Management"]
-        SessionKeys["Session Key<br/>Lifecycle"]
+        SmartAccount["Smart Account\nManagement"]
+        SessionKeys["Session Key\nLifecycle"]
     end
 
     WebApp --> API

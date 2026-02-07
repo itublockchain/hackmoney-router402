@@ -1,10 +1,10 @@
 # Architecture
 
-This guide explains the technical architecture of Route402, how its components interact, and the key design decisions behind the system.
+This guide explains the technical architecture of Router402, how its components interact, and the key design decisions behind the system.
 
 ## System Overview
 
-Route402 is a monorepo containing multiple applications and shared packages:
+Router402 is a monorepo containing multiple applications and shared packages:
 
 ```
 hackmoney-route402/
@@ -26,12 +26,12 @@ hackmoney-route402/
 ```mermaid
 graph TB
     subgraph Clients["Clients"]
-        WebApp["Web App<br/>(Next.js)"]
-        VSCode["VS Code<br/>Extension"]
-        HTTP["HTTP Client<br/>(curl, SDK)"]
+        WebApp["Web App\n(Next.js)"]
+        VSCode["VS Code\nExtension"]
+        HTTP["HTTP Client\n(curl, SDK)"]
     end
 
-    subgraph Server["Route402 Server (Express.js)"]
+    subgraph Server["Router402 Server (Express.js)"]
         Health["/health"]
         Authorize["/v1/authorize"]
         Models["/v1/models"]
@@ -39,18 +39,18 @@ graph TB
     end
 
     subgraph Data["Data Layer"]
-        DB["PostgreSQL<br/>(Prisma ORM)"]
+        DB["PostgreSQL\n(Prisma ORM)"]
     end
 
     subgraph AI["AI Providers"]
-        Anthropic["Anthropic<br/>(Claude)"]
-        Google["Google<br/>(Gemini)"]
+        Anthropic["Anthropic\n(Claude)"]
+        Google["Google\n(Gemini)"]
     end
 
     subgraph Blockchain["Blockchain Infrastructure"]
-        Pimlico["Pimlico<br/>(Bundler + Paymaster)"]
-        EntryPoint["ERC-4337<br/>Entry Point v0.7"]
-        SmartAccounts["Kernel v3.1<br/>Smart Accounts"]
+        Pimlico["Pimlico\n(Bundler + Paymaster)"]
+        EntryPoint["ERC-4337\nEntry Point v0.7"]
+        SmartAccounts["Kernel v3.1\nSmart Accounts"]
     end
 
     WebApp --> Server
@@ -112,7 +112,7 @@ sequenceDiagram
     participant User as User Wallet
     participant App as Client App
     participant SDK as @router402/sdk
-    participant Server as Route402 Server
+    participant Server as Router402 Server
     participant Chain as Blockchain
 
     User->>App: Connect wallet (EOA)
@@ -148,7 +148,7 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant Client as Client
-    participant Server as Route402 Server
+    participant Server as Router402 Server
     participant x402 as x402 Middleware
     participant Provider as LLM Provider
     participant DB as Database
@@ -225,8 +225,8 @@ Session keys solve a critical UX problem: requiring wallet signatures for every 
 ```mermaid
 flowchart LR
     A["User signs ONCE"] --> B["Session key approved"]
-    B --> C["Backend handles all<br/>subsequent transactions"]
-    C --> D["On-chain policies<br/>enforce security"]
+    B --> C["Backend handles all\nsubsequent transactions"]
+    C --> D["On-chain policies\nenforce security"]
 ```
 
 1. The user signs **once** to approve a session key.

@@ -6,10 +6,10 @@ This guide walks through the complete user onboarding flow, from wallet connecti
 
 ```mermaid
 flowchart LR
-    A["Connect<br/>Wallet"] --> B["Deploy<br/>Account"]
-    B --> C["Create<br/>Session Key"]
-    C --> D["Authorize<br/>with Server"]
-    D --> E["Make<br/>API Calls"]
+    A["Connect\nWallet"] --> B["Deploy\nAccount"]
+    B --> C["Create\nSession Key"]
+    C --> D["Authorize\nwith Server"]
+    D --> E["Make\nAPI Calls"]
 
     style A fill:#e1f5fe
     style E fill:#e8f5e9
@@ -106,7 +106,7 @@ async function createSessionKey(walletClient, smartAccountAddress, eoaAddress) {
 
 ## Phase 4: Authorize with Server
 
-Send the session key data to the Route402 server to receive a JWT token.
+Send the session key data to the Router402 server to receive a JWT token.
 
 ```typescript
 import { signTypedData } from "viem/actions";

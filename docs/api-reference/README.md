@@ -1,6 +1,6 @@
 # API Reference
 
-The Route402 API provides access to AI model inference through a payment-gated REST API. All endpoints follow a consistent response format and use Zod for request validation.
+The Router402 API provides access to AI model inference through a payment-gated REST API. All endpoints follow a consistent response format and use Zod for request validation.
 
 ## Base URL
 
@@ -50,7 +50,7 @@ All responses follow the `ApiResponse<T>` wrapper:
 
 ## Authentication Methods
 
-Route402 uses multiple authentication mechanisms depending on the endpoint:
+Router402 uses multiple authentication mechanisms depending on the endpoint:
 
 ```mermaid
 flowchart LR
