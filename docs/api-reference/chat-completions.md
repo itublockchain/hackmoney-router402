@@ -12,8 +12,7 @@ This endpoint is protected -- you must authenticate with a JWT token or provide 
 
 | Method | Header | Description |
 |--------|--------|-------------|
-| JWT Token | `Authorization: Bearer <token>` | Use the token from [/v1/authorize](authentication.md#authorize-session-key) |
-| x402 Payment | Payment headers per x402 protocol | Automatic payment from smart account |
+| API Token | `Authorization: Bearer <token>` | Use the token from [/v1/authorize](authentication.md#authorize-session-key) |
 
 ## Request Body
 

@@ -19,26 +19,26 @@ Router402 provides:
 ```mermaid
 graph TB
     subgraph Clients
-        WebApp["Web App\n(Next.js)"]
+        WebApp["Web App"]
         Extension["VS Code Extension"]
-        HTTPClient["HTTP Client\n(curl, SDK)"]
+        HTTPClient["HTTP Client (curl, SDK)"]
     end
 
     subgraph Router402["Router402 Server"]
         API["Express.js API"]
         Auth["EIP-712 Auth"]
-        x402["x402 Payment\nMiddleware"]
+        x402["x402 Payment Middleware"]
     end
 
     subgraph External["External Services"]
-        LLM["LLM Providers\n(Anthropic, Google)"]
+        LLM["LLM Providers (Anthropic, Google)"]
         DB["PostgreSQL"]
-        Pimlico["Pimlico\n(Bundler + Paymaster)"]
+        Pimlico["Pimlico (Bundler + Paymaster)"]
     end
 
     subgraph SDK["@router402/sdk"]
-        SmartAccount["Smart Account\nManagement"]
-        SessionKeys["Session Key\nLifecycle"]
+        SmartAccount["Smart Account Management"]
+        SessionKeys["Session Key Lifecycle"]
     end
 
     WebApp --> API
