@@ -140,7 +140,7 @@
     "watch": "tsc -watch -p ./",
     "lint": "npx @biomejs/biome check src/",
     "prepackage": "npm run compile",
-    "package": "vsce package"
+    "package": "vsce package --baseContentUrl https://github.com/itublockchain/hackmoney-route402/blob/master/apps/extension --baseImagesUrl https://github.com/itublockchain/hackmoney-route402/raw/master/apps/extension"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
