@@ -2,7 +2,7 @@
   "name": "router402-vscode",
   "displayName": "Router 402",
   "description": "AI-powered coding assistant. Pay per use via smart accounts on Base network.",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "publisher": "router402xyz",
   "license": "MIT",
   "repository": {
