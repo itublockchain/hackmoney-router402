@@ -43,7 +43,7 @@ Before using the extension, you must complete setup on the [Router 402 Dashboard
 | Router 402: Edit Selection | Edits selected code based on your instruction | `Ctrl+Shift+R` / `Cmd+Shift+R` |
 | Router 402: Explain Selection | Explains the selected code | — |
 | Router 402: Inline Edit | Right-click context menu edit | — |
-| Router 402: Open Chat | Opens the sidebar chat panel | — |
+| Router 402: Open Chat | Opens the sidebar chat panel | `Ctrl+Shift+L` / `Cmd+Shift+L` |
 | Router 402: Open Dashboard | Opens the web dashboard in your browser | — |
 
 ## How It Works
