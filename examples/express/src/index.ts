@@ -1,5 +1,5 @@
-import express from "express";
 import { Router402Sdk } from "@router402/sdk";
+import express from "express";
 
 const app = express();
 app.use(express.json());

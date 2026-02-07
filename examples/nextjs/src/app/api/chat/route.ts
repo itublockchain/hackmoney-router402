@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     console.error("Chat error:", error);
     return NextResponse.json(
       { error: "Failed to get response" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
