@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import type { Address } from "viem";
 import { APP_CONFIG } from "@/config";
 import { getAuthToken } from "@/lib/session-keys/storage";
 import type { ChatMessage } from "@/stores/chat.store";
@@ -26,6 +27,7 @@ function getMaxTokens(model: string): number {
 interface UseChatCompletionOptions {
   sessionId: string;
   model: string;
+  smartAccountAddress: Address | undefined;
   addMessage: (
     sessionId: string,
     role: "user" | "assistant",
@@ -50,6 +52,7 @@ interface UseChatCompletionReturn {
 export function useChatCompletion({
   sessionId,
   model,
+  smartAccountAddress,
   addMessage,
   updateMessage,
   messages,
@@ -64,7 +67,9 @@ export function useChatCompletion({
 
   const sendMessage = useCallback(
     async (content: string) => {
-      const authToken = getAuthToken();
+      const authToken = smartAccountAddress
+        ? getAuthToken(smartAccountAddress)
+        : null;
       if (!authToken) {
         addMessage(
           sessionId,
@@ -260,7 +265,7 @@ export function useChatCompletion({
         abortControllerRef.current = null;
       }
     },
-    [sessionId, model, addMessage, updateMessage, messages]
+    [sessionId, model, smartAccountAddress, addMessage, updateMessage, messages]
   );
 
   return { sendMessage, stop, isStreaming };

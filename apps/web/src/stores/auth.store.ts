@@ -41,17 +41,9 @@ export const useAuthStore = create<AuthStore>()(
           set({ token, isAuthenticated: !!token }, false, "setToken"),
         setUser: (user) => set({ user }, false, "setUser"),
         login: (token, user) => {
-          // Sync with localStorage for api-client compatibility
-          if (typeof window !== "undefined") {
-            localStorage.setItem("auth_token", token);
-          }
           set({ token, user, isAuthenticated: true }, false, "login");
         },
         logout: () => {
-          // Clear localStorage token
-          if (typeof window !== "undefined") {
-            localStorage.removeItem("auth_token");
-          }
           set(initialState, false, "logout");
         },
         setLoading: (isLoading) => set({ isLoading }, false, "setLoading"),

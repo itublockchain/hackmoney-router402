@@ -50,7 +50,7 @@ export function activate(context: vscode.ExtensionContext): void {
   registerDiffCommands(context);
 
   // Register the chat webview provider
-  const chatProvider = new ChatViewProvider(context.extensionUri);
+  const chatProvider = new ChatViewProvider(context.extensionUri, context);
   chatProviderInstance = chatProvider;
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(

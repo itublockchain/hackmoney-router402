@@ -6,6 +6,7 @@ import { ChatHeader } from "@/components/chat/chat-header";
 import { MessageInput } from "@/components/chat/message-input";
 import { MessageList } from "@/components/chat/message-list";
 import { useChatCompletion } from "@/hooks/use-chat-completion";
+import { useSmartAccountStore } from "@/stores";
 import {
   DEFAULT_MODEL,
   useAddMessage,
@@ -29,6 +30,7 @@ export default function ChatSessionPage() {
   const deleteSession = useDeleteSession();
   const setSessionModel = useSetSessionModel();
   const walletAddress = useWalletAddress();
+  const smartAccountAddress = useSmartAccountStore((s) => s.address);
   const isDeletingRef = useRef(false);
 
   const messages = session?.messages ?? [];
@@ -37,6 +39,7 @@ export default function ChatSessionPage() {
   const { sendMessage, stop, isStreaming } = useChatCompletion({
     sessionId: params.sessionId,
     model,
+    smartAccountAddress,
     addMessage,
     updateMessage,
     messages,

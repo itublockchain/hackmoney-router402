@@ -54,7 +54,7 @@ export function checkSyncStatus(params: StatusCheckParams): StatusCheckResult {
   const storeState = useSmartAccountStore.getState();
   if (storeState.address && storeState.isDeployed) {
     const existingKey = getActiveSessionKey(storeState.address);
-    if (existingKey && getAuthToken()) {
+    if (existingKey && getAuthToken(storeState.address)) {
       return {
         status: "ready",
         activeSessionKey: existingKey,

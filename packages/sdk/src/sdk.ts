@@ -1,4 +1,5 @@
 import type { Address, WalletClient } from "viem";
+import { encodeFunctionData, erc20Abi } from "viem";
 import { resolveConfig, validateConfig } from "./config";
 import {
   createKernelAccountFromWallet,
@@ -26,6 +27,8 @@ import type {
   Router402Config,
   SessionKeyData,
   SessionKeyForBackend,
+  SetupAccountOptions,
+  SetupAccountResult,
   SmartAccountInfo,
   TransactionExecutionResult,
 } from "./types";
@@ -281,6 +284,118 @@ export class Router402Sdk {
     sessionKey: SessionKeyData
   ): SessionKeyForBackend | null {
     return exportSessionKeyForBackend(sessionKey, this.config.chainId);
+  }
+
+  // ====================
+  // Setup Methods
+  // ====================
+
+  /**
+   * Enable a session key on-chain by sending a dummy ERC20 approve transaction.
+   * The first UserOp through `sendSessionKeyTransaction` activates the
+   * permission validator module on-chain via the `enableSignature` mechanism.
+   *
+   * @param sessionKey - An approved session key with serializedSessionKey
+   * @param usdcAddress - The USDC contract address on the target chain
+   * @param smartAccountAddress - The smart account address (used as the spender in the dummy approve)
+   */
+  async enableSessionKeyOnChain(
+    sessionKey: SessionKeyData,
+    usdcAddress: Address,
+    smartAccountAddress: Address
+  ): Promise<TransactionExecutionResult> {
+    if (!sessionKey.isApproved || !sessionKey.serializedSessionKey) {
+      throw new SmartAccountError(
+        "SESSION_KEY_NOT_APPROVED",
+        "Session key must be approved before enabling on-chain"
+      );
+    }
+
+    const approveData = encodeFunctionData({
+      abi: erc20Abi,
+      functionName: "approve",
+      args: [smartAccountAddress, BigInt(0)],
+    });
+
+    return sendSessionKeyTransaction(
+      sessionKey.privateKey,
+      sessionKey.serializedSessionKey,
+      [{ to: usdcAddress, value: BigInt(0), data: approveData }],
+      this.config
+    );
+  }
+
+  /**
+   * Full account setup flow: get info → deploy → generate session key → approve → enable on-chain.
+   *
+   * This method orchestrates all the steps needed to set up a smart account with a session key.
+   * It does NOT handle storage or backend authorization — those are app-specific concerns.
+   *
+   * @param walletClient - The owner wallet client
+   * @param eoaAddress - The owner EOA address
+   * @param options - Setup options including USDC address and optional callbacks
+   */
+  async setupAccount(
+    walletClient: WalletClient,
+    eoaAddress: Address,
+    options: SetupAccountOptions
+  ): Promise<SetupAccountResult> {
+    const { usdcAddress, existingSessionKey, onStatus } = options;
+
+    // Step 1: Get smart account info
+    onStatus?.("initializing");
+    const info = await this.getSmartAccountInfo(walletClient, eoaAddress);
+
+    // Step 2: Deploy if not deployed
+    if (!info.isDeployed) {
+      onStatus?.("deploying");
+      const deployResult = await this.deploySmartAccount(walletClient);
+      if (!deployResult.success) {
+        throw new SmartAccountError(
+          "DEPLOYMENT_FAILED",
+          "Failed to deploy Smart Account"
+        );
+      }
+      info.isDeployed = true;
+    }
+
+    // Step 3: Use existing session key or create a new one
+    let sessionKey: SessionKeyData;
+    if (existingSessionKey && this.canUseSessionKey(existingSessionKey)) {
+      sessionKey = existingSessionKey;
+    } else {
+      onStatus?.("creating_session_key");
+      const newKey = this.generateSessionKey(info.address, eoaAddress);
+
+      // Step 4: Approve the session key (triggers wallet signing)
+      onStatus?.("approving_session_key");
+      sessionKey = await this.approveSessionKey(walletClient, newKey);
+
+      if (!sessionKey.serializedSessionKey) {
+        throw new SmartAccountError(
+          "SESSION_KEY_NOT_APPROVED",
+          "Failed to approve session key"
+        );
+      }
+    }
+
+    // Step 5: Enable session key on-chain
+    onStatus?.("enabling_session_key");
+    const enableResult = await this.enableSessionKeyOnChain(
+      sessionKey,
+      usdcAddress,
+      info.address
+    );
+
+    if (!enableResult.success) {
+      throw new SmartAccountError(
+        "UNKNOWN_ERROR",
+        `Failed to enable session key on-chain: ${enableResult.error}`
+      );
+    }
+
+    onStatus?.("complete");
+    return { info, sessionKey, enableResult };
   }
 }
 

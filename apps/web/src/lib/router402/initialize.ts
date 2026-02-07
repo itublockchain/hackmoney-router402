@@ -1,7 +1,9 @@
-import type { SessionKeyData } from "@router402/sdk";
-import { sendSessionKeyTransaction } from "@router402/sdk";
+import type {
+  SessionKeyData,
+  SetupAccountResult,
+  SetupStatus,
+} from "@router402/sdk";
 import type { Address, WalletClient } from "viem";
-import { encodeFunctionData, erc20Abi } from "viem";
 import { router402Sdk, USDC_ADDRESS } from "@/config";
 import {
   exportSessionKeyForBackend,
@@ -11,10 +13,6 @@ import {
   storeSessionKey,
   updateSessionKeyApproval,
 } from "@/lib/session-keys";
-import {
-  getSmartAccountInfo,
-  sendUserOperation,
-} from "@/lib/smart-account/client";
 import { useSmartAccountStore } from "@/stores";
 import { authorizeWithBackend } from "./authorize";
 import type { Router402Status } from "./status";
@@ -33,8 +31,20 @@ interface InitializeResult {
 }
 
 /**
+ * Map SDK setup status to web app Router402Status
+ */
+function mapSetupStatus(status: SetupStatus): Router402Status {
+  if (status === "complete") return "ready";
+  return status;
+}
+
+/**
  * Pure async initialization flow for Router402.
  * Takes all dependencies as arguments so it can be tested without React hooks.
+ *
+ * Delegates core setup logic (deploy, session key, enable) to the SDK's
+ * `setupAccount` method. This function handles app-specific concerns:
+ * localStorage persistence, Zustand store updates, and backend authorization.
  */
 export async function initializeRouter402(
   deps: InitializeDeps
@@ -45,124 +55,76 @@ export async function initializeRouter402(
   const storeState = useSmartAccountStore.getState();
   if (storeState.address && storeState.isDeployed) {
     const existingKey = getActiveSessionKey(storeState.address);
-    const existingToken = getAuthToken();
+    const existingToken = getAuthToken(storeState.address);
     if (existingKey && existingToken) {
       return { sessionKey: existingKey, authToken: existingToken };
     }
   }
 
-  // Step 1: Get Smart Account info
-  onStatus("initializing");
+  if (!router402Sdk) {
+    throw new Error("Router402 SDK is not configured");
+  }
 
-  const info = await getSmartAccountInfo(client, eoa);
+  // Check for existing valid session key.
+  // If there's no auth token yet, the previous setup didn't complete fully.
+  // In that case, discard the stale session key (its enable signature may
+  // reference an outdated on-chain nonce) and force a fresh one.
+  let existingSessionKey: SessionKeyData | undefined;
+  if (storeState.address) {
+    existingSessionKey = getActiveSessionKey(storeState.address);
+    const hasAuthToken = !!getAuthToken(storeState.address);
+    if (existingSessionKey && !hasAuthToken) {
+      removeSessionKey(storeState.address);
+      existingSessionKey = undefined;
+    }
+  }
 
+  // Run the SDK setup flow, which handles:
+  // - Smart account info retrieval
+  // - Smart account deployment (dummy no-op transaction)
+  // - Session key generation & approval
+  // - Session key on-chain enablement (dummy ERC20 approve transaction)
+  let result: SetupAccountResult;
+  try {
+    result = await router402Sdk.setupAccount(client, eoa, {
+      usdcAddress: USDC_ADDRESS,
+      existingSessionKey,
+      onStatus: (status: SetupStatus) => {
+        onStatus(mapSetupStatus(status));
+      },
+    });
+  } catch (error) {
+    // If enablement failed, clear the session key so next retry is fresh
+    if (storeState.address) {
+      removeSessionKey(storeState.address);
+    }
+    throw error;
+  }
+
+  const { info, sessionKey } = result;
+
+  // Update Zustand store with smart account info
   onStoreUpdate({
     address: info.address,
     eoaAddress: info.eoaAddress,
-    isDeployed: info.isDeployed,
+    isDeployed: true,
     isLoading: false,
     error: undefined,
   });
   onLastChecked();
 
-  // Step 2: Deploy Smart Account if not deployed
-  if (!info.isDeployed) {
-    onStatus("deploying");
-
-    const deployResult = await sendUserOperation(client, [
-      {
-        to: info.address,
-        value: BigInt(0),
-        data: "0x",
-      },
-    ]);
-
-    if (!deployResult.success) {
-      throw new Error("Failed to deploy Smart Account");
-    }
-
-    onStoreUpdate({
-      isDeployed: true,
-      deploymentTxHash: deployResult.txHash,
-    });
-    onLastChecked();
-  }
-
-  // Step 3: Check for existing valid session key.
-  // If there's no auth token yet, the previous setup didn't complete fully.
-  // In that case, discard the stale session key (its enable signature may
-  // reference an outdated on-chain nonce) and force a fresh one.
-  let sessionKey = getActiveSessionKey(info.address);
-  const hasAuthToken = !!getAuthToken();
-  if (sessionKey && !hasAuthToken) {
-    removeSessionKey(info.address);
-    sessionKey = undefined;
-  }
-
-  // Step 4: Create and approve session key if none exists
-  if (!sessionKey) {
-    onStatus("creating_session_key");
-
-    if (!router402Sdk) {
-      throw new Error("Router402 SDK is not configured");
-    }
-
-    const newKey = router402Sdk.generateSessionKey(info.address, eoa);
-    storeSessionKey(newKey);
-
-    // Step 5: Approve the session key (triggers wallet signing)
-    onStatus("approving_session_key");
-
-    const approvedKey = await router402Sdk.approveSessionKey(client, newKey);
-
-    if (!approvedKey.serializedSessionKey) {
-      throw new Error("Failed to approve session key");
-    }
-
+  // Persist session key to localStorage
+  storeSessionKey(sessionKey);
+  if (sessionKey.serializedSessionKey) {
     updateSessionKeyApproval(
       info.address,
-      newKey.publicKey,
-      approvedKey.serializedSessionKey
+      sessionKey.publicKey,
+      sessionKey.serializedSessionKey
     );
-
-    sessionKey = getActiveSessionKey(info.address);
   }
 
-  // Step 6: Enable session key on-chain by sending an empty UserOp.
-  // The first UserOp through `sendSessionKeyTransaction` activates the
-  // permission validator module on-chain via the `enableSignature` mechanism.
-  if (sessionKey?.serializedSessionKey) {
-    onStatus("enabling_session_key");
-
-    if (!router402Sdk) {
-      throw new Error("Router402 SDK is not configured");
-    }
-
-    const config = router402Sdk.getConfig();
-    const approveData = encodeFunctionData({
-      abi: erc20Abi,
-      functionName: "approve",
-      args: [info.address, BigInt(0)],
-    });
-    const enableResult = await sendSessionKeyTransaction(
-      sessionKey.privateKey,
-      sessionKey.serializedSessionKey,
-      [{ to: USDC_ADDRESS, value: BigInt(0), data: approveData }],
-      config
-    );
-
-    if (!enableResult.success) {
-      // Clear the stale session key so the next retry creates a fresh one
-      // with a new enable signature matching the current on-chain nonce.
-      removeSessionKey(info.address);
-      throw new Error(
-        `Failed to enable session key on-chain: ${enableResult.error}`
-      );
-    }
-  }
-
-  // Step 7: Send session key to backend (if no token stored yet)
-  let authToken = getAuthToken() ?? undefined;
+  // Send session key to backend (if no token stored yet)
+  let authToken = getAuthToken(info.address) ?? undefined;
   if (sessionKey && !authToken) {
     onStatus("sending_to_backend");
 

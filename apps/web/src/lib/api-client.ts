@@ -11,7 +11,9 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from "axios";
 import { getConfig } from "@/config";
+import { useSmartAccountStore } from "@/stores/smart-account.store";
 import { apiLogger } from "./logger";
+import { getAuthToken } from "./session-keys/storage";
 
 /**
  * Custom error class for API client errors
@@ -59,9 +61,12 @@ function createApiClient(): AxiosInstance {
         );
       }
 
-      // Add auth token if available
+      // Add auth token if available (per-wallet)
       if (typeof window !== "undefined") {
-        const token = localStorage.getItem("auth_token");
+        const smartAccountAddress = useSmartAccountStore.getState().address;
+        const token = smartAccountAddress
+          ? getAuthToken(smartAccountAddress)
+          : null;
         if (token && requestConfig.headers) {
           requestConfig.headers.Authorization = `Bearer ${token}`;
         }

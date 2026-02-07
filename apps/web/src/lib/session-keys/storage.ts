@@ -139,28 +139,62 @@ export function exportSessionKeyForBackend(
   );
 }
 
-const AUTH_TOKEN_KEY = "router402_auth_token";
+const AUTH_TOKEN_KEY = "router402_auth_tokens";
 
 /**
- * Store the authentication token received from the backend
+ * Auth token storage structure (one token per smart account address)
  */
-export function storeAuthToken(token: string): void {
+interface AuthTokenStorage {
+  [smartAccountAddress: Address]: string;
+}
+
+function loadAuthTokens(): AuthTokenStorage {
+  if (!isLocalStorageAvailable()) return {};
+
+  try {
+    const data = localStorage.getItem(AUTH_TOKEN_KEY);
+    if (!data) return {};
+    return JSON.parse(data) as AuthTokenStorage;
+  } catch {
+    return {};
+  }
+}
+
+function saveAuthTokens(storage: AuthTokenStorage): void {
   if (!isLocalStorageAvailable()) return;
-  localStorage.setItem(AUTH_TOKEN_KEY, token);
+
+  try {
+    localStorage.setItem(AUTH_TOKEN_KEY, JSON.stringify(storage));
+  } catch (err) {
+    console.error("Failed to save auth tokens to localStorage", err);
+  }
 }
 
 /**
- * Get the stored authentication token
+ * Store the authentication token for a specific smart account
  */
-export function getAuthToken(): string | null {
-  if (!isLocalStorageAvailable()) return null;
-  return localStorage.getItem(AUTH_TOKEN_KEY);
+export function storeAuthToken(
+  token: string,
+  smartAccountAddress: Address
+): void {
+  const storage = loadAuthTokens();
+  storage[smartAccountAddress] = token;
+  saveAuthTokens(storage);
 }
 
 /**
- * Remove the stored authentication token
+ * Get the stored authentication token for a specific smart account
  */
-export function removeAuthToken(): void {
-  if (!isLocalStorageAvailable()) return;
-  localStorage.removeItem(AUTH_TOKEN_KEY);
+export function getAuthToken(smartAccountAddress: Address): string | null {
+  const storage = loadAuthTokens();
+  return storage[smartAccountAddress] ?? null;
+}
+
+/**
+ * Remove the stored authentication token for a specific smart account
+ */
+export function removeAuthToken(smartAccountAddress: Address): void {
+  const storage = loadAuthTokens();
+  delete storage[smartAccountAddress];
+  saveAuthTokens(storage);
 }

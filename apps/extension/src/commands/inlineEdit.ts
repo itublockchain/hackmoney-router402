@@ -73,7 +73,10 @@ export async function inlineEdit(): Promise<void> {
     new vscode.Range(new vscode.Position(0, 0), selection.start)
   );
   const afterSelection = editor.document.getText(
-    new vscode.Range(selection.end, editor.document.positionAt(fullOriginal.length))
+    new vscode.Range(
+      selection.end,
+      editor.document.positionAt(fullOriginal.length)
+    )
   );
   const fullModified = beforeSelection + editedCode + afterSelection;
 

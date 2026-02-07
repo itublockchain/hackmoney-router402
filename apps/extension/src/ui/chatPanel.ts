@@ -25,7 +25,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
   private webviewReady: Promise<void>;
   private resolveWebviewReady!: () => void;
 
-  constructor(private readonly extensionUri: vscode.Uri) {
+  constructor(
+    private readonly extensionUri: vscode.Uri,
+    private readonly context: vscode.ExtensionContext
+  ) {
     this.webviewReady = new Promise((resolve) => {
       this.resolveWebviewReady = resolve;
     });
@@ -84,6 +87,13 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     // Update config when settings change
     vscode.workspace.onDidChangeConfiguration((e) => {
       if (e.affectsConfiguration("router402")) {
+        this.postConfig();
+      }
+    });
+
+    // Update config when API key changes in secret storage
+    this.context.secrets.onDidChange((e) => {
+      if (e.key === "router402.apiKey") {
         this.postConfig();
       }
     });

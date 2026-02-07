@@ -146,6 +146,47 @@ export interface TransactionExecutionResult {
 }
 
 /**
+ * Status values emitted during the account setup flow
+ */
+export type SetupStatus =
+  | "initializing"
+  | "deploying"
+  | "creating_session_key"
+  | "approving_session_key"
+  | "enabling_session_key"
+  | "complete";
+
+/**
+ * Callbacks for setup progress reporting
+ */
+export interface SetupCallbacks {
+  /** Called when the setup status changes */
+  onStatus?: (status: SetupStatus) => void;
+}
+
+/**
+ * Options for the setupAccount flow
+ */
+export interface SetupAccountOptions extends SetupCallbacks {
+  /** USDC contract address on the target chain (required for session key enablement) */
+  usdcAddress: Address;
+  /** If provided, skip deployment and session key creation when already done */
+  existingSessionKey?: SessionKeyData;
+}
+
+/**
+ * Result of the setupAccount flow
+ */
+export interface SetupAccountResult {
+  /** Smart account info (address, deployment status, etc.) */
+  info: SmartAccountInfo;
+  /** The approved and on-chain-enabled session key */
+  sessionKey: SessionKeyData;
+  /** Result of the session key enablement transaction */
+  enableResult: TransactionExecutionResult;
+}
+
+/**
  * Error types for Smart Account operations
  */
 export type SmartAccountErrorType =

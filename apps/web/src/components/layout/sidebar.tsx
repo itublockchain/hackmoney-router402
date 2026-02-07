@@ -258,6 +258,19 @@ export function Sidebar() {
                 <Search size={16} />
               </button>
             </div>
+            <div className="mt-auto border-t border-border/40 py-3 flex justify-center w-full">
+              <Link
+                href="/setup"
+                className={`flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-accent hover:text-foreground cursor-pointer ${
+                  pathname === "/setup"
+                    ? "text-foreground"
+                    : "text-muted-foreground"
+                }`}
+                aria-label="Settings"
+              >
+                <Settings size={16} />
+              </Link>
+            </div>
           </div>
         )}
       </aside>

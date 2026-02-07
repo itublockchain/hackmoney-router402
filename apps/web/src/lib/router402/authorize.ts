@@ -78,8 +78,8 @@ export async function authorizeWithBackend(
   const result = response.data as AuthorizeResponse;
   const { token } = result;
 
-  // Store token in session-key storage (router402_auth_token)
-  storeAuthToken(token);
+  // Store token in per-wallet storage
+  storeAuthToken(token, backendData.smartAccountAddress as Address);
 
   // Sync token to auth store so api-client interceptor picks it up
   useAuthStore.getState().setToken(token);

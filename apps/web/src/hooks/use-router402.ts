@@ -165,7 +165,11 @@ export function useRouter402(): UseRouter402Return {
     ? exportSessionKeyForBackend(activeSessionKey)
     : null;
 
-  const isReady = status === "ready" && !!activeSessionKey && !!getAuthToken();
+  const isReady =
+    status === "ready" &&
+    !!activeSessionKey &&
+    !!smartAccountAddress &&
+    !!getAuthToken(smartAccountAddress);
 
   // Synchronous state check — never triggers signing or async ops
   useEffect(() => {
@@ -191,7 +195,11 @@ export function useRouter402(): UseRouter402Return {
 
     if (result.status === "ready") {
       setActiveSessionKey(result.activeSessionKey);
-      setAuthToken(getAuthToken() ?? undefined);
+      setAuthToken(
+        smartAccountAddress
+          ? (getAuthToken(smartAccountAddress) ?? undefined)
+          : undefined
+      );
       setStatus("ready");
       return;
     }
@@ -202,7 +210,14 @@ export function useRouter402(): UseRouter402Return {
       }
       return prev;
     });
-  }, [isConnected, eoaAddress, storedEoaAddress, storeHydrated, reset]);
+  }, [
+    isConnected,
+    eoaAddress,
+    storedEoaAddress,
+    storeHydrated,
+    reset,
+    smartAccountAddress,
+  ]);
 
   return {
     status,
