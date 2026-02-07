@@ -100,6 +100,17 @@
         "command": "router402.toggleChat",
         "key": "ctrl+shift+l",
         "mac": "cmd+shift+l"
+      },
+      {
+        "command": "router402.acceptChanges",
+        "key": "ctrl+enter",
+        "mac": "cmd+enter",
+        "when": "isInDiffEditor"
+      },
+      {
+        "command": "router402.rejectChanges",
+        "key": "escape",
+        "when": "isInDiffEditor"
       }
     ],
     "menus": {
