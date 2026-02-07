@@ -1,11 +1,12 @@
 {
-  "name": "router-402-mcp-server",
+  "name": "router402-mcp-server",
   "version": "0.0.0",
   "private": true,
   "scripts": {
     "deploy": "wrangler deploy",
     "dev": "wrangler dev",
     "format": "biome format --write",
+    "lint": "biome check",
     "lint:fix": "biome lint --fix",
     "start": "wrangler dev",
     "cf-typegen": "wrangler types",

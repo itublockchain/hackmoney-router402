@@ -12,6 +12,7 @@
     "build": "bun build ./src/index.ts --outdir ./dist --target bun && tsc --emitDeclarationOnly -p tsconfig.build.json",
     "dev": "tsc -p tsconfig.build.json --watch",
     "typecheck": "tsc --noEmit",
+    "lint": "biome check .",
     "clean": "rm -rf dist"
   },
   "devDependencies": {

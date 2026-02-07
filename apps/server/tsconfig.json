@@ -5,7 +5,7 @@
     "lib": ["ES2022"],
     "moduleResolution": "Node16",
     "outDir": "./dist",
-    "rootDir": "./src",
+    "rootDir": ".",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -16,6 +16,6 @@
     "sourceMap": true,
     "allowArbitraryExtensions": true
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "generated/**/*"],
   "exclude": ["node_modules", "dist", "external"]
 }

@@ -35,6 +35,7 @@
   "workspaces": [
     "apps/server",
     "apps/web",
+    "apps/mcp",
     "packages/*"
   ]
 }

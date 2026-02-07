@@ -8,7 +8,11 @@
  * 3. Updates the DB on success
  */
 
-import { type ResolvedConfig, sendSessionKeyTransaction } from "@router402/sdk";
+import {
+  DEFAULT_API_BASE_URL,
+  type SmartAccountResolvedConfig,
+  sendSessionKeyTransaction,
+} from "@router402/sdk";
 import { logger } from "@router402/utils";
 import { encodeFunctionData, getAddress, type Hex } from "viem";
 import { PrismaClient } from "../../generated/prisma/client.js";
@@ -83,7 +87,7 @@ const erc20TransferAbi = [
 /**
  * Build a ResolvedConfig for the SDK from server config and chainId
  */
-function buildSdkConfig(chainId: number): ResolvedConfig {
+function buildSdkConfig(chainId: number): SmartAccountResolvedConfig {
   const config = getConfig();
   const { chain, chainId: expectedChainId } = getChainConfig();
 
@@ -100,6 +104,7 @@ function buildSdkConfig(chainId: number): ResolvedConfig {
     pimlicoUrl: `https://api.pimlico.io/v2/${chainId}/rpc?apikey=${config.PIMLICO_API_KEY}`,
     entryPointVersion: "0.7",
     sessionKeyValidityPeriod: 365 * 24 * 60 * 60,
+    apiBaseUrl: DEFAULT_API_BASE_URL,
   };
 }
 
