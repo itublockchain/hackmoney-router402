@@ -2,15 +2,39 @@
   "name": "@router402/sdk",
   "version": "0.1.0",
   "description": "Router402 SDK for Kernel smart accounts with session keys",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/itublockchain/hackmoney-route402.git",
+    "directory": "packages/sdk"
+  },
+  "homepage": "https://github.com/itublockchain/hackmoney-route402/tree/master/packages/sdk",
+  "bugs": {
+    "url": "https://github.com/itublockchain/hackmoney-route402/issues"
+  },
+  "keywords": [
+    "router402",
+    "x402",
+    "smart-accounts",
+    "session-keys",
+    "zerodev",
+    "kernel",
+    "erc-4337",
+    "account-abstraction",
+    "micropayments",
+    "usdc"
+  ],
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "files": [
-    "dist",
-    "src"
+    "dist"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
-    "build": "bun build ./src/index.ts --outdir ./dist --target bun && tsc --emitDeclarationOnly -p tsconfig.build.json",
+    "build": "bun build ./src/index.ts --outdir ./dist --target node --format esm --external @zerodev/ecdsa-validator --external @zerodev/permissions --external @zerodev/sdk --external permissionless --external viem && tsc --emitDeclarationOnly -p tsconfig.build.json",
     "declarations": "tsc --emitDeclarationOnly -p tsconfig.build.json",
     "dev": "tsc -p tsconfig.build.json --watch",
     "typecheck": "tsc --noEmit",
