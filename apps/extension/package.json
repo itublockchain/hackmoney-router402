@@ -26,7 +26,7 @@
     "base network"
   ],
   "main": "./out/extension.js",
-  "icon": "media/logo.png",
+  "icon": "media/logo-square.png",
   "contributes": {
     "configuration": {
       "title": "Router 402",
