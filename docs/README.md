@@ -309,6 +309,8 @@ cd apps/server && bunx prisma studio
 - [Docs](https://docs.router402.xyz/) 
 - [Facilitator Dashboard](https://opendashboard.router402.xyz/) 
 - [Facilitator Server](https://x402.router402.xyz/supported)
+- [Facilitator Tx's Base Sepolia](https://sepolia.basescan.org/address/0xf7D8ebABeA47A21768650908F0584E8eB49C83a5)
+- [Facilitator Tx's Base Mainnet](https://basescan.org/address/0xf7D8ebABeA47A21768650908F0584E8eB49C83a5)
 - [VS Code Extension](https://marketplace.visualstudio.com/items?itemName=router402xyz.router402-vscode)
 - [LI.FI MCP](https://mcp-cloudflare.omerfurkanyuruk1.workers.dev/mcp)
 - [Stake Contract](https://sepolia.basescan.org/address/0xA5B97115FDE7E4d91E533ba6B299A1a4C53a167E#code)
