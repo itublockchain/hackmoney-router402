@@ -321,4 +321,4 @@ cd apps/server && bunx prisma studio
 - [Utku Ömer Kılıç](https://x.com/utmrklc) 
 - [Feyyaz Numan Cavlak](https://x.com/feyyazcigim)
 
-Built by [ITU Blockchain](https://x.com/ITUBlockchainen) at HackMoney 2025.
+Built by [ITU Blockchain](https://x.com/ITUBlockchainen) at HackMoney 2026.
