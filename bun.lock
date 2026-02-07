@@ -53,7 +53,7 @@
         "@types/node": "^22.10.5",
         "@types/pg": "^8.11.0",
         "tsx": "^4.19.2",
-        "typescript": "^5.7.3",
+        "typescript": "^5.9.3",
       },
     },
     "apps/web": {
@@ -122,7 +122,7 @@
         "@testing-library/jest-dom": "^6.9.1",
         "@testing-library/react": "^16.3.2",
         "@testing-library/user-event": "^14.6.1",
-        "@types/node": "^20",
+        "@types/node": "^22.10.5",
         "@types/react": "^19",
         "@types/react-dom": "^19",
         "@vitejs/plugin-react": "^5.1.2",
@@ -130,13 +130,13 @@
         "happy-dom": "^20.4.0",
         "jsdom": "^27.4.0",
         "tailwindcss": "^4",
-        "typescript": "^5",
+        "typescript": "^5.9.3",
         "vitest": "^4.0.18",
       },
     },
     "packages/sdk": {
       "name": "@router402/sdk",
-      "version": "0.1.0",
+      "version": "0.3.0",
       "dependencies": {
         "@zerodev/ecdsa-validator": "^5.4.9",
         "@zerodev/permissions": "^5.6.3",
@@ -144,7 +144,7 @@
         "permissionless": "^0.3.4",
       },
       "devDependencies": {
-        "typescript": "^5.7.3",
+        "typescript": "^5.9.3",
         "viem": "^2.23.7",
       },
       "peerDependencies": {
@@ -155,7 +155,7 @@
       "name": "@router402/types",
       "version": "0.1.0",
       "devDependencies": {
-        "typescript": "^5.7.3",
+        "typescript": "^5.9.3",
       },
     },
     "packages/utils": {
@@ -167,7 +167,7 @@
       },
       "devDependencies": {
         "@types/express": "^5.0.6",
-        "typescript": "^5.7.3",
+        "typescript": "^5.9.3",
       },
     },
   },
@@ -2932,8 +2932,6 @@
     "unstorage/chokidar": ["chokidar@5.0.0", "", { "dependencies": { "readdirp": "^5.0.0" } }, "sha512-TQMmc3w+5AxjpL8iIiwebF73dRDF4fBIieAqGn9RGCWaEVwQ6Fb2cGe31Yns0RRIzii5goJ1Y7xbMwo1TxMplw=="],
 
     "valtio/use-sync-external-store": ["use-sync-external-store@1.2.0", "", { "peerDependencies": { "react": "^16.8.0 || ^17.0.0 || ^18.0.0" } }, "sha512-eEgnFxGQ1Ife9bzYs6VLi8/4X6CObHMw9Qr9tPY43iKwsPw8xE8+EFsf/2cFZ5S3esXgpWgtSCtLNS41F+sKPA=="],
-
-    "web/@types/node": ["@types/node@20.19.32", "", { "dependencies": { "undici-types": "~6.21.0" } }, "sha512-Ez8QE4DMfhjjTsES9K2dwfV258qBui7qxUsoaixZDiTzbde4U12e1pXGNu/ECsUIOi5/zoCxAQxIhQnaUQ2VvA=="],
 
     "wrap-ansi/ansi-styles": ["ansi-styles@4.3.0", "", { "dependencies": { "color-convert": "^2.0.1" } }, "sha512-zbB9rCJAT1rbjiVDb2hqKFHNYLxgtk8NURxZ3IZwD3F6NtxbXZQCnnSi1Lkx+IDohdPlFp222wVALIheZJQSEg=="],
 

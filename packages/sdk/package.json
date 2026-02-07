@@ -50,7 +50,7 @@
     "permissionless": "^0.3.4"
   },
   "devDependencies": {
-    "typescript": "^5.7.3",
+    "typescript": "^5.9.3",
     "viem": "^2.23.7"
   }
 }

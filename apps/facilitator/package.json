@@ -21,11 +21,11 @@
     "node": ">=20"
   },
   "devDependencies": {
-    "@types/node": "^22.10.1",
+    "@types/node": "^22.10.5",
     "husky": "^9.1.7",
     "prettier": "^3.4.2",
     "turbo": "^2.3.3",
-    "typescript": "^5.7.2"
+    "typescript": "^5.9.3"
   },
   "dependencies": {
     "remark-gfm": "^4.0.1"
