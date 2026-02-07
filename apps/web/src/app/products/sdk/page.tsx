@@ -3,18 +3,29 @@
 import {
   ArrowRight,
   Check,
+  Copy,
   Cpu,
+  ExternalLink,
   Key,
   Layers,
   MessageSquare,
+  Package,
   Shield,
   Terminal,
   Zap,
 } from "lucide-react";
+import { useCallback, useState } from "react";
 import { TerminalDemo } from "@/components/hero/terminal-demo";
 import { Footer } from "@/components/layout/footer";
 import { Navbar } from "@/components/layout/navbar";
 import { Button } from "@/components/primitives/button";
+
+const packageManagers = [
+  { id: "npm", label: "npm", command: "npm install @router402/sdk" },
+  { id: "yarn", label: "yarn", command: "yarn add @router402/sdk" },
+  { id: "pnpm", label: "pnpm", command: "pnpm add @router402/sdk" },
+  { id: "bun", label: "bun", command: "bun add @router402/sdk" },
+] as const;
 
 const features = [
   {
@@ -54,6 +65,88 @@ const features = [
       "First-class TypeScript support with full type safety. Built on viem for reliable EVM interactions.",
   },
 ];
+
+function InstallSection() {
+  const [activeManager, setActiveManager] = useState<string>("npm");
+  const [copied, setCopied] = useState(false);
+
+  const activeCommand =
+    packageManagers.find((pm) => pm.id === activeManager)?.command ??
+    packageManagers[0].command;
+
+  const handleCopy = useCallback(async () => {
+    await navigator.clipboard.writeText(activeCommand);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [activeCommand]);
+
+  return (
+    <section className="px-4 pb-24 sm:px-8 md:px-16 lg:px-24">
+      <div className="mx-auto max-w-2xl">
+        <div className="mb-6 text-center">
+          <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-neutral-800 bg-neutral-900/80 px-3 py-1 text-xs text-neutral-400">
+            <Package size={12} />
+            <a
+              href="https://www.npmjs.com/package/@router402/sdk"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition-colors hover:text-emerald-400"
+            >
+              @router402/sdk
+              <ExternalLink size={10} className="ml-1 inline" />
+            </a>
+          </div>
+        </div>
+
+        <div className="overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950">
+          {/* Package manager tabs */}
+          <div className="flex items-center justify-between border-b border-neutral-800 px-4 py-2">
+            <div className="flex items-center gap-1">
+              {packageManagers.map((pm) => (
+                <button
+                  key={pm.id}
+                  onClick={() => setActiveManager(pm.id)}
+                  className={`rounded-md px-3 py-1.5 font-mono text-xs transition-colors ${
+                    activeManager === pm.id
+                      ? "bg-neutral-800 text-emerald-400"
+                      : "text-neutral-500 hover:text-neutral-300"
+                  }`}
+                >
+                  {pm.label}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={handleCopy}
+              className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs text-neutral-500 transition-colors hover:text-neutral-300"
+            >
+              {copied ? (
+                <>
+                  <Check size={12} className="text-emerald-400" />
+                  <span className="text-emerald-400">Copied!</span>
+                </>
+              ) : (
+                <>
+                  <Copy size={12} />
+                  <span>Copy</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Command display */}
+          <div className="p-4">
+            <pre className="font-mono text-sm text-neutral-300">
+              <code>
+                <span className="text-emerald-400">$</span> {activeCommand}
+              </code>
+            </pre>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 export default function SDKPage() {
   return (
@@ -205,26 +298,7 @@ export default function SDKPage() {
         </section>
 
         {/* Install command */}
-        <section className="px-4 pb-24 sm:px-8 md:px-16 lg:px-24">
-          <div className="mx-auto max-w-2xl">
-            <div className="overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950">
-              <div className="flex items-center gap-2 border-b border-neutral-800 px-4 py-3">
-                <Terminal size={14} className="text-neutral-500" />
-                <span className="text-xs text-neutral-500">Terminal</span>
-              </div>
-              <div className="p-4">
-                <pre className="font-mono text-sm text-neutral-300">
-                  <code>
-                    <span className="text-emerald-400">$</span>{" "}
-                    <span className="text-sky-400">npm</span>{" "}
-                    <span className="text-neutral-200">install</span>{" "}
-                    <span className="text-amber-300">@router402/sdk</span>
-                  </code>
-                </pre>
-              </div>
-            </div>
-          </div>
-        </section>
+        <InstallSection />
 
         {/* Terminal Demo */}
         <section className="px-4 pb-24 sm:px-8 md:px-16 lg:px-24">
