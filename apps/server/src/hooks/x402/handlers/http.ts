@@ -10,10 +10,16 @@ import { logger } from "@router402/utils";
 import { decodePaymentSignatureHeader } from "@x402/core/http";
 import type { HTTPRequestContext, RouteConfig } from "@x402/core/server";
 import type { PaymentPayload } from "@x402/core/types";
-import { verifyToken } from "../../../services/auth.service.js";
+import {
+  getSmartAccountAddress,
+  verifyToken,
+} from "../../../services/auth.service.js";
 import { autoPayDebt } from "../../../services/auto-payment.js";
 import { getUserDebt, isDebtBelowThreshold } from "../../../services/debt.js";
-import { setWalletAddress } from "../../../utils/request-context.js";
+import {
+  setSmartAccountAddress,
+  setWalletAddress,
+} from "../../../utils/request-context.js";
 import {
   extractWalletFromPayload,
   verifyPaymentSignature,
@@ -94,6 +100,9 @@ export async function onProtectedRequest(
         chainId,
       });
 
+      // Look up smart account address for MCP system prompt injection
+      const smartAccountAddr = await getSmartAccountAddress(userId);
+
       // Check if debt is below threshold (from database)
       // Task 3.2 will add: if debt >= threshold, trigger autoPayDebt()
       const belowThreshold = await isDebtBelowThreshold(walletAddress);
@@ -101,6 +110,7 @@ export async function onProtectedRequest(
       if (belowThreshold) {
         // Store wallet in async context for usage tracking
         setWalletAddress(walletAddress);
+        if (smartAccountAddr) setSmartAccountAddress(smartAccountAddr);
 
         hookLogger.info("Access granted via JWT - debt below threshold", {
           wallet: walletAddress.slice(0, 10),
@@ -131,6 +141,7 @@ export async function onProtectedRequest(
         // Auto-payment successful - grant access
         // Validates: Requirement 5.2
         setWalletAddress(walletAddress);
+        if (smartAccountAddr) setSmartAccountAddress(smartAccountAddr);
 
         hookLogger.info("Access granted via JWT - auto-payment successful", {
           wallet: walletAddress.slice(0, 10),

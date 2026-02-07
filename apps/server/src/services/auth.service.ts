@@ -147,6 +147,21 @@ export async function authorize(
 }
 
 /**
+ * Get the smart account address for a user by userId.
+ * Returns null if the user has no session key record.
+ */
+export async function getSmartAccountAddress(
+  userId: string
+): Promise<string | null> {
+  const db = getPrisma();
+  const record = await db.sessionKeyRecord.findUnique({
+    where: { userId },
+    select: { smartAccountAddress: true },
+  });
+  return record?.smartAccountAddress ?? null;
+}
+
+/**
  * Verify a JWT token and return the payload
  */
 export function verifyToken(token: string): JwtPayload | null {

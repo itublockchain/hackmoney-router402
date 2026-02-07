@@ -28,7 +28,10 @@ import {
   translateProviderError,
 } from "../utils/errors.js";
 import { calculateCost, isSupportedModel } from "../utils/pricing.js";
-import { getWalletAddress } from "../utils/request-context.js";
+import {
+  getSmartAccountAddressFromContext,
+  getWalletAddress,
+} from "../utils/request-context.js";
 
 const chatLogger = logger.context("ChatRoute");
 
@@ -87,6 +90,9 @@ export function createChatRouter(): Router {
 
         // Get wallet from AsyncLocalStorage (set by x402 hook)
         const walletAddress = getWalletAddress();
+        // Use smart account address for MCP prompt (fallback to EOA)
+        const mcpWalletAddress =
+          getSmartAccountAddressFromContext() ?? walletAddress;
 
         if (request.stream) {
           // Handle streaming response (Requirements 6.1, 6.2, 6.3, 6.4)
@@ -94,11 +100,15 @@ export function createChatRouter(): Router {
             res,
             chatService,
             request,
-            walletAddress
+            walletAddress,
+            mcpWalletAddress
           );
         } else {
           // Handle non-streaming response
-          const response = await chatService.complete(request, walletAddress);
+          const response = await chatService.complete(
+            request,
+            mcpWalletAddress
+          );
 
           // Debug log for usage tracking
           chatLogger.debug("Usage tracking check", {
@@ -166,7 +176,8 @@ export function createChatRouter(): Router {
  * @param res - Express response object
  * @param chatService - Chat service instance
  * @param request - Validated chat completion request
- * @param walletAddress - Optional wallet address for usage tracking
+ * @param walletAddress - Optional EOA wallet address for usage tracking
+ * @param mcpWalletAddress - Optional smart account address for MCP prompt injection
  *
  * @see Requirement 6.1 - Set response headers for SSE
  * @see Requirement 6.3 - Format each chunk as 'data: {json}\n\n'
@@ -176,7 +187,8 @@ async function handleStreamingResponse(
   res: Response,
   chatService: ChatService,
   request: ReturnType<typeof ChatCompletionRequestSchema.parse>,
-  walletAddress?: string
+  walletAddress?: string,
+  mcpWalletAddress?: string
 ): Promise<void> {
   // Set SSE headers (Requirement 6.1)
   res.setHeader("Content-Type", "text/event-stream");
@@ -192,7 +204,7 @@ async function handleStreamingResponse(
       | undefined;
 
     // Stream chunks from the chat service (Requirements 6.2, 6.3)
-    for await (const chunk of chatService.stream(request, walletAddress)) {
+    for await (const chunk of chatService.stream(request, mcpWalletAddress)) {
       // Capture usage from final chunk
       if (chunk.usage) {
         finalUsage = chunk.usage;
