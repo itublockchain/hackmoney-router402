@@ -25,7 +25,7 @@ export function getApiEndpoint(): string {
 export function getConfig(): Router402Config {
   const cfg = vscode.workspace.getConfiguration("router402");
   return {
-    apiEndpoint: cfg.get<string>("apiEndpoint", "http://localhost:8080"),
+    apiEndpoint: cfg.get<string>("apiEndpoint", "https://api.route402.xyz"),
     defaultModel: cfg.get<string>(
       "defaultModel",
       "anthropic/claude-sonnet-4.5"
