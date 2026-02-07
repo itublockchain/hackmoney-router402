@@ -84,6 +84,13 @@ export interface ChatResponse {
     /** Number of tokens in the completion */
     completionTokens: number;
   };
+
+  /**
+   * Raw provider-specific response parts for multi-turn tool calling.
+   * Used to preserve provider metadata (e.g. Gemini thoughtSignature)
+   * that must be echoed back in subsequent turns.
+   */
+  rawAssistantParts?: unknown;
 }
 
 // ============================================================================

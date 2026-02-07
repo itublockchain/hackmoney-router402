@@ -70,11 +70,28 @@ function convertParametersToGeminiSchema(
   const geminiProperties: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(properties)) {
     const prop = value as Record<string, unknown>;
-    geminiProperties[key] = {
+    const geminiProp: Record<string, unknown> = {
       type: mapJsonSchemaTypeToGemini(prop.type as string),
       description: prop.description,
       ...(prop.enum ? { enum: prop.enum } : {}),
     };
+
+    // Gemini requires 'items' for array types
+    if (prop.type === "array") {
+      if (prop.items) {
+        const items = prop.items as Record<string, unknown>;
+        geminiProp.items = {
+          type: mapJsonSchemaTypeToGemini(items.type as string),
+          ...(items.description ? { description: items.description } : {}),
+          ...(items.enum ? { enum: items.enum } : {}),
+        };
+      } else {
+        // Default to string items if not specified
+        geminiProp.items = { type: SchemaType.STRING };
+      }
+    }
+
+    geminiProperties[key] = geminiProp;
   }
 
   return {
@@ -283,30 +300,43 @@ export function translateMessages(messages: Message[]): Content[] {
     } else if (message.role === "assistant") {
       // Assistant messages map to 'model' role
       // @see Requirement 3.5
-      const parts: Part[] = [];
 
-      // Add text content
-      if (message.content) {
-        const textParts = convertContentToGemini(message.content);
-        parts.push(...textParts);
-      }
+      // If raw parts are available (from agentic loop), use them directly
+      // to preserve provider metadata like Gemini thoughtSignature
+      const rawParts = (message as Record<string, unknown>)._rawParts as
+        | Part[]
+        | undefined;
+      if (rawParts && Array.isArray(rawParts)) {
+        geminiContents.push({
+          role: "model",
+          parts: rawParts,
+        });
+      } else {
+        const parts: Part[] = [];
 
-      // Add tool calls as functionCall parts
-      if (message.tool_calls) {
-        for (const toolCall of message.tool_calls) {
-          parts.push({
-            functionCall: {
-              name: toolCall.function.name,
-              args: JSON.parse(toolCall.function.arguments),
-            },
-          });
+        // Add text content
+        if (message.content) {
+          const textParts = convertContentToGemini(message.content);
+          parts.push(...textParts);
         }
-      }
 
-      geminiContents.push({
-        role: "model",
-        parts: parts.length > 0 ? parts : [{ text: "" }],
-      });
+        // Add tool calls as functionCall parts
+        if (message.tool_calls) {
+          for (const toolCall of message.tool_calls) {
+            parts.push({
+              functionCall: {
+                name: toolCall.function.name,
+                args: JSON.parse(toolCall.function.arguments),
+              },
+            });
+          }
+        }
+
+        geminiContents.push({
+          role: "model",
+          parts: parts.length > 0 ? parts : [{ text: "" }],
+        });
+      }
     } else if (message.role === "user") {
       // User messages map directly
       // @see Requirement 3.5
@@ -604,6 +634,8 @@ export class GeminiProvider implements LLMProvider {
           promptTokens: usageMetadata?.promptTokenCount || 0,
           completionTokens: usageMetadata?.candidatesTokenCount || 0,
         },
+        // Preserve raw parts for multi-turn tool calling (thoughtSignature)
+        rawAssistantParts: candidate.content?.parts,
       };
     } catch (error) {
       if (error instanceof ProviderError) {

@@ -98,7 +98,7 @@ export function createChatRouter(): Router {
           );
         } else {
           // Handle non-streaming response
-          const response = await chatService.complete(request);
+          const response = await chatService.complete(request, walletAddress);
 
           // Debug log for usage tracking
           chatLogger.debug("Usage tracking check", {
@@ -192,7 +192,7 @@ async function handleStreamingResponse(
       | undefined;
 
     // Stream chunks from the chat service (Requirements 6.2, 6.3)
-    for await (const chunk of chatService.stream(request)) {
+    for await (const chunk of chatService.stream(request, walletAddress)) {
       // Capture usage from final chunk
       if (chunk.usage) {
         finalUsage = chunk.usage;

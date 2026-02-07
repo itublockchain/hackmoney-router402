@@ -18,8 +18,15 @@ import type {
   ChatCompletionResponse,
   ChunkChoice,
   ChunkDelta,
+  Message,
+  Tool,
+  ToolCall,
   Usage,
 } from "../types/chat.js";
+import { getMcpManager } from "./mcp-manager.js";
+
+/** Maximum number of LLM ↔ MCP tool execution rounds to prevent infinite loops */
+const MAX_MCP_ROUNDS = 10;
 
 // ============================================================================
 // Helper Functions
@@ -108,12 +115,74 @@ export class ChatService {
    * @see Requirement 5.5 - Include usage object
    */
   async complete(
-    request: ChatCompletionRequest
+    request: ChatCompletionRequest,
+    walletAddress?: string
   ): Promise<ChatCompletionResponse> {
     const model = this.getModelFromRequest(request);
     const { provider, modelId } = getProvider(model);
+
+    // Merge client tools with MCP tools
+    const mergedTools = this.mergeTools(request.tools);
     const params = this.buildParams(request, modelId);
-    const response = await provider.chat(params);
+    params.tools = mergedTools.length > 0 ? mergedTools : params.tools;
+    params.messages = this.injectMcpSystemMessages(
+      params.messages,
+      walletAddress
+    );
+
+    let response = await provider.chat(params);
+    const totalUsage = { ...response.usage };
+
+    // Agentic loop: if LLM calls MCP tools, execute them and re-prompt
+    let rounds = 0;
+    while (
+      response.toolCalls &&
+      response.toolCalls.length > 0 &&
+      this.hasMcpToolCalls(response.toolCalls) &&
+      rounds < MAX_MCP_ROUNDS
+    ) {
+      rounds++;
+
+      const { mcpCalls, clientCalls } = this.splitToolCalls(response.toolCalls);
+
+      // If there are client-side tool calls mixed in, stop the loop
+      // and return them to the client
+      if (clientCalls.length > 0) {
+        break;
+      }
+
+      // Execute all MCP tool calls
+      const toolResults = await this.executeMcpToolCalls(mcpCalls);
+
+      // Build the assistant message with tool calls
+      // Attach rawAssistantParts so provider can preserve metadata (e.g. Gemini thoughtSignature)
+      const assistantMessage: Message = {
+        role: "assistant",
+        content: response.content,
+        tool_calls: mcpCalls,
+        ...(response.rawAssistantParts
+          ? { _rawParts: response.rawAssistantParts }
+          : {}),
+      };
+
+      // Build tool result messages
+      const toolMessages: Message[] = toolResults.map((result) => ({
+        role: "tool" as const,
+        content: result.content,
+        tool_call_id: result.toolCallId,
+      }));
+
+      // Append to conversation and re-prompt
+      params.messages = [...params.messages, assistantMessage, ...toolMessages];
+
+      response = await provider.chat(params);
+
+      // Accumulate usage
+      totalUsage.promptTokens += response.usage.promptTokens;
+      totalUsage.completionTokens += response.usage.completionTokens;
+    }
+
+    response.usage = totalUsage;
     return this.formatResponse(model, response);
   }
 
@@ -134,19 +203,190 @@ export class ChatService {
    * @see Requirement 6.6 - Include incremental tool_calls in delta objects
    */
   async *stream(
-    request: ChatCompletionRequest
+    request: ChatCompletionRequest,
+    walletAddress?: string
   ): AsyncGenerator<ChatCompletionChunk> {
     const model = this.getModelFromRequest(request);
     const { provider, modelId } = getProvider(model);
+
+    // Merge client tools with MCP tools
+    const mergedTools = this.mergeTools(request.tools);
     const params = this.buildParams(request, modelId);
+    params.tools = mergedTools.length > 0 ? mergedTools : params.tools;
+    params.messages = this.injectMcpSystemMessages(
+      params.messages,
+      walletAddress
+    );
 
     // Generate a consistent ID for all chunks in this stream
     const responseId = generateResponseId();
     const created = getCurrentTimestamp();
 
-    for await (const chunk of provider.chatStream(params)) {
-      yield this.formatChunk(model, chunk, responseId, created);
+    let rounds = 0;
+    let continueLoop = true;
+
+    while (continueLoop && rounds <= MAX_MCP_ROUNDS) {
+      continueLoop = false;
+
+      // Collect tool calls from the stream
+      const accumulatedToolCalls: ToolCall[] = [];
+      let lastContent: string | null = null;
+
+      for await (const chunk of provider.chatStream(params)) {
+        // Accumulate tool calls for potential MCP execution
+        if (chunk.toolCalls) {
+          accumulatedToolCalls.push(...chunk.toolCalls);
+        }
+        if (chunk.content) {
+          lastContent = (lastContent ?? "") + chunk.content;
+        }
+
+        // Always yield chunks to the client for real-time streaming
+        yield this.formatChunk(model, chunk, responseId, created);
+      }
+
+      // After stream ends, check if we need to execute MCP tools
+      if (
+        accumulatedToolCalls.length > 0 &&
+        this.hasMcpToolCalls(accumulatedToolCalls)
+      ) {
+        const { mcpCalls, clientCalls } =
+          this.splitToolCalls(accumulatedToolCalls);
+
+        // If there are client-side calls mixed in, stop
+        if (clientCalls.length > 0) {
+          break;
+        }
+
+        rounds++;
+
+        // Execute MCP tool calls
+        const toolResults = await this.executeMcpToolCalls(mcpCalls);
+
+        // Build messages for the next round
+        // Note: streaming doesn't preserve rawParts/thoughtSignature,
+        // so Gemini 3 multi-step tool calling may not work in streaming mode
+        const assistantMessage: Message = {
+          role: "assistant",
+          content: lastContent,
+          tool_calls: mcpCalls,
+        };
+
+        const toolMessages: Message[] = toolResults.map((result) => ({
+          role: "tool" as const,
+          content: result.content,
+          tool_call_id: result.toolCallId,
+        }));
+
+        params.messages = [
+          ...params.messages,
+          assistantMessage,
+          ...toolMessages,
+        ];
+
+        continueLoop = true;
+      }
     }
+  }
+
+  // ==========================================================================
+  // MCP Tool Helpers
+  // ==========================================================================
+
+  /**
+   * Merge client-provided tools with MCP server tools.
+   */
+  private mergeTools(clientTools?: Tool[]): Tool[] {
+    const mcpManager = getMcpManager();
+    const mcpTools = mcpManager.hasServers() ? mcpManager.getAllTools() : [];
+    return [...(clientTools ?? []), ...mcpTools];
+  }
+
+  /**
+   * Inject MCP server system messages at the beginning of the messages array.
+   * Only adds messages if MCP servers are connected and have systemMessage configured.
+   */
+  private injectMcpSystemMessages(
+    messages: Message[],
+    walletAddress?: string
+  ): Message[] {
+    const mcpManager = getMcpManager();
+    if (!mcpManager.hasServers()) return messages;
+
+    const systemMessages = mcpManager.getSystemMessages();
+    if (systemMessages.length === 0 && !walletAddress) return messages;
+
+    const injected: Message[] = systemMessages.map((content) => ({
+      role: "system" as const,
+      content,
+    }));
+
+    if (walletAddress) {
+      injected.push({
+        role: "system" as const,
+        content: `User's wallet address: ${walletAddress}`,
+      });
+    }
+
+    return [...injected, ...messages];
+  }
+
+  /**
+   * Check if any tool calls target MCP tools.
+   */
+  private hasMcpToolCalls(toolCalls: ToolCall[]): boolean {
+    const mcpManager = getMcpManager();
+    return toolCalls.some((tc) => mcpManager.isMcpTool(tc.function.name));
+  }
+
+  /**
+   * Split tool calls into MCP and client-side calls.
+   */
+  private splitToolCalls(toolCalls: ToolCall[]): {
+    mcpCalls: ToolCall[];
+    clientCalls: ToolCall[];
+  } {
+    const mcpManager = getMcpManager();
+    const mcpCalls: ToolCall[] = [];
+    const clientCalls: ToolCall[] = [];
+
+    for (const tc of toolCalls) {
+      if (mcpManager.isMcpTool(tc.function.name)) {
+        mcpCalls.push(tc);
+      } else {
+        clientCalls.push(tc);
+      }
+    }
+
+    return { mcpCalls, clientCalls };
+  }
+
+  /**
+   * Execute MCP tool calls and return results.
+   */
+  private async executeMcpToolCalls(
+    toolCalls: ToolCall[]
+  ): Promise<{ toolCallId: string; content: string }[]> {
+    const mcpManager = getMcpManager();
+
+    const results = await Promise.all(
+      toolCalls.map(async (tc) => {
+        try {
+          const args = JSON.parse(tc.function.arguments);
+          const content = await mcpManager.executeTool(tc.function.name, args);
+          return { toolCallId: tc.id, content };
+        } catch (error) {
+          const errorMsg =
+            error instanceof Error ? error.message : String(error);
+          return {
+            toolCallId: tc.id,
+            content: JSON.stringify({ error: errorMsg }),
+          };
+        }
+      })
+    );
+
+    return results;
   }
 
   /**

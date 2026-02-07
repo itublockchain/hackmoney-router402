@@ -8,6 +8,7 @@ import express, {
 } from "express";
 import helmet from "helmet";
 import { initConfig } from "./config/index.js";
+import { mcpServers } from "./config/mcp-servers.js";
 import { authorizeRouter } from "./routes/authorize.js";
 import { healthRouter } from "./routes/health.js";
 import { modelsRouter } from "./routes/models.js";
@@ -15,6 +16,7 @@ import { createPaidRouter } from "./routes/paid.js";
 import { initAuthService } from "./services/auth.service.js";
 import { initAutoPaymentService } from "./services/auto-payment.js";
 import { initDebtService } from "./services/debt.js";
+import { initMcpManager } from "./services/mcp-manager.js";
 import { disconnectPrisma, getPrismaClient } from "./utils/prisma.js";
 
 // Initialize and validate configuration at startup
@@ -31,6 +33,14 @@ initAutoPaymentService(prisma);
 
 // Initialize auth service
 initAuthService(prisma, config.JWT_SECRET);
+
+// Initialize MCP manager and connect to remote MCP servers
+const mcpManager = initMcpManager();
+if (mcpServers.length > 0) {
+  mcpManager.connectAll(mcpServers).catch((err) => {
+    logger.error("Failed to initialize MCP servers", err);
+  });
+}
 
 // Create routers that depend on config
 const paidRouter = createPaidRouter(config);
@@ -107,6 +117,7 @@ const shutdownLogger = logger.context("Shutdown");
 process.on("SIGTERM", () => {
   shutdownLogger.info("SIGTERM signal received: closing HTTP server");
   server.close(async () => {
+    await mcpManager.disconnectAll();
     await disconnectPrisma();
     shutdownLogger.info("HTTP server closed");
     process.exit(0);
@@ -116,6 +127,7 @@ process.on("SIGTERM", () => {
 process.on("SIGINT", () => {
   shutdownLogger.info("\nSIGINT signal received: closing HTTP server");
   server.close(async () => {
+    await mcpManager.disconnectAll();
     await disconnectPrisma();
     shutdownLogger.info("HTTP server closed");
     process.exit(0);
