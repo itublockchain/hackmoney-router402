@@ -1,7 +1,7 @@
 # Router402 - Use any LLM with x402 micropayments. One API, multiple models, pay-per-use.
 
 <p align="center">
-    <img src="../apps/web/public/og-image.png" width="700" />
+    <img src="../apps/web/public/banner.gif" width="100%" />
 </p>
 
 ## The Problem
