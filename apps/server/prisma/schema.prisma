@@ -23,7 +23,7 @@ model User {
   walletAddress     String             @unique
   currentDebt       Decimal            @default(0) @db.Decimal(18, 8)
   totalSpent        Decimal            @default(0) @db.Decimal(18, 8)
-  paymentThreshold  Decimal            @default(0.5) @db.Decimal(18, 8)
+  paymentThreshold  Decimal            @default(0) @db.Decimal(18, 8)
   lastNonce         String?
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt

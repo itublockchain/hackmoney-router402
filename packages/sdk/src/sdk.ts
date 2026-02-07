@@ -1,12 +1,12 @@
 import type { Address, WalletClient } from "viem";
-import { resolveConfig, validateConfig } from "./config";
+import { resolveConfig, validateConfig } from "./config.js";
 import {
   createKernelAccountFromWallet,
   createKernelPublicClient,
   createSessionKeyApproval,
   getKernelAccountAddress,
   isKernelAccountDeployed,
-} from "./kernel";
+} from "./kernel.js";
 import {
   canUseSessionKey,
   exportSessionKeyForBackend,
@@ -15,11 +15,11 @@ import {
   isSessionKeyExpired,
   isSessionKeyValid,
   markSessionKeyApproved,
-} from "./session-keys";
+} from "./session-keys.js";
 import {
   sendOwnerTransaction,
   sendSessionKeyTransaction,
-} from "./transactions";
+} from "./transactions.js";
 import type {
   CallData,
   ResolvedConfig,
@@ -28,8 +28,8 @@ import type {
   SessionKeyForBackend,
   SmartAccountInfo,
   TransactionExecutionResult,
-} from "./types";
-import { SmartAccountError } from "./types";
+} from "./types.js";
+import { SmartAccountError } from "./types.js";
 
 /**
  * Router402 SDK - Main entry point for smart account operations

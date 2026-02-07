@@ -5,8 +5,8 @@
  */
 
 import { logger } from "@router402/utils";
+import type { PaymentRequirements } from "@x402/core/types";
 import { verifyTypedData } from "viem";
-import type { PaymentRequirements } from "../../external/x402/typescript/packages/core/dist/esm/types/index.mjs";
 
 const sigLogger = logger.context("signature");
 

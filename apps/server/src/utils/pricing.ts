@@ -6,6 +6,7 @@ import { Decimal } from "decimal.js";
  */
 export const PRICING = {
   // Claude models
+  "anthropic/claude-opus-4.6": { input: 5.0, output: 25.0 },
   "anthropic/claude-opus-4.5": { input: 5.0, output: 25.0 },
   "anthropic/claude-sonnet-4.5": { input: 3.0, output: 15.0 },
   "anthropic/claude-haiku-4.5": { input: 1.0, output: 5.0 },

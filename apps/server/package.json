@@ -11,18 +11,20 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
-    "db:studio": "prisma studio",
-    "x402:install": "pnpm install --prefix external/x402/typescript",
-    "x402:build": "pnpm run build --prefix external/x402/typescript"
+    "db:studio": "prisma studio"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.72.1",
     "@google/generative-ai": "^0.24.1",
     "@prisma/adapter-pg": "^7.3.0",
     "@prisma/client": "^7.3.0",
+    "@router402/sdk": "workspace:*",
     "@router402/types": "workspace:*",
     "@router402/utils": "workspace:*",
     "@types/jsonwebtoken": "^9.0.10",
+    "@x402/core": "^2.3.0",
+    "@x402/evm": "^2.3.0",
+    "@x402/express": "^2.3.0",
     "@zerodev/ecdsa-validator": "^5.4.5",
     "@zerodev/permissions": "^5.4.5",
     "@zerodev/sdk": "^5.4.5",
