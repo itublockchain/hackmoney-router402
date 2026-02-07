@@ -63,7 +63,21 @@ export async function editSelection(): Promise<void> {
   // Extract code from markdown code blocks if present
   const editedCode = extractCode(response, language);
 
-  await showDiffView(selectedText, editedCode, editor);
+  // Build full file contents for a proper full-file diff
+  const fullOriginal = editor.document.getText();
+  const selection = editor.selection;
+  const beforeSelection = editor.document.getText(
+    new vscode.Range(new vscode.Position(0, 0), selection.start)
+  );
+  const afterSelection = editor.document.getText(
+    new vscode.Range(
+      selection.end,
+      editor.document.positionAt(fullOriginal.length)
+    )
+  );
+  const fullModified = beforeSelection + editedCode + afterSelection;
+
+  await showDiffView(fullOriginal, fullModified, editor);
 }
 
 /** Extracts code from a markdown code block, falling back to raw text. */

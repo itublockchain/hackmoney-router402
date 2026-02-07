@@ -82,9 +82,6 @@ export default function SetupPage() {
     return () => clearTimeout(id);
   }, []);
 
-  // Ref to ensure initialize is called at most once automatically
-  const hasAutoInitialized = useRef(false);
-
   // Fetch USDC balance of the smart account (not the EOA)
   const { data: rawBalance, isLoading: isBalanceLoading } = useReadContract({
     address: USDC_ADDRESS,
@@ -103,45 +100,6 @@ export default function SetupPage() {
   const balanceNumber =
     usdcBalance !== undefined ? parseFloat(usdcBalance) : undefined;
   const isLowBalance = balanceNumber !== undefined && balanceNumber < 0.5;
-
-  // Auto-initialize once when the wallet is connected and setup is needed.
-  // Uses a ref to guarantee this fires at most once — no sign request duplicates.
-  // A settling delay prevents firing while wagmi / Zustand state is still
-  // stabilising, which avoids flickering and duplicate sign-request prompts.
-  useEffect(() => {
-    if (!isConnected) {
-      // Reset when wallet disconnects so re-connect can auto-init again
-      hasAutoInitialized.current = false;
-      return;
-    }
-
-    // Don't auto-init if already ready or already ran
-    if (isReady || hasAutoInitialized.current) return;
-
-    // Don't auto-init if the hook hasn't settled yet (walletClient may not be
-    // available) or if already in an active flow state.
-    if (
-      status === "disconnected" ||
-      status === "initializing" ||
-      status === "deploying" ||
-      status === "creating_session_key" ||
-      status === "approving_session_key" ||
-      status === "enabling_session_key" ||
-      status === "sending_to_backend"
-    ) {
-      return;
-    }
-
-    // Wait for state to settle before triggering initialization.
-    // If any dependency changes during the delay the timer is cancelled,
-    // preventing duplicate or overlapping sign requests.
-    const timer = setTimeout(() => {
-      hasAutoInitialized.current = true;
-      initialize();
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [isConnected, isReady, status, initialize]);
 
   const currentStep = !isConnected ? 0 : statusToStep[status];
 
@@ -356,13 +314,7 @@ export default function SetupPage() {
       {/* Action area */}
       <div className="pt-2">
         {status === "error" && (
-          <Button
-            onClick={() => {
-              hasAutoInitialized.current = true;
-              initialize();
-            }}
-            className="w-full"
-          >
+          <Button onClick={() => initialize()} className="w-full">
             Retry Setup
           </Button>
         )}

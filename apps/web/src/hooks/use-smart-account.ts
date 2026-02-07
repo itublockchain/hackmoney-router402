@@ -224,9 +224,15 @@ export function useSmartAccount(): UseSmartAccountReturn {
       return;
     }
 
+    // Wallet switched while connected — reset the store so the old smart
+    // account data is cleared, then fall through to re-initialize with the
+    // new EOA.  `initializeSmartAccount` will re-derive the smart account
+    // address and repopulate the store.
     if (storedEoaAddress && storedEoaAddress !== eoaAddress) {
       reset();
       lastInitializedEoa.current = undefined;
+      // Don't return — fall through to initializeSmartAccount so it runs
+      // immediately in this render rather than waiting for the next effect.
     }
 
     initializeSmartAccount();

@@ -9,12 +9,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { Address } from "viem";
 import { useConnection, useSwitchChain, useWalletClient } from "wagmi";
 import { SMART_ACCOUNT_CONFIG } from "@/config";
+import { initializeRouter402, type Router402Status } from "@/lib/router402";
 import {
-  checkSyncStatus,
-  initializeRouter402,
-  type Router402Status,
-} from "@/lib/router402";
-import { exportSessionKeyForBackend, getAuthToken } from "@/lib/session-keys";
+  exportSessionKeyForBackend,
+  getActiveSessionKey,
+  getAuthToken,
+} from "@/lib/session-keys";
 import { useSmartAccountStore } from "@/stores";
 
 export type { Router402Status };
@@ -38,12 +38,12 @@ interface UseRouter402Return {
 /**
  * Unified hook that orchestrates the Router402 setup flow.
  *
- * Business logic lives in `lib/router402/`:
- * - `status.ts`     — synchronous status computation
- * - `initialize.ts` — async setup flow (deploy, session key, authorize)
- * - `authorize.ts`  — EIP-712 signing + backend submission
- *
- * The hook only wires React state, refs, and effects.
+ * Design:
+ * - Single effect triggers setup when wallet connects
+ * - Fast path: if session key + auth token exist in localStorage, skip to "ready"
+ * - Slow path: run full SDK setup (deploy, session key, approve, enable, backend auth)
+ * - Wallet switches reset everything and re-trigger
+ * - No competing state machines or sync effects
  */
 export function useRouter402(): UseRouter402Return {
   const {
@@ -52,15 +52,15 @@ export function useRouter402(): UseRouter402Return {
     isConnecting,
     isReconnecting,
   } = useConnection();
-  const { data: walletClient } = useWalletClient({
-    chainId: SMART_ACCOUNT_CONFIG.chainId,
-  });
+
+  // Use walletClient WITHOUT chain filter — we switch chains inside initialize()
+  const { data: walletClient } = useWalletClient();
   const { mutateAsync: switchChainAsync } = useSwitchChain();
 
   const {
     address: smartAccountAddress,
-    isDeployed,
     eoaAddress: storedEoaAddress,
+    isDeployed,
     setLoading,
     setError: setStoreError,
     updateState,
@@ -74,11 +74,13 @@ export function useRouter402(): UseRouter402Return {
     SessionKeyData | undefined
   >(undefined);
   const [authToken, setAuthToken] = useState<string | undefined>(undefined);
-  const [storeHydrated, setStoreHydrated] = useState(false);
 
-  // Refs for unstable values — lets `initialize` read current values
-  // without being in its dependency array.
+  // Track the EOA we last initialized for to detect wallet switches
+  const initializedForEoa = useRef<Address | undefined>(undefined);
+  // Guard against concurrent initialize() calls
   const isRunning = useRef(false);
+
+  // Refs for values used inside initialize() — avoids stale closures
   const walletClientRef = useRef(walletClient);
   const eoaAddressRef = useRef(eoaAddress);
   const switchChainRef = useRef(switchChainAsync);
@@ -95,38 +97,29 @@ export function useRouter402(): UseRouter402Return {
   updateStateRef.current = updateState;
   updateLastCheckedRef.current = updateLastChecked;
 
-  // Listen for Zustand store hydration
-  useEffect(() => {
-    const unsub = useSmartAccountStore.persist.onFinishHydration(() => {
-      setStoreHydrated(true);
-    });
-    if (useSmartAccountStore.persist.hasHydrated()) {
-      setStoreHydrated(true);
-    }
-    return unsub;
-  }, []);
-
+  /**
+   * Run the full setup pipeline. Can be called automatically or via retry button.
+   */
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const initialize = useCallback(async () => {
     const client = walletClientRef.current;
     const eoa = eoaAddressRef.current;
 
     if (isRunning.current) return;
-    if (!client || !eoa) {
-      setStatus("disconnected");
-      return;
-    }
+    if (!client || !eoa) return;
     if (!SMART_ACCOUNT_CONFIG.isConfigured) {
-      setStatus("not_configured");
+      setStatus("error");
       setError(new Error("Pimlico API key is not configured"));
       return;
     }
 
     isRunning.current = true;
     setError(undefined);
+    setStatus("initializing");
     setLoadingRef.current(true);
 
     try {
+      // Switch to the correct chain first
       await switchChainRef.current({
         chainId: SMART_ACCOUNT_CONFIG.chainId,
       });
@@ -142,6 +135,7 @@ export function useRouter402(): UseRouter402Return {
       setActiveSessionKey(result.sessionKey);
       setAuthToken(result.authToken);
       setStatus("ready");
+      initializedForEoa.current = eoa;
     } catch (err) {
       const wrapped =
         err instanceof SmartAccountError
@@ -155,73 +149,103 @@ export function useRouter402(): UseRouter402Return {
       setError(wrapped);
       setStoreErrorRef.current(wrapped);
       setStatus("error");
-    } finally {
-      setLoadingRef.current(false);
-      // Keep the running lock for a short cooldown so React effects that
-      // re-evaluate right after completion don't trigger a second run.
-      setTimeout(() => {
-        isRunning.current = false;
-      }, 1000);
     }
+
+    setLoadingRef.current(false);
+    isRunning.current = false;
   }, []);
+
+  /**
+   * Try the fast path: check localStorage for existing valid session.
+   * Returns true if we found a valid session and set status to "ready".
+   */
+  const tryFastPath = useCallback((saAddress: Address): boolean => {
+    const existingKey = getActiveSessionKey(saAddress);
+    const existingToken = getAuthToken(saAddress);
+    if (existingKey && existingToken) {
+      setActiveSessionKey(existingKey);
+      setAuthToken(existingToken);
+      setStatus("ready");
+      return true;
+    }
+    return false;
+  }, []);
+
+  /**
+   * Main effect: triggers setup when wallet connects.
+   *
+   * Flow:
+   * 1. Not connected → "disconnected", clear state
+   * 2. Connected but no walletClient yet → "not_configured" (waiting)
+   * 3. Connected + walletClient → check store for smart account address
+   *    a. If store has address → try fast path (localStorage session key)
+   *    b. If fast path succeeds → "ready"
+   *    c. If fast path fails or no store address → run initialize()
+   */
+  useEffect(() => {
+    // Disconnected: reset everything
+    if (!isConnected || !eoaAddress) {
+      setStatus("disconnected");
+      setActiveSessionKey(undefined);
+      setAuthToken(undefined);
+      setError(undefined);
+      initializedForEoa.current = undefined;
+      return;
+    }
+
+    // Wallet switched: reset store and allow re-initialization
+    if (initializedForEoa.current && initializedForEoa.current !== eoaAddress) {
+      reset();
+      initializedForEoa.current = undefined;
+      setActiveSessionKey(undefined);
+      setAuthToken(undefined);
+      setError(undefined);
+      setStatus("not_configured");
+      // Fall through — will trigger init below or on next render when walletClient updates
+    }
+
+    // Already initialized for this EOA
+    if (initializedForEoa.current === eoaAddress) return;
+
+    // No wallet client yet — wait for it
+    if (!walletClient) {
+      setStatus("not_configured");
+      return;
+    }
+
+    // Try fast path: check if store already has the smart account address
+    // for THIS EOA (persisted from a previous session via Zustand persist).
+    // Skip if the store has data from a different wallet.
+    if (smartAccountAddress && storedEoaAddress === eoaAddress) {
+      if (tryFastPath(smartAccountAddress)) {
+        initializedForEoa.current = eoaAddress;
+        return;
+      }
+    }
+
+    // Run full initialization. Use a small delay to let React state settle
+    // (prevents firing during wagmi's reconnect flicker).
+    const timer = setTimeout(() => {
+      initialize();
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [
+    isConnected,
+    eoaAddress,
+    walletClient,
+    smartAccountAddress,
+    storedEoaAddress,
+    reset,
+    initialize,
+    tryFastPath,
+  ]);
 
   const sessionKeyForBackend = activeSessionKey
     ? exportSessionKeyForBackend(activeSessionKey)
     : null;
 
-  const isReady =
-    status === "ready" &&
-    !!activeSessionKey &&
-    !!smartAccountAddress &&
-    !!getAuthToken(smartAccountAddress);
-
-  // Synchronous state check — never triggers signing or async ops
-  useEffect(() => {
-    const result = checkSyncStatus({
-      isConnected,
-      eoaAddress,
-      storedEoaAddress,
-      storeHydrated,
-    });
-
-    if (result.shouldReset) {
-      reset();
-      return;
-    }
-
-    if (result.status === "disconnected") {
-      setStatus("disconnected");
-      setActiveSessionKey(undefined);
-      return;
-    }
-
-    if (result.status === null) return;
-
-    if (result.status === "ready") {
-      setActiveSessionKey(result.activeSessionKey);
-      setAuthToken(
-        smartAccountAddress
-          ? (getAuthToken(smartAccountAddress) ?? undefined)
-          : undefined
-      );
-      setStatus("ready");
-      return;
-    }
-
-    setStatus((prev) => {
-      if (prev === "disconnected" || prev === "not_configured") {
-        return "not_configured";
-      }
-      return prev;
-    });
-  }, [
-    isConnected,
-    eoaAddress,
-    storedEoaAddress,
-    storeHydrated,
-    reset,
-    smartAccountAddress,
-  ]);
+  const isReady = status === "ready" && !!activeSessionKey && !!authToken;
 
   return {
     status,
