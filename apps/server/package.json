@@ -4,8 +4,8 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch --clear-screen=false src/index.ts",
-    "build": "prisma generate && tsc",
-    "start": "node dist/src/index.js",
+    "build": "prisma generate && bun build ./src/index.ts --outdir ./dist --target bun",
+    "start": "bun dist/index.js",
     "typecheck": "tsc --noEmit",
     "lint": "biome check .",
     "db:generate": "prisma generate",
