@@ -10,6 +10,10 @@
       "dependsOn": ["^build"],
       "outputs": ["dist/**", ".next/**"]
     },
+    "declarations": {
+      "dependsOn": ["build"],
+      "outputs": ["dist/**/*.d.ts", "dist/**/*.d.ts.map"]
+    },
     "typecheck": {},
     "lint": {},
     "test": {

@@ -18,7 +18,7 @@ export interface Router402Config {
 /** Returns the configured API endpoint. */
 export function getApiEndpoint(): string {
   const cfg = vscode.workspace.getConfiguration("router402");
-  return cfg.get<string>("apiEndpoint", "http://localhost:8080");
+  return cfg.get<string>("apiEndpoint", "https://api.route402.xyz");
 }
 
 /** Reads all Router 402 extension settings (excluding secrets). */

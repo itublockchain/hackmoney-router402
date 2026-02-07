@@ -28,7 +28,7 @@
       "properties": {
         "router402.apiEndpoint": {
           "type": "string",
-          "default": "http://localhost:8080",
+          "default": "https://api.route402.xyz",
           "description": "Router 402 API endpoint URL"
         },
         "router402.defaultModel": {
