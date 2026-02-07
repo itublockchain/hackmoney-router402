@@ -97,7 +97,9 @@ const serverLogger = logger.context("Server");
 const server = app.listen(PORT, () => {
   serverLogger.info(`Server running on http://localhost:${PORT}`);
   serverLogger.info(`Environment: ${config.NODE_ENV}`);
-  serverLogger.info(`CORS enabled for: ${CORS_ORIGIN}`);
+  serverLogger.info(
+    `CORS enabled for: ${Array.isArray(CORS_ORIGIN) ? CORS_ORIGIN.join(", ") : CORS_ORIGIN}`
+  );
 });
 
 // Graceful shutdown

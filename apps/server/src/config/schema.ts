@@ -26,9 +26,15 @@ export const configSchema = z.object({
 
   /**
    * CORS origin for cross-origin requests
+   * Supports comma-separated values for multiple origins
    * @default "http://localhost:3000"
    */
-  CORS_ORIGIN: z.string().default("http://localhost:3000"),
+  CORS_ORIGIN: z
+    .string()
+    .default("http://localhost:3000")
+    .transform((val) =>
+      val.includes(",") ? val.split(",").map((origin) => origin.trim()) : val
+    ),
 
   /**
    * Database connection URL

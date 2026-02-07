@@ -1,12 +1,12 @@
 # Getting Started
 
-This guide walks you through installing the SDK, configuring it, and setting up your first smart account.
+This guide covers everything you need to go from installation to making your first chat completion request with Route402.
 
 ## Prerequisites
 
 - **Node.js 18+** or **Bun 1.0+**
-- A **Pimlico API key** (get one at [pimlico.io](https://www.pimlico.io/))
-- A wallet library like **Wagmi** or **Viem** for wallet client creation
+- A **Pimlico API key** ([pimlico.io](https://www.pimlico.io/))
+- A wallet library like **Wagmi** or **Viem**
 
 ## Installation
 
@@ -22,7 +22,7 @@ bun add @router402/sdk viem
 
 ## Configuration
 
-Create an SDK instance with your configuration:
+Create an SDK instance:
 
 ```typescript
 import { Router402Sdk } from "@router402/sdk";
@@ -41,45 +41,33 @@ const sdk = new Router402Sdk({
 | `chain` | `Chain` | Yes | -- | Target blockchain (from `viem/chains`) |
 | `pimlicoApiKey` | `string` | Yes | -- | Pimlico API key for bundler and paymaster |
 | `entryPointVersion` | `"0.7"` | No | `"0.7"` | ERC-4337 entry point version |
-| `sessionKeyValidityPeriod` | `number` | No | `31536000` | Session key validity in seconds (default: 1 year) |
+| `sessionKeyValidityPeriod` | `number` | No | `31536000` | Session key validity in seconds (1 year) |
 
-The SDK validates the configuration on construction and throws if required fields are missing or invalid.
+## Setup Flow
 
-### Factory Function
+The complete setup flow from wallet connection to making API calls:
 
-You can also use the factory function:
+```mermaid
+flowchart TD
+    A["1. Connect Wallet"] --> B["2. Initialize SDK"]
+    B --> C["3. Deploy Smart Account"]
+    C --> D["4. Create & Approve Session Key"]
+    D --> E["5. Enable Session Key On-Chain"]
+    E --> F["6. Authorize with Server"]
+    F --> G["7. Make Chat Completion Requests"]
 
-```typescript
-import { createRouter402Sdk } from "@router402/sdk";
-
-const sdk = createRouter402Sdk({
-  chain: baseSepolia,
-  pimlicoApiKey: "your-api-key",
-});
+    style A fill:#f9f,stroke:#333
+    style G fill:#9f9,stroke:#333
 ```
 
-## Creating a Wallet Client
-
-The SDK requires a Viem `WalletClient` for operations that need wallet signing. Here's how to create one:
-
-### With Wagmi (React)
+### Step 1: Create a Wallet Client
 
 ```typescript
+// With Wagmi (React)
 import { useWalletClient } from "wagmi";
+const { data: walletClient } = useWalletClient();
 
-function MyComponent() {
-  const { data: walletClient } = useWalletClient();
-
-  // Use walletClient with the SDK
-  if (walletClient) {
-    const address = await sdk.getSmartAccountAddress(walletClient);
-  }
-}
-```
-
-### With Viem Directly
-
-```typescript
+// With Viem directly
 import { createWalletClient, custom } from "viem";
 import { baseSepolia } from "viem/chains";
 
@@ -89,92 +77,244 @@ const walletClient = createWalletClient({
 });
 ```
 
-## First Steps
+### Step 2: Setup Account (Deploy + Session Key)
 
-### 1. Get Your Smart Account Address
-
-Every EOA deterministically maps to a smart account address. You can get this address before the account is deployed:
+The `setupAccount()` method handles deployment, session key generation, approval, and on-chain enablement in a single call:
 
 ```typescript
-const smartAccountAddress = await sdk.getSmartAccountAddress(walletClient);
-console.log("Smart Account:", smartAccountAddress);
-```
+const USDC_BASE_SEPOLIA = "0x036CbD53842c5426634e7929541eC2318f3dCF7e";
 
-### 2. Check Deployment Status
-
-```typescript
-const isDeployed = await sdk.isSmartAccountDeployed(smartAccountAddress);
-console.log("Deployed:", isDeployed);
-```
-
-### 3. Deploy the Smart Account
-
-If the account is not deployed, deploy it. This sends a no-op user operation that triggers on-chain deployment:
-
-```typescript
-if (!isDeployed) {
-  const result = await sdk.deploySmartAccount(walletClient);
-  console.log("Deploy tx:", result.txHash);
-}
-```
-
-### 4. Create a Session Key
-
-Generate a session key pair and have the owner approve it:
-
-```typescript
-// Generate key pair
-const sessionKey = sdk.generateSessionKey(smartAccountAddress, eoaAddress);
-
-// Owner approves the key (triggers wallet signature)
-const approvedKey = await sdk.approveSessionKey(walletClient, sessionKey);
-```
-
-### 5. Send a Transaction
-
-Use the approved session key to send transactions without the owner's wallet:
-
-```typescript
-const result = await sdk.sendSessionKeyTransaction(approvedKey, [
-  {
-    to: "0x...",
-    value: 0n,
-    data: "0x...",
-  },
-]);
-
-console.log("Success:", result.success);
-console.log("Tx hash:", result.txHash);
-```
-
-## Using the Setup Flow
-
-For a simpler experience, use `setupAccount()` which orchestrates all steps automatically:
-
-```typescript
-const result = await sdk.setupAccount(walletClient, eoaAddress, {
-  usdcAddress: "0x036CbD53842c5426634e7929541eC2318f3dCF7e", // USDC on Base Sepolia
+const setup = await sdk.setupAccount(walletClient, eoaAddress, {
+  usdcAddress: USDC_BASE_SEPOLIA,
   onStatus: (status) => {
-    console.log("Setup status:", status);
     // "initializing" → "deploying" → "creating_session_key"
     // → "approving_session_key" → "enabling_session_key" → "complete"
+    console.log("Setup status:", status);
   },
 });
 
-console.log("Smart Account:", result.info.address);
-console.log("Session Key:", result.sessionKey.publicKey);
-console.log("Is approved:", result.sessionKey.isApproved);
+console.log("Smart Account:", setup.info.address);
+console.log("Session Key:", setup.sessionKey.publicKey);
 ```
 
-## Reading Configuration
+### Step 3: Authorize with Server
 
-Access the resolved configuration at any time:
+Sign an EIP-712 message and send the session key data to the Route402 server to receive a JWT token:
 
 ```typescript
-const config = sdk.getConfig();
-console.log("Chain ID:", config.chainId);
-console.log("Pimlico URL:", config.pimlicoUrl);
-console.log("Session key validity:", config.sessionKeyValidityPeriod, "seconds");
+import { signTypedData } from "viem/actions";
+
+// Export session key for the server
+const backendData = sdk.exportSessionKeyForBackend(setup.sessionKey);
+const nonce = 0;
+
+const requestBody = {
+  smartAccountAddress: setup.info.address,
+  privateKey: backendData.privateKey,
+  serializedSessionKey: backendData.serializedSessionKey,
+  eoaAddress,
+  chainId: sdk.getChainId(),
+  nonce,
+};
+
+// Sign the EIP-712 authorization message
+const signature = await signTypedData(walletClient, {
+  domain: {
+    name: "Router402 Authorization",
+    version: "1",
+    chainId: BigInt(sdk.getChainId()),
+  },
+  types: {
+    Authorization: [
+      { name: "smartAccountAddress", type: "address" },
+      { name: "privateKey", type: "string" },
+      { name: "serializedSessionKey", type: "string" },
+      { name: "eoaAddress", type: "address" },
+      { name: "chainId", type: "uint256" },
+      { name: "nonce", type: "uint256" },
+    ],
+  },
+  primaryType: "Authorization",
+  message: {
+    ...requestBody,
+    chainId: BigInt(sdk.getChainId()),
+    nonce: BigInt(nonce),
+  },
+});
+
+// Send to the server
+const response = await fetch("https://api.router402.xyz/v1/authorize", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "x-authorization-signature": signature,
+  },
+  body: JSON.stringify(requestBody),
+});
+
+const { data } = await response.json();
+const jwtToken = data.token;
+```
+
+### Step 4: Make Chat Completion Requests
+
+Use the JWT token for authenticated chat completions:
+
+```typescript
+// Non-streaming
+async function chat(token: string, message: string) {
+  const response = await fetch("https://api.router402.xyz/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      model: "anthropic/claude-sonnet-4.5",
+      messages: [
+        { role: "user", content: message },
+      ],
+    }),
+  });
+
+  const result = await response.json();
+  return result.choices[0].message.content;
+}
+
+const answer = await chat(jwtToken, "What is account abstraction?");
+console.log(answer);
+```
+
+### Streaming Example
+
+```typescript
+async function streamChat(token: string, message: string) {
+  const response = await fetch("https://api.router402.xyz/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      model: "anthropic/claude-sonnet-4.5",
+      messages: [
+        { role: "user", content: message },
+      ],
+      stream: true,
+    }),
+  });
+
+  const reader = response.body!.getReader();
+  const decoder = new TextDecoder();
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    const text = decoder.decode(value);
+    const lines = text.split("\n");
+
+    for (const line of lines) {
+      if (line.startsWith("data: ") && line !== "data: [DONE]") {
+        const chunk = JSON.parse(line.slice(6));
+        const content = chunk.choices[0]?.delta?.content;
+        if (content) {
+          process.stdout.write(content);
+        }
+      }
+    }
+  }
+}
+
+await streamChat(jwtToken, "Tell me about ERC-4337");
+```
+
+## Complete Example
+
+Putting it all together:
+
+```typescript
+import { Router402Sdk } from "@router402/sdk";
+import { baseSepolia } from "viem/chains";
+import { signTypedData } from "viem/actions";
+
+const USDC_BASE_SEPOLIA = "0x036CbD53842c5426634e7929541eC2318f3dCF7e";
+
+const sdk = new Router402Sdk({
+  chain: baseSepolia,
+  pimlicoApiKey: process.env.PIMLICO_API_KEY!,
+});
+
+async function onboard(walletClient, eoaAddress: string) {
+  // 1. Setup account (deploy + session key)
+  const setup = await sdk.setupAccount(walletClient, eoaAddress, {
+    usdcAddress: USDC_BASE_SEPOLIA,
+    onStatus: (s) => console.log("Status:", s),
+  });
+
+  // 2. Authorize with server (get JWT)
+  const backendData = sdk.exportSessionKeyForBackend(setup.sessionKey);
+  const signature = await signTypedData(walletClient, {
+    domain: {
+      name: "Router402 Authorization",
+      version: "1",
+      chainId: BigInt(sdk.getChainId()),
+    },
+    types: {
+      Authorization: [
+        { name: "smartAccountAddress", type: "address" },
+        { name: "privateKey", type: "string" },
+        { name: "serializedSessionKey", type: "string" },
+        { name: "eoaAddress", type: "address" },
+        { name: "chainId", type: "uint256" },
+        { name: "nonce", type: "uint256" },
+      ],
+    },
+    primaryType: "Authorization",
+    message: {
+      smartAccountAddress: setup.info.address,
+      privateKey: backendData.privateKey,
+      serializedSessionKey: backendData.serializedSessionKey,
+      eoaAddress,
+      chainId: BigInt(sdk.getChainId()),
+      nonce: 0n,
+    },
+  });
+
+  const authResponse = await fetch("https://api.router402.xyz/v1/authorize", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-authorization-signature": signature,
+    },
+    body: JSON.stringify({
+      smartAccountAddress: setup.info.address,
+      privateKey: backendData.privateKey,
+      serializedSessionKey: backendData.serializedSessionKey,
+      eoaAddress,
+      chainId: sdk.getChainId(),
+      nonce: 0,
+    }),
+  });
+
+  const { data } = await authResponse.json();
+
+  // 3. Make a chat completion request
+  const chatResponse = await fetch("https://api.router402.xyz/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${data.token}`,
+    },
+    body: JSON.stringify({
+      model: "anthropic/claude-sonnet-4.5",
+      messages: [{ role: "user", content: "Hello, Route402!" }],
+    }),
+  });
+
+  const result = await chatResponse.json();
+  console.log("Response:", result.choices[0].message.content);
+}
 ```
 
 ## Error Handling
@@ -185,19 +325,35 @@ The SDK throws `SmartAccountError` for domain-specific errors:
 import { SmartAccountError } from "@router402/sdk";
 
 try {
-  await sdk.deploySmartAccount(walletClient);
+  await sdk.setupAccount(walletClient, eoaAddress, { usdcAddress });
 } catch (error) {
   if (error instanceof SmartAccountError) {
-    console.error(`[${error.type}] ${error.message}`);
-    // e.g. [DEPLOYMENT_FAILED] Failed to deploy Smart Account
+    switch (error.type) {
+      case "USER_REJECTED":
+        console.log("User cancelled the wallet signature");
+        break;
+      case "DEPLOYMENT_FAILED":
+        console.log("Smart account deployment failed");
+        break;
+      case "NETWORK_ERROR":
+        console.log("Network issue -- check RPC connection");
+        break;
+      default:
+        console.error("Setup error:", error.message);
+    }
   }
 }
 ```
 
-See [Types Reference](types.md) for the full list of error types.
+### Error Types
 
-## Next Steps
-
-- [Smart Accounts](smart-accounts.md) -- Learn about smart account management in detail
-- [Session Keys](session-keys.md) -- Understand session key policies and lifecycle
-- [Transactions](transactions.md) -- Send transactions with owner wallets and session keys
+| Type | Description |
+|------|-------------|
+| `NOT_CONFIGURED` | SDK not properly configured |
+| `DEPLOYMENT_FAILED` | Smart account deployment failed |
+| `INSUFFICIENT_FUNDS` | Not enough funds for operation |
+| `USER_REJECTED` | User rejected the wallet prompt |
+| `NETWORK_ERROR` | Blockchain network error |
+| `SESSION_KEY_NOT_APPROVED` | Session key has not been approved |
+| `INVALID_SESSION_KEY` | Session key data is invalid |
+| `SESSION_KEY_EXPIRED` | Session key has passed its expiration |

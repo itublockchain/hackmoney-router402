@@ -5,6 +5,11 @@
   "version": "0.1.0",
   "publisher": "router402",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/itublockchain/hackmoney-route402",
+    "directory": "apps/extension"
+  },
   "engines": {
     "vscode": "^1.85.0"
   },

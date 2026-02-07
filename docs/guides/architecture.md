@@ -23,37 +23,46 @@ hackmoney-route402/
 
 ## Component Architecture
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                        Clients                               │
-│  ┌──────────┐  ┌──────────────┐  ┌───────────────────────┐  │
-│  │  Web App  │  │  Extension   │  │  Any HTTP Client      │  │
-│  │ (Next.js) │  │  (VS Code)   │  │  (curl, SDK, etc.)    │  │
-│  └─────┬─────┘  └──────┬───────┘  └───────────┬───────────┘  │
-│        │               │                      │              │
-│        └───────────────┼──────────────────────┘              │
-│                        │                                     │
-└────────────────────────┼─────────────────────────────────────┘
-                         │
-                         ▼
-              ┌──────────────────────┐
-              │   Route402 Server    │
-              │   (Express.js)       │
-              │                      │
-              │  /health             │
-              │  /v1/authorize       │
-              │  /v1/models          │
-              │  /v1/chat/completions│
-              └──────────┬───────────┘
-                         │
-              ┌──────────┼───────────────────┐
-              │          │                   │
-              ▼          ▼                   ▼
-     ┌──────────┐  ┌──────────┐    ┌──────────────┐
-     │ PostgreSQL│  │ OpenRouter│    │   Pimlico    │
-     │ (Prisma)  │  │ (LLM API)│    │ (Bundler +   │
-     │           │  │          │    │  Paymaster)   │
-     └──────────┘  └──────────┘    └──────────────┘
+```mermaid
+graph TB
+    subgraph Clients["Clients"]
+        WebApp["Web App<br/>(Next.js)"]
+        VSCode["VS Code<br/>Extension"]
+        HTTP["HTTP Client<br/>(curl, SDK)"]
+    end
+
+    subgraph Server["Route402 Server (Express.js)"]
+        Health["/health"]
+        Authorize["/v1/authorize"]
+        Models["/v1/models"]
+        Chat["/v1/chat/completions"]
+    end
+
+    subgraph Data["Data Layer"]
+        DB["PostgreSQL<br/>(Prisma ORM)"]
+    end
+
+    subgraph AI["AI Providers"]
+        Anthropic["Anthropic<br/>(Claude)"]
+        Google["Google<br/>(Gemini)"]
+    end
+
+    subgraph Blockchain["Blockchain Infrastructure"]
+        Pimlico["Pimlico<br/>(Bundler + Paymaster)"]
+        EntryPoint["ERC-4337<br/>Entry Point v0.7"]
+        SmartAccounts["Kernel v3.1<br/>Smart Accounts"]
+    end
+
+    WebApp --> Server
+    VSCode --> Server
+    HTTP --> Server
+    Chat --> Anthropic
+    Chat --> Google
+    Server --> DB
+    Authorize --> DB
+    Server --> Pimlico
+    Pimlico --> EntryPoint
+    EntryPoint --> SmartAccounts
 ```
 
 ## Technology Stack
@@ -94,89 +103,131 @@ hackmoney-route402/
 | Package Manager | Bun 1.3 | Fast JS runtime and package manager |
 | Linting/Formatting | Biome | Code quality and formatting |
 
-## Data Flow
+## Data Flows
 
 ### Authentication Flow
 
-```
-1. User connects wallet (EOA) via ConnectKit/Wagmi
-                    │
-2. SDK computes deterministic smart account address
-                    │
-3. SDK deploys smart account (if needed)
-                    │
-4. SDK generates session key pair
-                    │
-5. User signs EIP-712 approval in wallet
-                    │
-6. SDK enables session key on-chain (first UserOp)
-                    │
-7. Client sends authorization to server:
-   POST /v1/authorize
-   - Smart account address
-   - Session key data
-   - EIP-712 signature
-                    │
-8. Server verifies signature, stores session key,
-   returns JWT token
-                    │
-9. Client uses JWT for subsequent API calls
+```mermaid
+sequenceDiagram
+    participant User as User Wallet
+    participant App as Client App
+    participant SDK as @router402/sdk
+    participant Server as Route402 Server
+    participant Chain as Blockchain
+
+    User->>App: Connect wallet (EOA)
+    App->>SDK: Initialize SDK
+    SDK->>Chain: Compute smart account address
+    SDK-->>App: Smart account address
+
+    App->>SDK: deploySmartAccount()
+    SDK->>Chain: Deploy via Pimlico bundler
+    Chain-->>SDK: Deployed
+
+    App->>SDK: generateSessionKey()
+    SDK-->>App: Session key pair
+
+    User->>SDK: approveSessionKey() (wallet signs)
+    SDK-->>App: Approved session key
+
+    App->>SDK: enableSessionKeyOnChain()
+    SDK->>Chain: First UserOp activates permission module
+    Chain-->>SDK: Enabled
+
+    User->>App: Sign EIP-712 authorization
+    App->>Server: POST /v1/authorize
+    Server->>Server: Verify signature
+    Server-->>App: JWT token
+
+    App->>Server: POST /v1/chat/completions (JWT)
+    Server-->>App: AI response
 ```
 
 ### Chat Completion Flow
 
-```
-1. Client sends POST /v1/chat/completions
-   with JWT token or x402 payment
-                    │
-2. x402 middleware verifies payment/JWT
-                    │
-3. Server validates request against Zod schema
-                    │
-4. Server forwards to OpenRouter API
-                    │
-5. Response streamed back (SSE) or returned (JSON)
-                    │
-6. Server records token usage and cost to database
-                    │
-7. User's debt is updated
+```mermaid
+sequenceDiagram
+    participant Client as Client
+    participant Server as Route402 Server
+    participant x402 as x402 Middleware
+    participant Provider as LLM Provider
+    participant DB as Database
+
+    Client->>Server: POST /v1/chat/completions
+    Server->>x402: Check authentication
+    alt JWT Token
+        x402->>x402: Validate JWT
+        x402->>DB: Check debt threshold
+        x402-->>Server: Access granted
+    else x402 Payment
+        x402->>x402: Verify payment proof
+        x402-->>Server: Access granted
+    else No Auth
+        x402-->>Client: 402 Payment Required
+    end
+
+    Server->>Server: Validate request (Zod)
+    Server->>Provider: Forward to AI provider
+
+    alt Streaming
+        Provider-->>Server: SSE chunks
+        Server-->>Client: SSE chunks
+    else Non-streaming
+        Provider-->>Server: JSON response
+        Server-->>Client: JSON response
+    end
+
+    Server->>DB: Record usage + update debt
 ```
 
 ### Transaction Execution Flow
 
-```
-1. Call data prepared (to, value, data)
-                    │
-2. SDK creates Kernel smart account client
-   (from owner wallet or session key)
-                    │
-3. Client creates a user operation (UserOp)
-                    │
-4. UserOp sent to Pimlico bundler
-                    │
-5. Pimlico paymaster sponsors gas
-                    │
-6. Bundler submits transaction via Entry Point
-                    │
-7. Smart account executes the calls
-                    │
-8. Transaction hash returned to caller
+```mermaid
+sequenceDiagram
+    participant App as Application
+    participant SDK as @router402/sdk
+    participant Bundler as Pimlico Bundler
+    participant Paymaster as Pimlico Paymaster
+    participant EP as Entry Point v0.7
+    participant SA as Smart Account
+
+    App->>SDK: sendSessionKeyTransaction(calls)
+    SDK->>SDK: Build UserOperation
+    SDK->>SDK: Sign with session key
+
+    SDK->>Paymaster: Request gas sponsorship
+    Paymaster-->>SDK: Paymaster signature
+
+    SDK->>Bundler: Submit UserOperation
+    Bundler->>EP: handleOps()
+    EP->>SA: Execute calls
+    SA-->>EP: Result
+    EP-->>Bundler: Transaction receipt
+    Bundler-->>SDK: Transaction hash
+    SDK-->>App: TransactionExecutionResult
 ```
 
 ## Key Design Decisions
 
 ### Why ERC-4337?
 
-ERC-4337 (Account Abstraction) provides several advantages over traditional EOA transactions:
+ERC-4337 (Account Abstraction) provides several advantages:
 
 - **Gas sponsorship** -- Users don't need to hold ETH. The Pimlico paymaster covers gas fees.
 - **Batched transactions** -- Multiple calls in a single transaction.
 - **Programmable validation** -- Session keys with on-chain policy enforcement.
-- **Deterministic addresses** -- Smart account addresses can be computed before deployment.
+- **Deterministic addresses** -- Smart account addresses are computable before deployment.
 
 ### Why Session Keys?
 
-Session keys solve a critical UX problem: requiring wallet signatures for every API call would make the system unusable. Instead:
+Session keys solve a critical UX problem: requiring wallet signatures for every API call would make the system unusable.
+
+```mermaid
+flowchart LR
+    A["User signs ONCE"] --> B["Session key approved"]
+    B --> C["Backend handles all<br/>subsequent transactions"]
+    C --> D["On-chain policies<br/>enforce security"]
+```
 
 1. The user signs **once** to approve a session key.
 2. The session key handles all subsequent transactions automatically.
@@ -196,7 +247,7 @@ The x402 HTTP payment protocol provides a standardized way to monetize APIs:
 
 Pimlico provides the infrastructure layer for ERC-4337:
 
-- **Bundler** -- Collects user operations and submits them as Ethereum transactions.
+- **Bundler** -- Collects user operations and submits them as transactions.
 - **Paymaster** -- Sponsors gas fees so users can transact without ETH.
 - **Gas estimation** -- Accurate gas pricing for user operations.
 

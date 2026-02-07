@@ -156,8 +156,12 @@ export function useRouter402(): UseRouter402Return {
       setStoreErrorRef.current(wrapped);
       setStatus("error");
     } finally {
-      isRunning.current = false;
       setLoadingRef.current(false);
+      // Keep the running lock for a short cooldown so React effects that
+      // re-evaluate right after completion don't trigger a second run.
+      setTimeout(() => {
+        isRunning.current = false;
+      }, 1000);
     }
   }, []);
 

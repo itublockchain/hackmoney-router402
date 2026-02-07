@@ -92,6 +92,8 @@ export default function SetupPage() {
 
   // Auto-initialize once when the wallet is connected and setup is needed.
   // Uses a ref to guarantee this fires at most once — no sign request duplicates.
+  // A settling delay prevents firing while wagmi / Zustand state is still
+  // stabilising, which avoids flickering and duplicate sign-request prompts.
   useEffect(() => {
     if (!isConnected) {
       // Reset when wallet disconnects so re-connect can auto-init again
@@ -116,8 +118,15 @@ export default function SetupPage() {
       return;
     }
 
-    hasAutoInitialized.current = true;
-    initialize();
+    // Wait for state to settle before triggering initialization.
+    // If any dependency changes during the delay the timer is cancelled,
+    // preventing duplicate or overlapping sign requests.
+    const timer = setTimeout(() => {
+      hasAutoInitialized.current = true;
+      initialize();
+    }, 500);
+
+    return () => clearTimeout(timer);
   }, [isConnected, isReady, status, initialize]);
 
   const currentStep = !isConnected ? 0 : statusToStep[status];

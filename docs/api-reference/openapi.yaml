@@ -19,7 +19,7 @@ info:
       requirement for subsequent requests.
 
 servers:
-  - url: https://your-deployment.example.com
+  - url: https://api.router402.xyz
     description: Production server
 
 tags:
