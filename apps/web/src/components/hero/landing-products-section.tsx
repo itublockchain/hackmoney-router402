@@ -5,9 +5,10 @@ const products = [
   { name: "x402", logo: "/product/x402.png", size: 96 },
   { name: "ZeroDev", logo: "/product/zerodev.png", size: 160 },
   { name: "base", logo: "/product/base.png", size: 112 },
-  { name: "Claude", logo: "/product/claude.png", size: 144 },
   { name: "LI.FI", logo: "/product/lifi.png", size: 112 },
+  { name: "Claude", logo: "/product/claude.png", size: 144 },
   { name: "ChatGPT", logo: "/product/chatgpt.png", size: 160 },
+  { name: "Gemini", logo: "/product/gemini.png", size: 144 },
 ];
 
 const sizeClasses: Record<number, string> = {
