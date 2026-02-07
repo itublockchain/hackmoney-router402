@@ -36,7 +36,7 @@ export function getEnvVar(key: string, defaultValue?: string): string {
 /**
  * Logger utilities
  */
-export { Logger, LogLevel, type LogMetadata, logger } from "./logger";
+export { Logger, LogLevel, type LogMetadata, logger } from "./logger.js";
 
 /**
  * Type-safe route builder utilities
@@ -48,4 +48,4 @@ export {
   type TypedRequest,
   ValidationError,
   validationErrorHandler,
-} from "./route-builder";
+} from "./route-builder.js";
