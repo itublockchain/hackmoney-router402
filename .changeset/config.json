@@ -9,6 +9,10 @@
   "updateInternalDependencies": "patch",
   "ignore": [
     "@router402/server",
-    "web"
+    "web",
+    "extension",
+    "contracts",
+    "types",
+    "utils"
   ]
 }
