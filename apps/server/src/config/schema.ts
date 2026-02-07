@@ -28,7 +28,7 @@ export const configSchema = z.object({
    * CORS origin for cross-origin requests
    * @default "http://localhost:3000"
    */
-  CORS_ORIGIN: z.url().default("http://localhost:3000"),
+  CORS_ORIGIN: z.string().default("http://localhost:3000"),
 
   /**
    * Database connection URL
