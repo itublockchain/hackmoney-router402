@@ -2,6 +2,10 @@
 
 The Route402 server exposes a REST API built on Express.js. All endpoints follow a consistent response format and use Zod for request validation.
 
+{% hint style="info" %}
+The full API specification is available as an [OpenAPI 3.1 file](openapi.yaml). GitBook renders interactive API documentation from this spec automatically.
+{% endhint %}
+
 ## Base URL
 
 ```

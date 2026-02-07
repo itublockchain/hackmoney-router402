@@ -4,9 +4,8 @@ The chat completions endpoint provides OpenRouter-compatible LLM inference. It s
 
 This endpoint is protected by the x402 payment protocol. Unauthenticated requests receive HTTP `402 Payment Required` with payment requirements. Authorized users with a valid JWT token can bypass the payment step.
 
-```
-POST /v1/chat/completions
-```
+{% openapi src="openapi.yaml" path="/v1/chat/completions" method="post" %}
+{% endopenapi %}
 
 ## Authentication
 
@@ -15,28 +14,7 @@ This endpoint accepts authentication via:
 1. **x402 Payment** -- Include payment proof in the request headers according to the x402 protocol.
 2. **JWT Token** -- Pass a valid JWT (obtained from the [authorization endpoint](authentication.md)) to bypass payment.
 
-## Request Body
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `messages` | `Message[]` | Yes | Array of conversation messages (minimum 1) |
-| `model` | `string` | No | Model identifier (e.g. `"anthropic/claude-3.5-sonnet"`) |
-| `stream` | `boolean` | No | Enable streaming response via SSE |
-| `temperature` | `number` | No | Sampling temperature (0--2) |
-| `max_tokens` | `number` | No | Maximum tokens to generate |
-| `top_p` | `number` | No | Nucleus sampling (0--1) |
-| `top_k` | `number` | No | Top-k sampling |
-| `frequency_penalty` | `number` | No | Frequency penalty (-2 to 2) |
-| `presence_penalty` | `number` | No | Presence penalty (-2 to 2) |
-| `repetition_penalty` | `number` | No | Repetition penalty (0--2) |
-| `seed` | `number` | No | Random seed for reproducibility |
-| `stop` | `string \| string[]` | No | Stop sequences |
-| `response_format` | `object` | No | Response format (`"text"` or `"json_object"`) |
-| `tools` | `Tool[]` | No | Tool definitions for function calling |
-| `tool_choice` | `ToolChoice` | No | Tool selection strategy |
-| `user` | `string` | No | End-user identifier |
-
-### Message Format
+## Message Format
 
 ```typescript
 {
@@ -58,7 +36,7 @@ This endpoint accepts authentication via:
 { type: "image_url", image_url: { url: "https://...", detail?: "auto" | "low" | "high" } }
 ```
 
-### Tool Definition
+## Tool Definition
 
 ```typescript
 {
@@ -76,7 +54,7 @@ This endpoint accepts authentication via:
 }
 ```
 
-### Tool Choice
+## Tool Choice
 
 | Value | Description |
 |-------|-------------|
@@ -132,25 +110,6 @@ curl -X POST "https://api.example.com/v1/chat/completions" \
   }
 }
 ```
-
-### Response Fields
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `string` | Unique identifier with `gen-` prefix |
-| `object` | `string` | Always `"chat.completion"` |
-| `created` | `number` | Unix timestamp of creation |
-| `model` | `string` | Model identifier |
-| `choices` | `ChatCompletionChoice[]` | Array of completion choices |
-| `choices[].index` | `number` | Choice index |
-| `choices[].message.role` | `string` | Always `"assistant"` |
-| `choices[].message.content` | `string \| null` | Generated text |
-| `choices[].message.tool_calls` | `ToolCall[]` | Tool calls (if applicable) |
-| `choices[].finish_reason` | `string` | `"stop"`, `"length"`, `"tool_calls"`, or `"content_filter"` |
-| `usage` | `object` | Token usage statistics |
-| `usage.prompt_tokens` | `number` | Tokens in the prompt |
-| `usage.completion_tokens` | `number` | Tokens generated |
-| `usage.total_tokens` | `number` | Total tokens used |
 
 ## Streaming Response
 

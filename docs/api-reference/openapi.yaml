@@ -1,0 +1,847 @@
+openapi: 3.1.0
+info:
+  title: Route402 API
+  version: 0.8.1
+  description: |
+    Route402 is a payment-gated API platform that enables developers to monetize API endpoints
+    using the x402 HTTP payment protocol. It combines ERC-4337 smart accounts with session keys
+    to provide a seamless, gasless payment experience for AI model inference and other protected resources.
+
+    ## Authentication Methods
+
+    Route402 uses multiple authentication mechanisms depending on the endpoint:
+
+    - **x402 Payment Protocol** — The chat completions endpoint is protected by the x402 payment protocol.
+      Clients must include valid payment proof in their requests.
+    - **EIP-712 Signature** — The authorization endpoint uses EIP-712 typed data signatures to verify wallet ownership,
+      passed in the `x-authorization-signature` header.
+    - **JWT Token** — After successful authorization, clients receive a JWT token that can bypass the x402 payment
+      requirement for subsequent requests.
+
+servers:
+  - url: https://your-deployment.example.com
+    description: Production server
+
+tags:
+  - name: Health
+    description: Server health and status endpoints. No authentication required.
+  - name: Models
+    description: List available AI models. No authentication required.
+  - name: Authentication
+    description: |
+      User registration, session key management, and JWT token generation using EIP-712 signature verification.
+  - name: Chat
+    description: |
+      OpenRouter-compatible LLM inference endpoints supporting both streaming (SSE) and non-streaming (JSON) responses.
+      Protected by x402 payment protocol or JWT token.
+
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      summary: Health check
+      description: Returns the current server status, uptime, and version.
+      tags:
+        - Health
+      responses:
+        "200":
+          description: Server is healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+              example:
+                status: ok
+                timestamp: "2025-01-15T10:30:00.000Z"
+                uptime: 3600
+                version: "0.1.0"
+
+  /v1/models:
+    get:
+      operationId: listModels
+      summary: List supported models
+      description: Returns the list of supported AI models available for chat completions.
+      tags:
+        - Models
+      responses:
+        "200":
+          description: List of model identifiers
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModelsResponse"
+              example:
+                data:
+                  - anthropic/claude-3.5-sonnet
+                  - openai/gpt-4o
+                  - google/gemini-pro
+                  - meta-llama/llama-3-70b-instruct
+
+  /v1/authorize/check:
+    get:
+      operationId: checkUserStatus
+      summary: Check user authorization status
+      description: Check whether a wallet address is registered and fully configured.
+      tags:
+        - Authentication
+      parameters:
+        - name: walletAddress
+          in: query
+          required: true
+          description: Ethereum wallet address (`0x`-prefixed, 40 hex characters)
+          schema:
+            type: string
+            pattern: "^0x[0-9a-fA-F]{40}$"
+            example: "0x1234567890abcdef1234567890abcdef12345678"
+      responses:
+        "200":
+          description: User status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_CheckUserStatus"
+              example:
+                data:
+                  exists: true
+                  hasSessionKey: true
+                  fieldsComplete: true
+                  ready: true
+                  user:
+                    walletAddress: "0x1234...abcd"
+                    hasPaymentThreshold: true
+                    currentDebt: "0.0025"
+                    totalSpent: "1.5000"
+                  sessionKey:
+                    chainId: 84532
+                    smartAccountAddress: "0xabcd...1234"
+                    createdAt: "2025-01-15T10:30:00.000Z"
+                error: null
+                meta:
+                  timestamp: "2025-01-15T10:30:00.000Z"
+                  path: "/check"
+        "400":
+          description: Invalid wallet address format
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+              example:
+                data: null
+                error: "Invalid wallet address format"
+                meta:
+                  timestamp: "2025-01-15T10:30:00.000Z"
+                  path: "/v1/authorize/check"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+
+  /v1/authorize:
+    post:
+      operationId: authorizeSessionKey
+      summary: Authorize session key
+      description: |
+        Submit a session key for authorization with EIP-712 signature verification.
+        On success, returns a JWT token for authenticated API access.
+
+        The authorization message is signed using EIP-712 typed data. The domain includes:
+        - `name`: Route402 domain name
+        - `chainId`: The blockchain network ID
+
+        The signature must be produced by the EOA that owns the smart account.
+      tags:
+        - Authentication
+      parameters:
+        - name: x-authorization-signature
+          in: header
+          required: true
+          description: EIP-712 typed data signature of the authorization message
+          schema:
+            type: string
+            example: "0x..."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthorizeRequest"
+            example:
+              smartAccountAddress: "0xabcdef1234567890abcdef1234567890abcdef12"
+              privateKey: "0x..."
+              serializedSessionKey: "..."
+              eoaAddress: "0x1234567890abcdef1234567890abcdef12345678"
+              chainId: 84532
+              nonce: 0
+      responses:
+        "201":
+          description: Session key authorized successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse_Authorize"
+              example:
+                data:
+                  token: "eyJhbGciOiJIUzI1NiIs..."
+                  sessionKeyId: "clx1234567890"
+                error: null
+                meta:
+                  timestamp: "2025-01-15T10:30:00.000Z"
+                  path: "/"
+        "400":
+          description: Bad request (missing signature or validation error)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+              examples:
+                missingSignature:
+                  summary: Missing signature header
+                  value:
+                    data: null
+                    error: "Missing x-authorization-signature header"
+                    meta:
+                      timestamp: "2025-01-15T10:30:00.000Z"
+                      path: "/v1/authorize"
+                validationFailed:
+                  summary: Validation error
+                  value:
+                    data: null
+                    error: "Validation failed"
+                    meta:
+                      timestamp: "2025-01-15T10:30:00.000Z"
+                      path: "/v1/authorize"
+        "401":
+          description: Invalid signature
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+              example:
+                data: null
+                error: "Invalid signature"
+                meta:
+                  timestamp: "2025-01-15T10:30:00.000Z"
+                  path: "/v1/authorize"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+
+  /v1/chat/completions:
+    post:
+      operationId: createChatCompletion
+      summary: Create chat completion
+      description: |
+        Create a chat completion using an OpenRouter-compatible LLM inference API.
+        Supports both streaming (Server-Sent Events) and non-streaming (JSON) responses.
+
+        This endpoint is protected by the x402 payment protocol. Unauthenticated requests
+        receive HTTP 402 Payment Required with payment requirements. Authorized users with
+        a valid JWT token can bypass the payment step.
+      tags:
+        - Chat
+      security:
+        - bearerAuth: []
+        - x402Payment: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatCompletionRequest"
+            example:
+              model: anthropic/claude-3.5-sonnet
+              messages:
+                - role: system
+                  content: You are a helpful assistant.
+                - role: user
+                  content: What is ERC-4337?
+              temperature: 0.7
+              max_tokens: 1024
+      responses:
+        "200":
+          description: Chat completion response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatCompletionResponse"
+              example:
+                id: gen-abc123
+                object: chat.completion
+                created: 1705312200
+                model: anthropic/claude-3.5-sonnet
+                choices:
+                  - index: 0
+                    message:
+                      role: assistant
+                      content: "ERC-4337 is an Ethereum standard for account abstraction..."
+                    finish_reason: stop
+                    logprobs: null
+                usage:
+                  prompt_tokens: 25
+                  completion_tokens: 150
+                  total_tokens: 175
+            text/event-stream:
+              schema:
+                type: string
+                description: Server-Sent Events stream of chat completion chunks
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatCompletionError"
+              example:
+                error:
+                  message: "messages array must not be empty"
+                  type: invalid_request_error
+                  param: messages
+        "402":
+          description: Payment required (x402)
+          content:
+            application/json:
+              schema:
+                type: object
+                description: x402 payment requirements specifying accepted payment schemes, networks, and amounts.
+        "429":
+          description: Rate limit exceeded
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+              description: Maximum requests allowed
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+              description: Remaining requests in window
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+              description: Unix timestamp when limit resets
+            Retry-After:
+              schema:
+                type: integer
+              description: Seconds to wait before retrying
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatCompletionError"
+              example:
+                error:
+                  message: "Rate limit exceeded"
+                  type: rate_limit_error
+                  code: rate_limit_exceeded
+        "500":
+          description: Internal server error
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from the authorization endpoint
+    x402Payment:
+      type: apiKey
+      in: header
+      name: X-Payment
+      description: x402 payment proof header
+
+  schemas:
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - timestamp
+        - uptime
+        - version
+      properties:
+        status:
+          type: string
+          enum:
+            - ok
+            - degraded
+            - error
+          description: Server status
+        timestamp:
+          type: string
+          format: date-time
+          description: Current server time (ISO 8601)
+        uptime:
+          type: number
+          description: Seconds since server started
+        version:
+          type: string
+          description: Server version
+
+    ModelsResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            type: string
+          description: Array of supported model identifiers in `provider/model-name` format
+
+    ApiMeta:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        path:
+          type: string
+
+    ApiErrorResponse:
+      type: object
+      required:
+        - data
+        - error
+        - meta
+      properties:
+        data:
+          type: "null"
+        error:
+          type: string
+        meta:
+          $ref: "#/components/schemas/ApiMeta"
+
+    CheckUserStatusData:
+      type: object
+      required:
+        - exists
+        - hasSessionKey
+        - fieldsComplete
+        - ready
+      properties:
+        exists:
+          type: boolean
+          description: Whether the user exists in the database
+        hasSessionKey:
+          type: boolean
+          description: Whether a session key is registered
+        fieldsComplete:
+          type: boolean
+          description: Whether all required fields are set
+        ready:
+          type: boolean
+          description: Whether the user is fully configured and can use the API
+        user:
+          type: object
+          description: User details (only present if user exists)
+          properties:
+            walletAddress:
+              type: string
+            hasPaymentThreshold:
+              type: boolean
+            currentDebt:
+              type: string
+              description: Current accumulated debt as a decimal string
+            totalSpent:
+              type: string
+              description: Total amount spent as a decimal string
+        sessionKey:
+          type: object
+          description: Session key details (only present if registered)
+          properties:
+            chainId:
+              type: integer
+              description: Blockchain network ID
+            smartAccountAddress:
+              type: string
+              description: Associated smart account address
+            createdAt:
+              type: string
+              format: date-time
+              description: ISO 8601 timestamp of creation
+
+    ApiResponse_CheckUserStatus:
+      type: object
+      required:
+        - data
+        - error
+        - meta
+      properties:
+        data:
+          $ref: "#/components/schemas/CheckUserStatusData"
+        error:
+          type: "null"
+        meta:
+          $ref: "#/components/schemas/ApiMeta"
+
+    AuthorizeRequest:
+      type: object
+      required:
+        - smartAccountAddress
+        - privateKey
+        - serializedSessionKey
+        - eoaAddress
+        - chainId
+        - nonce
+      properties:
+        smartAccountAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+          description: Smart account address (`0x`-prefixed, 40 hex characters)
+        privateKey:
+          type: string
+          description: Session key private key
+        serializedSessionKey:
+          type: string
+          description: Serialized permission account data
+        eoaAddress:
+          type: string
+          pattern: "^0x[0-9a-fA-F]{40}$"
+          description: Owner EOA address (`0x`-prefixed, 40 hex characters)
+        chainId:
+          type: integer
+          minimum: 1
+          description: Blockchain network ID (positive integer)
+        nonce:
+          type: integer
+          minimum: 0
+          description: Unique nonce for replay protection (non-negative integer)
+
+    AuthorizeResponseData:
+      type: object
+      required:
+        - token
+        - sessionKeyId
+      properties:
+        token:
+          type: string
+          description: JWT token for authenticated API access
+        sessionKeyId:
+          type: string
+          description: Unique identifier for the registered session key
+
+    ApiResponse_Authorize:
+      type: object
+      required:
+        - data
+        - error
+        - meta
+      properties:
+        data:
+          $ref: "#/components/schemas/AuthorizeResponseData"
+        error:
+          type: "null"
+        meta:
+          $ref: "#/components/schemas/ApiMeta"
+
+    ChatMessage:
+      type: object
+      required:
+        - role
+        - content
+      properties:
+        role:
+          type: string
+          enum:
+            - system
+            - user
+            - assistant
+            - tool
+          description: The role of the message author
+        content:
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                $ref: "#/components/schemas/ContentPart"
+            - type: "null"
+          description: The message content (string, content parts array, or null)
+        name:
+          type: string
+          description: Optional name for the message author
+        tool_call_id:
+          type: string
+          description: Required for tool role messages
+        tool_calls:
+          type: array
+          items:
+            $ref: "#/components/schemas/ToolCall"
+          description: Tool calls made by the assistant
+
+    ContentPart:
+      oneOf:
+        - type: object
+          required:
+            - type
+            - text
+          properties:
+            type:
+              type: string
+              const: text
+            text:
+              type: string
+        - type: object
+          required:
+            - type
+            - image_url
+          properties:
+            type:
+              type: string
+              const: image_url
+            image_url:
+              type: object
+              required:
+                - url
+              properties:
+                url:
+                  type: string
+                  format: uri
+                detail:
+                  type: string
+                  enum:
+                    - auto
+                    - low
+                    - high
+
+    ToolDefinition:
+      type: object
+      required:
+        - type
+        - function
+      properties:
+        type:
+          type: string
+          const: function
+        function:
+          type: object
+          required:
+            - name
+          properties:
+            name:
+              type: string
+            description:
+              type: string
+            parameters:
+              type: object
+
+    ToolCall:
+      type: object
+      required:
+        - id
+        - type
+        - function
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          const: function
+        function:
+          type: object
+          required:
+            - name
+            - arguments
+          properties:
+            name:
+              type: string
+            arguments:
+              type: string
+
+    ChatCompletionRequest:
+      type: object
+      required:
+        - messages
+      properties:
+        messages:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/ChatMessage"
+          description: Array of conversation messages
+        model:
+          type: string
+          description: "Model identifier (e.g. `anthropic/claude-3.5-sonnet`)"
+        stream:
+          type: boolean
+          description: Enable streaming response via SSE
+        temperature:
+          type: number
+          minimum: 0
+          maximum: 2
+          description: Sampling temperature
+        max_tokens:
+          type: integer
+          description: Maximum tokens to generate
+        top_p:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: Nucleus sampling
+        top_k:
+          type: integer
+          description: Top-k sampling
+        frequency_penalty:
+          type: number
+          minimum: -2
+          maximum: 2
+          description: Frequency penalty
+        presence_penalty:
+          type: number
+          minimum: -2
+          maximum: 2
+          description: Presence penalty
+        repetition_penalty:
+          type: number
+          minimum: 0
+          maximum: 2
+          description: Repetition penalty
+        seed:
+          type: integer
+          description: Random seed for reproducibility
+        stop:
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+          description: Stop sequences
+        response_format:
+          type: object
+          properties:
+            type:
+              type: string
+              enum:
+                - text
+                - json_object
+          description: Response format
+        tools:
+          type: array
+          items:
+            $ref: "#/components/schemas/ToolDefinition"
+          description: Tool definitions for function calling
+        tool_choice:
+          oneOf:
+            - type: string
+              enum:
+                - none
+                - auto
+                - required
+            - type: object
+              properties:
+                type:
+                  type: string
+                  const: function
+                function:
+                  type: object
+                  required:
+                    - name
+                  properties:
+                    name:
+                      type: string
+          description: Tool selection strategy
+        user:
+          type: string
+          description: End-user identifier
+
+    ChatCompletionResponse:
+      type: object
+      required:
+        - id
+        - object
+        - created
+        - model
+        - choices
+      properties:
+        id:
+          type: string
+          description: Unique identifier with `gen-` prefix
+        object:
+          type: string
+          const: chat.completion
+          description: Always `chat.completion`
+        created:
+          type: integer
+          description: Unix timestamp of creation
+        model:
+          type: string
+          description: Model identifier
+        choices:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChatCompletionChoice"
+        usage:
+          $ref: "#/components/schemas/Usage"
+
+    ChatCompletionChoice:
+      type: object
+      required:
+        - index
+        - message
+        - finish_reason
+      properties:
+        index:
+          type: integer
+        message:
+          type: object
+          required:
+            - role
+            - content
+          properties:
+            role:
+              type: string
+              const: assistant
+            content:
+              type:
+                - string
+                - "null"
+            tool_calls:
+              type: array
+              items:
+                $ref: "#/components/schemas/ToolCall"
+        finish_reason:
+          type: string
+          enum:
+            - stop
+            - length
+            - tool_calls
+            - content_filter
+        logprobs:
+          type: "null"
+
+    Usage:
+      type: object
+      required:
+        - prompt_tokens
+        - completion_tokens
+        - total_tokens
+      properties:
+        prompt_tokens:
+          type: integer
+          description: Tokens in the prompt
+        completion_tokens:
+          type: integer
+          description: Tokens generated
+        total_tokens:
+          type: integer
+          description: Total tokens used
+
+    ChatCompletionError:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - message
+            - type
+          properties:
+            message:
+              type: string
+            type:
+              type: string
+            param:
+              type: string
+            code:
+              type: string

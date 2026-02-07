@@ -6,29 +6,8 @@ These endpoints provide server status and available model information. Neither r
 
 Returns the current server status, uptime, and version.
 
-```
-GET /health
-```
-
-### Response
-
-```json
-{
-  "status": "ok",
-  "timestamp": "2025-01-15T10:30:00.000Z",
-  "uptime": 3600,
-  "version": "0.1.0"
-}
-```
-
-### Response Fields
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `status` | `string` | Server status: `"ok"`, `"degraded"`, or `"error"` |
-| `timestamp` | `string` | Current server time (ISO 8601) |
-| `uptime` | `number` | Seconds since server started |
-| `version` | `string` | Server version |
+{% openapi src="openapi.yaml" path="/health" method="get" %}
+{% endopenapi %}
 
 ### Example
 
@@ -42,28 +21,8 @@ curl "https://api.example.com/health"
 
 Returns the list of supported AI models available for chat completions.
 
-```
-GET /v1/models
-```
-
-### Response
-
-```json
-{
-  "data": [
-    "anthropic/claude-3.5-sonnet",
-    "openai/gpt-4o",
-    "google/gemini-pro",
-    "meta-llama/llama-3-70b-instruct"
-  ]
-}
-```
-
-### Response Fields
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `data` | `string[]` | Array of supported model identifiers |
+{% openapi src="openapi.yaml" path="/v1/models" method="get" %}
+{% endopenapi %}
 
 Model identifiers follow the `provider/model-name` format and can be used in the `model` field of [chat completion requests](chat-completions.md).
 

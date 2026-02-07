@@ -6,44 +6,8 @@ The authorization endpoints handle user registration, session key management, an
 
 Check whether a wallet address is registered and fully configured.
 
-```
-GET /v1/authorize/check
-```
-
-### Query Parameters
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `walletAddress` | `string` | Yes | Ethereum wallet address (`0x`-prefixed, 40 hex characters) |
-
-### Response
-
-```json
-{
-  "data": {
-    "exists": true,
-    "hasSessionKey": true,
-    "fieldsComplete": true,
-    "ready": true,
-    "user": {
-      "walletAddress": "0x1234...abcd",
-      "hasPaymentThreshold": true,
-      "currentDebt": "0.0025",
-      "totalSpent": "1.5000"
-    },
-    "sessionKey": {
-      "chainId": 84532,
-      "smartAccountAddress": "0xabcd...1234",
-      "createdAt": "2025-01-15T10:30:00.000Z"
-    }
-  },
-  "error": null,
-  "meta": {
-    "timestamp": "2025-01-15T10:30:00.000Z",
-    "path": "/check"
-  }
-}
-```
+{% openapi src="openapi.yaml" path="/v1/authorize/check" method="get" %}
+{% endopenapi %}
 
 ### Response Fields
 
@@ -62,13 +26,6 @@ GET /v1/authorize/check
 | `sessionKey.smartAccountAddress` | `string` | Associated smart account address |
 | `sessionKey.createdAt` | `string` | ISO 8601 timestamp of creation |
 
-### Error Responses
-
-| Status | Error | Description |
-|--------|-------|-------------|
-| `400` | `"Invalid wallet address format"` | The `walletAddress` query parameter is missing or malformed |
-| `500` | `"Internal server error"` | Unexpected server failure |
-
 ### Example
 
 ```bash
@@ -81,72 +38,8 @@ curl "https://api.example.com/v1/authorize/check?walletAddress=0x1234567890abcde
 
 Submit a session key for authorization with EIP-712 signature verification. On success, returns a JWT token for authenticated API access.
 
-```
-POST /v1/authorize
-```
-
-### Headers
-
-| Header | Type | Required | Description |
-|--------|------|----------|-------------|
-| `x-authorization-signature` | `string` | Yes | EIP-712 typed data signature of the authorization message |
-| `Content-Type` | `string` | Yes | Must be `application/json` |
-
-### Request Body
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `smartAccountAddress` | `string` | Yes | Smart account address (`0x`-prefixed, 40 hex chars) |
-| `privateKey` | `string` | Yes | Session key private key |
-| `serializedSessionKey` | `string` | Yes | Serialized permission account data |
-| `eoaAddress` | `string` | Yes | Owner EOA address (`0x`-prefixed, 40 hex chars) |
-| `chainId` | `number` | Yes | Blockchain network ID (positive integer) |
-| `nonce` | `number` | Yes | Unique nonce for replay protection (non-negative integer) |
-
-### Request Example
-
-```json
-{
-  "smartAccountAddress": "0xabcdef1234567890abcdef1234567890abcdef12",
-  "privateKey": "0x...",
-  "serializedSessionKey": "...",
-  "eoaAddress": "0x1234567890abcdef1234567890abcdef12345678",
-  "chainId": 84532,
-  "nonce": 0
-}
-```
-
-### Response (201 Created)
-
-```json
-{
-  "data": {
-    "token": "eyJhbGciOiJIUzI1NiIs...",
-    "sessionKeyId": "clx1234567890"
-  },
-  "error": null,
-  "meta": {
-    "timestamp": "2025-01-15T10:30:00.000Z",
-    "path": "/"
-  }
-}
-```
-
-### Response Fields
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `token` | `string` | JWT token for authenticated API access |
-| `sessionKeyId` | `string` | Unique identifier for the registered session key |
-
-### Error Responses
-
-| Status | Error | Description |
-|--------|-------|-------------|
-| `400` | `"Missing x-authorization-signature header"` | The signature header is not provided |
-| `400` | `"Validation failed"` | Request body does not match the schema |
-| `401` | `"Invalid signature"` | EIP-712 signature verification failed |
-| `500` | `"Internal server error"` | Unexpected server failure |
+{% openapi src="openapi.yaml" path="/v1/authorize" method="post" %}
+{% endopenapi %}
 
 ### EIP-712 Signature Details
 

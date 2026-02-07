@@ -40,7 +40,6 @@ function createApiClient(): AxiosInstance {
   const instance = axios.create({
     baseURL: config.NEXT_PUBLIC_API_URL,
     timeout: 30000, // 30 seconds
-    withCredentials: true,
     headers: {
       "Content-Type": "application/json",
       Accept: "application/json",
