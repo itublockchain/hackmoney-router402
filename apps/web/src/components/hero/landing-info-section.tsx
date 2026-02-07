@@ -39,7 +39,7 @@ const features = [
 const tabs = [
   { id: "web", label: "Web" },
   { id: "vscode", label: "VS Code" },
-  { id: "cli", label: "Terminal" },
+  { id: "cli", label: "CLI" },
 ] as const;
 
 type TabId = (typeof tabs)[number]["id"];
