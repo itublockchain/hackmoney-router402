@@ -46,6 +46,7 @@ type TabId = (typeof tabs)[number]["id"];
 
 export function LandingInfoSection() {
   const [activeTab, setActiveTab] = useState<TabId>("web");
+  const [gifLoaded, setGifLoaded] = useState(false);
 
   return (
     <section className="relative -mt-[32rem] md:-mt-[32rem] w-full bg-black px-4 pt-32 pb-24 sm:px-8 sm:pt-40 md:px-16 lg:px-24">
@@ -82,7 +83,10 @@ export function LandingInfoSection() {
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    setGifLoaded(false);
+                  }}
                   className={cn(
                     "rounded-full px-5 py-1.5 text-sm font-medium transition-colors",
                     activeTab === tab.id
@@ -112,7 +116,7 @@ export function LandingInfoSection() {
             </div>
 
             {/* Terminal */}
-            <div className="relative overflow-hidden rounded-lg">
+            <div className="relative overflow-hidden rounded-lg bg-black">
               {/* macOS window title bar */}
               <div className="flex items-center gap-2 bg-black px-4 py-3">
                 <div className="h-3 w-3 rounded-full bg-[#FF5F57]" />
@@ -133,24 +137,44 @@ export function LandingInfoSection() {
                   }}
                   className="aspect-video w-full bg-black"
                 >
-                  <div className="relative flex h-full items-start justify-start text-neutral-500">
+                  <div className="relative flex h-full items-start justify-start bg-black text-neutral-500">
                     {activeTab === "web" && (
-                      <Image
-                        src="/demo/demo-web.gif"
-                        alt="Web Demo"
-                        fill
-                        className="object-cover"
-                        unoptimized
-                      />
+                      <>
+                        {!gifLoaded && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black">
+                            <div className="h-8 w-8 animate-spin rounded-full border-2 border-neutral-700 border-t-neutral-400" />
+                          </div>
+                        )}
+                        <Image
+                          src="/demo/demo-web.gif"
+                          alt="Web Demo"
+                          fill
+                          className={cn(
+                            "object-cover transition-opacity duration-300",
+                            gifLoaded ? "opacity-100" : "opacity-0"
+                          )}
+                          unoptimized
+                          onLoad={() => setGifLoaded(true)}
+                        />
+                      </>
                     )}
                     {activeTab === "vscode" && (
                       <>
+                        {!gifLoaded && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black">
+                            <div className="h-8 w-8 animate-spin rounded-full border-2 border-neutral-700 border-t-neutral-400" />
+                          </div>
+                        )}
                         <Image
                           src="/demo/demo-vscode.gif"
                           alt="VS Code Demo"
                           fill
-                          className="object-cover"
+                          className={cn(
+                            "object-cover transition-opacity duration-300",
+                            gifLoaded ? "opacity-100" : "opacity-0"
+                          )}
                           unoptimized
+                          onLoad={() => setGifLoaded(true)}
                         />
                         <a
                           href="https://marketplace.visualstudio.com/items?itemName=router402xyz.router402-vscode"

@@ -5,8 +5,13 @@ import React, { useCallback, useMemo, useRef } from "react";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 import { cn } from "@/lib";
 import type { ChatMessage } from "@/stores/chat.store";
+import { useActiveSessionId } from "@/stores/chat.store";
 import { type Artifact, useUIStore } from "@/stores/ui.store";
 import { InsufficientBalanceBlock } from "./insufficient-balance-block";
+import {
+  CompletedTransactionBlock,
+  TransactionBlock,
+} from "./transaction-block";
 
 interface MessageBubbleProps {
   message: ChatMessage;
@@ -22,6 +27,7 @@ export const MessageBubble = React.memo(function MessageBubble({
   const isUser = message.role === "user";
   const selectedArtifact = useUIStore((s) => s.selectedArtifact);
   const setSelectedArtifact = useUIStore((s) => s.setSelectedArtifact);
+  const activeSessionId = useActiveSessionId();
   const blockIndexRef = useRef(0);
 
   // Reset counter before each render so indices stay stable
@@ -54,7 +60,7 @@ export const MessageBubble = React.memo(function MessageBubble({
       ...props
     }: // biome-ignore lint/suspicious/noExplicitAny: react-markdown component props
     any) => {
-      const match = /language-(\w+)/.exec(className || "");
+      const match = /language-([\w-]+)/.exec(className || "");
       const isBlock = node?.position
         ? node.position.start.line !== node.position.end.line
         : !!match;
@@ -73,6 +79,40 @@ export const MessageBubble = React.memo(function MessageBubble({
       const code = String(children).replace(/\n$/, "");
       const language = match?.[1];
       const currentIndex = blockIndexRef.current++;
+
+      // Handle completed transaction blocks
+      if (language === "tx-complete") {
+        return <CompletedTransactionBlock code={code} />;
+      }
+
+      // Handle transaction blocks
+      if (language === "tx") {
+        if (isActivelyStreaming) {
+          return (
+            <div className="my-3 flex w-full items-center gap-3 rounded-xl border border-border/60 bg-[hsl(0_0%_6%)] px-4 py-3 text-left animate-pulse">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                <Loader2 size={16} className="text-primary animate-spin" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-foreground">
+                  Transaction
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Preparing transaction...
+                </p>
+              </div>
+            </div>
+          );
+        }
+        return (
+          <TransactionBlock
+            code={code}
+            messageId={message.id}
+            sessionId={activeSessionId ?? ""}
+          />
+        );
+      }
+
       const isSelected =
         selectedArtifact?.messageId === message.id &&
         selectedArtifact?.blockIndex === currentIndex;
@@ -138,6 +178,7 @@ export const MessageBubble = React.memo(function MessageBubble({
     message.id,
     handleCodeBlockClick,
     isActivelyStreaming,
+    activeSessionId,
   ]);
 
   if (isUser) {

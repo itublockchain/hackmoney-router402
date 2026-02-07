@@ -4,7 +4,7 @@ export interface CodeBlockInfo {
   index: number;
 }
 
-const FENCED_CODE_RE = /```(\w+)?\n([\s\S]*?)```/g;
+const FENCED_CODE_RE = /```([\w-]+)?\n([\s\S]*?)```/g;
 
 /**
  * Extract fenced code blocks from a markdown string.

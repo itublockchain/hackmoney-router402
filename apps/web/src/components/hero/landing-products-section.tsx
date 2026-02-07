@@ -8,7 +8,6 @@ const products = [
   { name: "Claude", logo: "/product/claude.png", size: 144 },
   { name: "LI.FI", logo: "/product/lifi.png", size: 112 },
   { name: "ChatGPT", logo: "/product/chatgpt.png", size: 160 },
-  { name: "Uniswap", logo: "/product/uniswap.png", size: 160 },
 ];
 
 const sizeClasses: Record<number, string> = {
