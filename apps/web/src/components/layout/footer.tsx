@@ -14,7 +14,7 @@ const FOOTER_LINKS = [
 export function Footer() {
   return (
     <footer className="mt-32 border-t border-neutral-900 bg-background">
-      <div className="container mx-auto max-w-screen-2xl px-4 pb-12 pt-[95px]">
+      <div className="container mx-auto max-w-screen-2xl px-4 pb-12 pt-12 sm:pt-[95px]">
         <div className="flex flex-col items-center gap-6">
           <Image
             src="/logo-text.png"
@@ -24,7 +24,7 @@ export function Footer() {
             className="object-contain"
           />
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center justify-center gap-3">
             {FOOTER_LINKS.map((link) => (
               <a
                 key={link.label}

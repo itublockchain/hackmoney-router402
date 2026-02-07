@@ -1,9 +1,17 @@
 "use client";
 
-import { ChevronDown, Globe, Puzzle, Terminal } from "lucide-react";
+import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
+import { ChevronDown, Globe, Menu, Puzzle, Terminal } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
+
 import { Button } from "@/components/primitives/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from "@/components/primitives/sheet";
 
 const products = [
   {
@@ -27,6 +35,8 @@ const products = [
 ];
 
 export function Navbar() {
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
       <div className="container flex h-16 max-w-screen-2xl mx-auto items-center justify-between px-4">
@@ -34,7 +44,8 @@ export function Navbar() {
           <Image src="/logo.png" alt="Router 402" width={128} height={17.24} />
         </Link>
 
-        <nav className="flex items-center gap-3">
+        {/* Desktop navigation */}
+        <nav className="hidden md:flex items-center gap-3">
           {/* Products dropdown */}
           <div className="group relative">
             <button
@@ -87,6 +98,71 @@ export function Navbar() {
             <Link href="/chat">Launch App</Link>
           </Button>
         </nav>
+
+        {/* Mobile navigation */}
+        <div className="flex items-center gap-2 md:hidden">
+          <Button size="sm" asChild>
+            <Link href="/chat">Launch App</Link>
+          </Button>
+
+          <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Menu size={20} />
+                <span className="sr-only">Open menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent>
+              <VisuallyHidden.Root>
+                <span>Navigation menu</span>
+              </VisuallyHidden.Root>
+              <nav className="mt-8 flex flex-col gap-6">
+                <div>
+                  <h3 className="mb-3 text-sm font-semibold text-foreground/60 uppercase tracking-wider">
+                    Products
+                  </h3>
+                  <div className="flex flex-col gap-1">
+                    {products.map((product) => (
+                      <Link
+                        key={product.href}
+                        href={product.href}
+                        onClick={() => setDrawerOpen(false)}
+                        className="flex items-center gap-3 rounded-lg px-3 py-3 transition-colors hover:bg-neutral-800/60"
+                      >
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-neutral-800 bg-neutral-900">
+                          <product.icon
+                            size={16}
+                            className="text-neutral-300"
+                          />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-neutral-100">
+                            {product.label}
+                          </p>
+                          <p className="text-xs text-neutral-500">
+                            {product.description}
+                          </p>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="border-t border-neutral-800 pt-4">
+                  <a
+                    href="https://docs.router402.xyz"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setDrawerOpen(false)}
+                    className="flex items-center rounded-lg px-3 py-3 text-sm font-medium text-foreground/80 transition-colors hover:bg-neutral-800/60"
+                  >
+                    Docs
+                  </a>
+                </div>
+              </nav>
+            </SheetContent>
+          </Sheet>
+        </div>
       </div>
     </header>
   );
