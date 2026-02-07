@@ -1,6 +1,6 @@
 # Authorization
 
-The authorization endpoints handle user registration, session key management, and JWT token generation using EIP-712 signature verification.
+The authorization system handles session key registration and JWT token generation using EIP-712 signature verification. Once you have a JWT token, include it as a Bearer token in all subsequent API requests.
 
 ## Authorization Flow
 
@@ -9,85 +9,19 @@ sequenceDiagram
     participant User as User Wallet
     participant Client as Client App
     participant Server as Router402 Server
-    participant DB as Database
-
-    Client->>Server: GET /v1/authorize/check?walletAddress=0x...
-    Server->>DB: Lookup user
-    Server-->>Client: User status (exists, hasSessionKey, ready)
 
     User->>Client: Sign EIP-712 authorization
     Client->>Server: POST /v1/authorize (body + signature header)
     Server->>Server: Recover signer from EIP-712 signature
     Server->>Server: Verify recovered address matches eoaAddress
-    Server->>DB: Create/update user + session key
     Server-->>Client: JWT token + session key ID
+
+    Client->>Client: Store JWT token locally
+
+    Client->>Server: POST /v1/chat/completions
+    Note over Client,Server: Authorization: Bearer <token>
+    Server-->>Client: AI response
 ```
-
----
-
-## Check User Status
-
-Check whether a wallet address is registered and fully configured.
-
-**`GET /v1/authorize/check`**
-
-### Query Parameters
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `walletAddress` | `string` | Yes | Ethereum address (`0x`-prefixed) |
-
-### Example Request
-
-```bash
-curl "https://api.router402.xyz/v1/authorize/check?walletAddress=0x1234567890abcdef1234567890abcdef12345678"
-```
-
-### Response (200 OK)
-
-```json
-{
-  "data": {
-    "exists": true,
-    "hasSessionKey": true,
-    "fieldsComplete": true,
-    "ready": true,
-    "user": {
-      "walletAddress": "0x1234567890abcdef1234567890abcdef12345678",
-      "hasPaymentThreshold": true,
-      "currentDebt": "0.00",
-      "totalSpent": "1.25"
-    },
-    "sessionKey": {
-      "chainId": 8453,
-      "smartAccountAddress": "0xabcdef...",
-      "createdAt": "2026-01-30T10:00:00.000Z"
-    }
-  },
-  "error": null,
-  "meta": {
-    "timestamp": "2026-01-30T10:30:00.000Z",
-    "path": "/v1/authorize/check"
-  }
-}
-```
-
-### Response Fields
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `exists` | `boolean` | Whether the user exists in the database |
-| `hasSessionKey` | `boolean` | Whether a session key is registered |
-| `fieldsComplete` | `boolean` | Whether all required fields are set |
-| `ready` | `boolean` | `true` when user is fully configured and can use the API |
-| `user` | `object?` | User details (only present if user exists) |
-| `user.hasPaymentThreshold` | `boolean` | Whether the user has a configured payment threshold |
-| `user.currentDebt` | `string` | Current accumulated debt as a decimal string |
-| `user.totalSpent` | `string` | Total amount spent as a decimal string |
-| `sessionKey` | `object?` | Session key details (only present if registered) |
-| `sessionKey.chainId` | `number` | Blockchain network ID |
-| `sessionKey.smartAccountAddress` | `string` | Associated smart account address |
-| `sessionKey.createdAt` | `string` | ISO 8601 timestamp |
 
 ---
 
@@ -185,3 +119,30 @@ curl -X POST "https://api.router402.xyz/v1/authorize" \
 | `400` | Missing `x-authorization-signature` header or request body validation failed |
 | `401` | Invalid EIP-712 signature (recovered address doesn't match `eoaAddress`) |
 | `500` | Internal server error |
+
+---
+
+## Using Your Token
+
+After authorization, store the JWT token and include it in all API requests as a Bearer token in the `Authorization` header.
+
+```typescript
+const response = await fetch("https://api.router402.xyz/v1/chat/completions", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+  },
+  body: JSON.stringify({
+    model: "anthropic/claude-sonnet-4.5",
+    messages: [{ role: "user", content: "Hello!" }],
+  }),
+});
+```
+
+If your token is invalid or your balance is insufficient, you will receive:
+
+| Status | Meaning |
+|--------|---------|
+| `401` | Token is invalid or expired -- re-authorize to get a new token |
+| `402` | Insufficient balance -- deposit USDC to your smart account |

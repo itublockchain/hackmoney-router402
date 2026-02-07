@@ -13,7 +13,6 @@ https://api.router402.xyz
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | `POST` | [`/v1/authorize`](authentication.md#authorize-session-key) | EIP-712 Signature | Authorize a session key and receive a JWT token |
-| `GET` | [`/v1/authorize/check`](authentication.md#check-user-status) | None | Check if a wallet is registered and configured |
 | `GET` | [`/v1/models`](models.md) | None | List supported AI models |
 | `POST` | [`/v1/chat/completions`](chat-completions.md) | JWT / x402 Payment | Chat completion (streaming & non-streaming) |
 | `GET` | `/health` | None | Server health check |
@@ -43,7 +42,7 @@ All responses follow the `ApiResponse<T>` wrapper:
   "error": "Invalid wallet address format",
   "meta": {
     "timestamp": "2026-01-30T10:30:00.000Z",
-    "path": "/v1/authorize/check"
+    "path": "/v1/authorize"
   }
 }
 ```

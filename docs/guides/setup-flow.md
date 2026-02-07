@@ -228,28 +228,6 @@ const result = await sdk.setupAccount(walletClient, eoaAddress, {
 // Then proceed to Phase 4 (authorize) and Phase 5 (API calls)
 ```
 
-## Checking Existing Status
-
-Before running the full setup, check if the user is already configured:
-
-```typescript
-const response = await fetch(
-  `https://api.router402.xyz/v1/authorize/check?walletAddress=${eoaAddress}`
-);
-const status = await response.json();
-
-if (status.data.ready) {
-  console.log("User is already set up!");
-  // Skip to making API calls
-} else {
-  console.log("Needs setup:", {
-    exists: status.data.exists,
-    hasSessionKey: status.data.hasSessionKey,
-  });
-  // Run the setup flow
-}
-```
-
 ## Error Handling
 
 ```typescript
