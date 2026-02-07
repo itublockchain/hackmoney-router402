@@ -19,7 +19,7 @@ Every existing payment model asks users to **trust a third party with their mone
 No prepaid balances. No subscriptions. No custody. **True pay-per-use.**
 
 <p align="center">
-  <img src="../apps/web/public/demo/demo-web.gif" alt="Router402 Demo" width="700" />
+  <img src="../apps/web/public/demo/demo-web.gif" alt="Router402 Demo" width="100%" />
 </p>
 
 ## How It Works
