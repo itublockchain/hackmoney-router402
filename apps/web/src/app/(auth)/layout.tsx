@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { AuthLayout } from "@/components/layout";
 
 export default function AuthGroupLayout({
@@ -5,5 +6,9 @@ export default function AuthGroupLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <AuthLayout>{children}</AuthLayout>;
+  return (
+    <AuthLayout>
+      <Suspense>{children}</Suspense>
+    </AuthLayout>
+  );
 }

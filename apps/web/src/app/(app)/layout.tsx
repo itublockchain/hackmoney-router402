@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { AppLayout, Router402Guard } from "@/components/layout";
 
 export default function AppGroupLayout({
@@ -7,7 +8,9 @@ export default function AppGroupLayout({
 }) {
   return (
     <AppLayout>
-      <Router402Guard>{children}</Router402Guard>
+      <Suspense>
+        <Router402Guard>{children}</Router402Guard>
+      </Suspense>
     </AppLayout>
   );
 }
