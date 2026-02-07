@@ -11,6 +11,7 @@ import {
   Terminal,
   Zap,
 } from "lucide-react";
+import { TerminalDemo } from "@/components/hero/terminal-demo";
 import { Footer } from "@/components/layout/footer";
 import { Navbar } from "@/components/layout/navbar";
 import { Button } from "@/components/primitives/button";
@@ -220,6 +221,32 @@ export default function SDKPage() {
                     <span className="text-amber-300">@router402/sdk</span>
                   </code>
                 </pre>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Terminal Demo */}
+        <section className="px-4 pb-24 sm:px-8 md:px-16 lg:px-24">
+          <div className="mx-auto max-w-3xl">
+            <div className="mb-8 text-center">
+              <h2 className="mb-4 text-3xl font-bold text-white">
+                See it in action
+              </h2>
+              <p className="mx-auto max-w-2xl text-neutral-400">
+                A few lines of code to start chatting with any AI model, powered
+                by crypto micropayments.
+              </p>
+            </div>
+            <div className="overflow-hidden rounded-xl border border-neutral-800 shadow-2xl shadow-black/60">
+              <div className="flex items-center gap-2 border-b border-neutral-800 bg-neutral-950 px-4 py-3">
+                <div className="h-3 w-3 rounded-full bg-[#FF5F57]" />
+                <div className="h-3 w-3 rounded-full bg-[#FEBC2E]" />
+                <div className="h-3 w-3 rounded-full bg-[#28C840]" />
+                <span className="ml-2 text-xs text-neutral-500">Terminal</span>
+              </div>
+              <div className="aspect-video bg-neutral-950">
+                <TerminalDemo />
               </div>
             </div>
           </div>

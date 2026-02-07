@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ExternalLink } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
+import { TerminalDemo } from "@/components/hero/terminal-demo";
 import { Button } from "@/components/primitives/button";
 import { cn } from "@/lib";
 
@@ -132,7 +133,7 @@ export function LandingInfoSection() {
                   }}
                   className="aspect-video w-full bg-black"
                 >
-                  <div className="relative flex h-full items-center justify-center text-neutral-500">
+                  <div className="relative flex h-full items-start justify-start text-neutral-500">
                     {activeTab === "web" && (
                       <Image
                         src="/demo/demo-web.gif"
@@ -162,7 +163,7 @@ export function LandingInfoSection() {
                         </a>
                       </>
                     )}
-                    {activeTab === "cli" && "Terminal Demo"}
+                    {activeTab === "cli" && <TerminalDemo />}
                   </div>
                 </motion.div>
               </AnimatePresence>
