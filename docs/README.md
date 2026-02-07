@@ -97,16 +97,15 @@ npm install @router402/sdk
 ```
 
 ```typescript
-import { Router402 } from '@router402/sdk';
+import { Router402Sdk } from '@router402/sdk';
 
-const ai = new Router402({ apiKey: 'your-api-key' });
+const sdk = new Router402Sdk({ token: 'your-jwt-token' });
 
-const response = await ai.chat({
+const response = await sdk.chat('Explain x402 in one sentence.', {
   model: 'anthropic/claude-sonnet-4.5',
-  messages: [{ role: 'user', content: 'Explain x402 in one sentence.' }]
 });
 
-console.log(response.choices[0].message.content);
+console.log(response);
 // This request's cost will be settled via Flashblocks (~0.2s) with your next call
 // Your funds stay in your smart account until then
 ```
