@@ -60,4 +60,4 @@ const sdk = new Router402Sdk({
 
 ## Sections
 
-- [Getting Started](getting-started.md) -- Installation, setup guide, and chat completions example
+- [Getting Started](getting-started.md) - Installation, setup guide, and chat completions example
