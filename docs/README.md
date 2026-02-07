@@ -1,6 +1,7 @@
 # Router402
 
-![Router402 Logo](../apps/web/public/logo-large.png)
+
+<img src="../apps/web/public/og-image.png" style="width:200" />
 
 Router402 is a payment-gated API platform that enables developers to access AI models using the [x402 HTTP payment protocol](https://www.x402.org/). It combines ERC-4337 smart accounts with session keys to provide a seamless, gasless payment experience for AI model inference.
 
