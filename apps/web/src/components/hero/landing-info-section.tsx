@@ -10,31 +10,31 @@ import { cn } from "@/lib";
 
 const features = [
   {
-    emoji: "",
+    emoji: "💸",
     title: "True Pay-Per-Use",
     description:
       "Not prepaid, not subscription. Every API call settles the exact cost of your previous request as a USDC micropayment on Base. Your funds stay in your smart account until a completed request is being paid for.",
   },
   {
-    emoji: "",
+    emoji: "🔌",
     title: "One API, Multiple Models",
     description:
       "Access Claude, Gemini, and more through a single OpenRouter-compatible endpoint. Switch models by changing one string. No new accounts, no new API keys, no new billing.",
   },
   {
-    emoji: "",
+    emoji: "⛽",
     title: "Gasless UX",
     description:
       "All transactions are handled via Pimlico-powered account abstraction. No gas fees, no wallet popups, no seed phrases. It feels like a traditional API, but your money stays yours.",
   },
   {
-    emoji: "",
+    emoji: "🌉",
     title: "Li.Fi MCP Integration",
     description:
       "Bridge and swap assets directly from your own wallet via the built-in Li.Fi MCP server. The gateway returns typed transaction data, you sign it yourself. No private key handoff, no custody risk.",
   },
   {
-    emoji: "",
+    emoji: "⚡",
     title: "~0.2s Settlement",
     description:
       "We modified the OpenFacilitator to leverage Base Flashblocks for ~200ms on-chain settlement. The previous request's cost confirms before the next LLM call is forwarded, fast enough to feel instant.",

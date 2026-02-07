@@ -2,8 +2,11 @@ import { ArrowUpRight } from "lucide-react";
 import Image from "next/image";
 
 const FOOTER_LINKS = [
-  { label: "GitHub", href: "https://github.com/route402" },
-  { label: "Docs", href: "https://docs.route402.com" },
+  {
+    label: "GitHub",
+    href: "https://github.com/itublockchain/hackmoney-router402",
+  },
+  { label: "Docs", href: "https://docs.router402.xyz" },
   { label: "Showcase", href: "https://ethglobal.com/showcase/router402-b717q" },
   {
     label: "VS Code Extension",
