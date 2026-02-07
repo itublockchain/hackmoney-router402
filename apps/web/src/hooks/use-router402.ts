@@ -119,6 +119,24 @@ export function useRouter402(): UseRouter402Return {
     setLoadingRef.current(true);
 
     try {
+      // Fast path: if Zustand store already has the smart account for this EOA
+      // and localStorage has both a valid session key and auth token, skip
+      // everything (including the chain switch) and go straight to "ready".
+      const store = useSmartAccountStore.getState();
+      if (store.address && store.eoaAddress === eoa && store.isDeployed) {
+        const cachedKey = getActiveSessionKey(store.address);
+        const cachedToken = getAuthToken(store.address);
+        if (cachedKey && cachedToken) {
+          setActiveSessionKey(cachedKey);
+          setAuthToken(cachedToken);
+          setStatus("ready");
+          initializedForEoa.current = eoa;
+          setLoadingRef.current(false);
+          isRunning.current = false;
+          return;
+        }
+      }
+
       // Switch to the correct chain first
       await switchChainRef.current({
         chainId: SMART_ACCOUNT_CONFIG.chainId,
