@@ -9,7 +9,7 @@
     "src"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc",
     "dev": "tsc -p tsconfig.build.json --watch",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
