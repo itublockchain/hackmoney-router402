@@ -11,7 +11,8 @@
     "resolveJsonModule": true,
     "declaration": true,
     "declarationMap": true,
-    "noEmit": true
+    "outDir": "./dist",
+    "rootDir": "./src"
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]

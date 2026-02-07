@@ -21,7 +21,8 @@
     "test": "turbo test",
     "format": "biome check --write --formatter-enabled=true --assist-enabled=true ",
     "clean": "turbo clean && rm -rf node_modules && rm -rf bun.lock",
-    "prepare": "husky"
+    "prepare": "husky",
+    "build:server": "turbo build --filter=@router402/utils && turbo build --filter=@router402/server"
   },
   "type": "module",
   "packageManager": "bun@1.3.8",
