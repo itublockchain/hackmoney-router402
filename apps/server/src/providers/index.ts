@@ -28,6 +28,7 @@ import { GeminiProvider } from "./gemini.js";
  */
 export const SUPPORTED_MODELS = {
   // Anthropic Claude models
+  "anthropic/claude-opus-4.6": "claude-opus-4-6",
   "anthropic/claude-opus-4.5": "claude-opus-4-5-20251101",
   "anthropic/claude-sonnet-4.5": "claude-sonnet-4-5-20250929",
   "anthropic/claude-haiku-4.5": "claude-haiku-4-5-20251001",

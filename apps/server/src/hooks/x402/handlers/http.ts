@@ -7,12 +7,9 @@
  */
 
 import { logger } from "@router402/utils";
-import { decodePaymentSignatureHeader } from "../../../../external/x402/typescript/packages/core/dist/esm/http/index.mjs";
-import type {
-  HTTPRequestContext,
-  RouteConfig,
-} from "../../../../external/x402/typescript/packages/core/dist/esm/server/index.mjs";
-import type { PaymentPayload } from "../../../../external/x402/typescript/packages/core/dist/esm/types/index.mjs";
+import { decodePaymentSignatureHeader } from "@x402/core/http";
+import type { HTTPRequestContext, RouteConfig } from "@x402/core/server";
+import type { PaymentPayload } from "@x402/core/types";
 import { verifyToken } from "../../../services/auth.service.js";
 import { autoPayDebt } from "../../../services/auto-payment.js";
 import { getUserDebt, isDebtBelowThreshold } from "../../../services/debt.js";

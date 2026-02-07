@@ -6,7 +6,7 @@ import { logger } from "@router402/utils";
 import type {
   x402HTTPResourceServer,
   x402ResourceServer,
-} from "../../../external/x402/typescript/packages/core/dist/esm/server/index.mjs";
+} from "@x402/core/server";
 import {
   onAfterSettle,
   onAfterVerify,

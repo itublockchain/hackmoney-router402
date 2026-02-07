@@ -1,4 +1,14 @@
 import { logger } from "@router402/utils";
+// x402 imports from npm packages
+import { decodePaymentSignatureHeader } from "@x402/core/http";
+import type { HTTPRequestContext } from "@x402/core/server";
+import {
+  HTTPFacilitatorClient,
+  x402HTTPResourceServer,
+  x402ResourceServer,
+} from "@x402/core/server";
+import { registerExactEvmScheme } from "@x402/evm/exact/server";
+import { paymentMiddlewareFromHTTPServer } from "@x402/express";
 import {
   Router as ExpressRouter,
   type NextFunction,
@@ -6,16 +16,6 @@ import {
   type Response,
   type Router,
 } from "express";
-// x402 imports from submodule dist
-import { decodePaymentSignatureHeader } from "../../external/x402/typescript/packages/core/dist/esm/http/index.mjs";
-import type { HTTPRequestContext } from "../../external/x402/typescript/packages/core/dist/esm/server/index.mjs";
-import {
-  HTTPFacilitatorClient,
-  x402HTTPResourceServer,
-  x402ResourceServer,
-} from "../../external/x402/typescript/packages/core/dist/esm/server/index.mjs";
-import { paymentMiddlewareFromHTTPServer } from "../../external/x402/typescript/packages/http/express/dist/esm/index.mjs";
-import { registerExactEvmScheme } from "../../external/x402/typescript/packages/mechanisms/evm/dist/esm/exact/server/index.mjs";
 import type { Config } from "../config/index.js";
 import { registerX402Hooks, registerX402HTTPHooks } from "../hooks/index.js";
 import { getUserDebt } from "../services/debt.js";

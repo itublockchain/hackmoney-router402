@@ -5,16 +5,18 @@ import {
   type SessionKeyForBackend,
   type TransactionExecutionResult,
 } from "@router402/sdk";
-import { base, baseSepolia } from "viem/chains";
+import { baseSepolia } from "viem/chains";
 import { getConfig } from "../config/index.js";
 
 const config = getConfig();
 
 /**
  * Get the target chain based on environment
+ * Currently hardcoded to Base Sepolia for testnet
  */
 function getTargetChain() {
-  return config.CHAIN_ENV === "mainnet" ? base : baseSepolia;
+  // TODO: Add CHAIN_ENV to config when mainnet support is needed
+  return baseSepolia;
 }
 
 /**
