@@ -2,8 +2,10 @@
 
 import { Loader2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter402 } from "@/hooks";
+import { getActiveSessionKey, getAuthToken } from "@/lib/session-keys";
+import { useSmartAccountStore } from "@/stores";
 import { ConnectWalletCard } from "./connect-wallet-card";
 
 interface Router402GuardProps {
@@ -21,10 +23,36 @@ interface Router402GuardProps {
  * redirects to the setup page where initialization is managed.
  */
 export function Router402Guard({ children }: Router402GuardProps) {
-  const { isConnected, isReconnecting, isReady, status } = useRouter402();
+  const { isConnected, isReconnecting, isReady, status, eoaAddress } =
+    useRouter402();
   const router = useRouter();
   const searchParams = useSearchParams();
   const hasRedirected = useRef(false);
+
+  const {
+    address: storedSmartAccountAddress,
+    eoaAddress: storedEoaAddress,
+    isDeployed: storedIsDeployed,
+  } = useSmartAccountStore();
+
+  /**
+   * Check if the persisted store + localStorage indicate a previously
+   * completed setup for the current EOA. If so, the "not_configured" status
+   * is just a transient state while walletClient hydrates — don't redirect.
+   */
+  const hasPreviousSetup = useCallback((): boolean => {
+    if (!eoaAddress || !storedSmartAccountAddress) return false;
+    if (storedEoaAddress !== eoaAddress || !storedIsDeployed) return false;
+
+    const sessionKey = getActiveSessionKey(storedSmartAccountAddress);
+    const authToken = getAuthToken(storedSmartAccountAddress);
+    return !!sessionKey && !!authToken;
+  }, [
+    eoaAddress,
+    storedSmartAccountAddress,
+    storedEoaAddress,
+    storedIsDeployed,
+  ]);
 
   // Small delay before showing the connect-wallet card so wagmi has time to
   // start its auto-reconnect cycle and set `isReconnecting = true`.
@@ -60,6 +88,13 @@ export function Router402Guard({ children }: Router402GuardProps) {
       status === "error";
 
     if (needsSetup && !hasRedirected.current) {
+      // If the persisted store has a completed setup for this EOA,
+      // "not_configured" is just transient while walletClient loads.
+      // Wait for the hook to resolve via its fast path instead of redirecting.
+      if (status === "not_configured" && hasPreviousSetup()) {
+        return;
+      }
+
       hasRedirected.current = true;
       // Preserve query params (e.g. ?prompt=...) so the user returns after setup
       const prompt = searchParams.get("prompt");
@@ -68,7 +103,7 @@ export function Router402Guard({ children }: Router402GuardProps) {
         : "/setup";
       router.replace(setupUrl);
     }
-  }, [isConnected, isReady, status, router, searchParams]);
+  }, [isConnected, isReady, status, router, searchParams, hasPreviousSetup]);
 
   // Wallet not connected — show connect prompt with decorative card.
   // During auto-reconnection (or before mount delay elapses), show loading
