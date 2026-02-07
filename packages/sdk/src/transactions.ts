@@ -3,12 +3,12 @@ import {
   createKernelAccountFromWallet,
   createKernelClientFromSessionKey,
   createKernelSmartAccountClient,
-} from "./kernel";
+} from "./kernel.js";
 import type {
   CallData,
-  ResolvedConfig,
+  SmartAccountResolvedConfig as ResolvedConfig,
   TransactionExecutionResult,
-} from "./types";
+} from "./types.js";
 
 /**
  * Send a user operation using the owner wallet.

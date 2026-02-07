@@ -5,6 +5,10 @@ const FOOTER_LINKS = [
   { label: "GitHub", href: "https://github.com/route402" },
   { label: "Docs", href: "https://docs.route402.com" },
   { label: "Showcase", href: "https://showcase.route402.com" },
+  {
+    label: "VS Code Extension",
+    href: "https://marketplace.visualstudio.com/items?itemName=router402xyz.router402-vscode",
+  },
 ];
 
 export function Footer() {

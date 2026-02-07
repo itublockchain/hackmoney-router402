@@ -24,6 +24,7 @@ export function Hero402Animation() {
   });
   const [inputValue, setInputValue] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const isInitializedRef = useRef(false);
 
   const handleFocus = useCallback(() => {
     animationStateRef.current.isFocused = true;
@@ -34,9 +35,11 @@ export function Hero402Animation() {
   }, []);
 
   const createSketch = useCallback(() => {
-    if (!containerRef.current) return;
+    if (!containerRef.current || isInitializedRef.current) return;
+    isInitializedRef.current = true;
 
     import("p5").then((p5Module) => {
+      if (!containerRef.current) return;
       const p5 = p5Module.default;
 
       const sketch = (p: p5Type) => {
@@ -184,11 +187,16 @@ export function Hero402Animation() {
       // Clean up previous instance if it exists
       if (p5InstanceRef.current) {
         p5InstanceRef.current.remove();
+        p5InstanceRef.current = null;
       }
 
       // Create new p5 instance
       const container = containerRef.current;
       if (container) {
+        // Clear any leftover canvases from previous instances
+        while (container.firstChild) {
+          container.removeChild(container.firstChild);
+        }
         p5InstanceRef.current = new p5(sketch, container);
       }
     });

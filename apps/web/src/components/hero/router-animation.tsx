@@ -6,11 +6,14 @@ import { useCallback, useEffect, useRef } from "react";
 export function RouterAnimation() {
   const containerRef = useRef<HTMLDivElement>(null);
   const p5InstanceRef = useRef<p5Type | null>(null);
+  const isInitializedRef = useRef(false);
 
   const createSketch = useCallback(() => {
-    if (!containerRef.current) return;
+    if (!containerRef.current || isInitializedRef.current) return;
+    isInitializedRef.current = true;
 
     import("p5").then((p5Module) => {
+      if (!containerRef.current) return;
       const p5 = p5Module.default;
 
       const sketch = (p: p5Type) => {
@@ -122,10 +125,15 @@ export function RouterAnimation() {
 
       if (p5InstanceRef.current) {
         p5InstanceRef.current.remove();
+        p5InstanceRef.current = null;
       }
 
       const container = containerRef.current;
       if (container) {
+        // Clear any leftover canvases from previous instances
+        while (container.firstChild) {
+          container.removeChild(container.firstChild);
+        }
         p5InstanceRef.current = new p5(sketch, container);
       }
     });

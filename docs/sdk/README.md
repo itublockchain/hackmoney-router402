@@ -1,6 +1,6 @@
 # SDK
 
-The `@router402/sdk` package provides a TypeScript SDK for managing Kernel v3.1 smart accounts with session key support. It handles smart account creation, deployment, session key lifecycle, and transaction execution.
+The `@router402/sdk` package provides a TypeScript SDK for accessing AI models through Router402's payment-gated API. It handles smart account creation, session key management, and chat completions in a simple interface.
 
 ## Installation
 
@@ -18,20 +18,32 @@ bun add @router402/sdk viem
 
 ```typescript
 import { Router402Sdk } from "@router402/sdk";
+
+// For chat completions, just pass your JWT token
+const sdk = new Router402Sdk({
+  token: "your-jwt-token",
+});
+
+// Send a chat completion request
+const response = await sdk.chat("What is ERC-4337?");
+console.log(response);
+
+// Use a different model
+const answer = await sdk.chat("Explain account abstraction", {
+  model: "anthropic/claude-haiku-4.5",
+});
+```
+
+For smart account operations (deploy, session keys, gasless transactions), also provide `chain` and `pimlicoApiKey`:
+
+```typescript
+import { Router402Sdk } from "@router402/sdk";
 import { baseSepolia } from "viem/chains";
 
 const sdk = new Router402Sdk({
   chain: baseSepolia,
   pimlicoApiKey: "your-pimlico-api-key",
-});
-
-// Get the deterministic smart account address
-const address = await sdk.getSmartAccountAddress(walletClient);
-
-// Full account setup (deploy + session key) in one call
-const result = await sdk.setupAccount(walletClient, eoaAddress, {
-  usdcAddress: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
-  onStatus: (status) => console.log("Status:", status),
+  token: "your-jwt-token", // optional here, can also use setToken() later
 });
 ```
 
@@ -39,6 +51,7 @@ const result = await sdk.setupAccount(walletClient, eoaAddress, {
 
 | Feature | Description |
 |---------|-------------|
+| **Chat Completions** | Send chat requests with `sdk.chat(prompt)` -- one line to AI |
 | **Smart Accounts** | Create and manage Kernel v3.1 smart contract wallets |
 | **Session Keys** | Generate, approve, and manage delegated signing keys |
 | **Gasless Transactions** | Gas fees sponsored by Pimlico paymaster |

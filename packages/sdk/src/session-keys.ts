@@ -1,10 +1,10 @@
 import type { Address } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import type {
-  ResolvedConfig,
+  SmartAccountResolvedConfig as ResolvedConfig,
   SessionKeyData,
   SessionKeyForBackend,
-} from "./types";
+} from "./types.js";
 
 /**
  * Generate a new session key pair

@@ -16,7 +16,7 @@ const features = [
   {
     title: "Account-less Access",
     description:
-      "No sign-ups, no credit cards, no passwords. Just connect your wallet, stake 3 USDC, and start using AI immediately. Your wallet is your identity.",
+      "No sign-ups, no credit cards, no passwords. Just connect your wallet and start using AI immediately. Your wallet is your identity.",
   },
   {
     title: "Agent-Ready",
@@ -104,7 +104,7 @@ export function LandingInfoSection() {
 
         {/* Demo Terminal with Decorative Background */}
         <div className="relative z-20 mb-20 flex justify-center">
-          <div className="relative w-full max-w-4xl">
+          <div className="relative w-full max-w-6xl">
             {/* Decorative background image */}
             <div className="absolute -inset-y-8 -inset-x-4 sm:-inset-y-12 sm:-inset-x-24 md:-inset-x-32 rounded-3xl overflow-hidden">
               <Image
@@ -138,9 +138,36 @@ export function LandingInfoSection() {
                   }}
                   className="aspect-video w-full bg-black"
                 >
-                  <div className="flex h-full items-center justify-center text-neutral-500">
-                    {activeTab === "web" && "Web Demo"}
-                    {activeTab === "vscode" && "VS Code Demo"}
+                  <div className="relative flex h-full items-center justify-center text-neutral-500">
+                    {activeTab === "web" && (
+                      <Image
+                        src="/demo/demo-web.gif"
+                        alt="Web Demo"
+                        fill
+                        className="object-cover"
+                        unoptimized
+                      />
+                    )}
+                    {activeTab === "vscode" && (
+                      <>
+                        <Image
+                          src="/demo/demo-vscode.gif"
+                          alt="VS Code Demo"
+                          fill
+                          className="object-cover"
+                          unoptimized
+                        />
+                        <a
+                          href="https://marketplace.visualstudio.com/items?itemName=router402xyz.router402-vscode"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="absolute bottom-3 right-3 z-10 inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1.5 text-xs font-medium text-black backdrop-blur-sm transition-colors hover:bg-white"
+                        >
+                          Install Extension
+                          <ExternalLink size={12} />
+                        </a>
+                      </>
+                    )}
                     {activeTab === "cli" && "Terminal Demo"}
                   </div>
                 </motion.div>

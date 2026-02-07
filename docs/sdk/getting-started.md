@@ -1,12 +1,12 @@
 # Getting Started
 
-This guide covers everything you need to go from installation to making your first chat completion request with Router402.
+This guide covers everything you need to go from installation to sending your first chat completion request with Router402.
 
 ## Prerequisites
 
 - **Node.js 18+** or **Bun 1.0+**
-- A **Pimlico API key** ([pimlico.io](https://www.pimlico.io/))
-- A wallet library like **Wagmi** or **Viem**
+- A **JWT token** from Router402 (obtained via `/v1/authorize`)
+- For smart account features: a **Pimlico API key** ([pimlico.io](https://www.pimlico.io/)) and a wallet library like **Wagmi** or **Viem**
 
 ## Installation
 
@@ -22,7 +22,17 @@ bun add @router402/sdk viem
 
 ## Configuration
 
-Create an SDK instance:
+For **chat-only** usage, just pass your JWT token:
+
+```typescript
+import { Router402Sdk } from "@router402/sdk";
+
+const sdk = new Router402Sdk({
+  token: process.env.ROUTER402_TOKEN!,
+});
+```
+
+For **smart account** operations (deploy, session keys, gasless transactions), also provide `chain` and `pimlicoApiKey`:
 
 ```typescript
 import { Router402Sdk } from "@router402/sdk";
@@ -31,6 +41,7 @@ import { baseSepolia } from "viem/chains";
 const sdk = new Router402Sdk({
   chain: baseSepolia,
   pimlicoApiKey: process.env.PIMLICO_API_KEY!,
+  token: process.env.ROUTER402_TOKEN!, // optional here, can set later via setToken()
 });
 ```
 
@@ -38,14 +49,18 @@ const sdk = new Router402Sdk({
 
 | Option | Type | Required | Default | Description |
 |--------|------|----------|---------|-------------|
-| `chain` | `Chain` | Yes | -- | Target blockchain (from `viem/chains`) |
-| `pimlicoApiKey` | `string` | Yes | -- | Pimlico API key for bundler and paymaster |
+| `token` | `string` | No | -- | JWT token for API auth (can also use `setToken()`) |
+| `chain` | `Chain` | No* | -- | Target blockchain (from `viem/chains`) |
+| `pimlicoApiKey` | `string` | No* | -- | Pimlico API key for bundler and paymaster |
+| `apiBaseUrl` | `string` | No | `https://api.router402.xyz` | Router402 API base URL |
 | `entryPointVersion` | `"0.7"` | No | `"0.7"` | ERC-4337 entry point version |
 | `sessionKeyValidityPeriod` | `number` | No | `31536000` | Session key validity in seconds (1 year) |
 
+\* Required only for smart account operations (deploy, session keys, transactions).
+
 ## Setup Flow
 
-The complete setup flow from wallet connection to making API calls:
+The complete setup flow from wallet connection to sending chat completions:
 
 ```mermaid
 flowchart TD
@@ -54,7 +69,7 @@ flowchart TD
     C --> D["4. Create & Approve Session Key"]
     D --> E["5. Enable Session Key On-Chain"]
     E --> F["6. Authorize with Server"]
-    F --> G["7. Make Chat Completion Requests"]
+    F --> G["7. Send Chat Completions"]
 
     style A fill:#f9f,stroke:#333
     style G fill:#9f9,stroke:#333
@@ -156,78 +171,40 @@ const { data } = await response.json();
 const jwtToken = data.token;
 ```
 
-### Step 4: Make Chat Completion Requests
+### Step 4: Send Chat Completions
 
-Use the JWT token for authenticated chat completions:
-
-```typescript
-// Non-streaming
-async function chat(token: string, message: string) {
-  const response = await fetch("https://api.router402.xyz/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      model: "anthropic/claude-sonnet-4.5",
-      messages: [
-        { role: "user", content: message },
-      ],
-    }),
-  });
-
-  const result = await response.json();
-  return result.choices[0].message.content;
-}
-
-const answer = await chat(jwtToken, "What is account abstraction?");
-console.log(answer);
-```
-
-### Streaming Example
+If you passed `token` in the constructor, you can call `chat()` directly. Otherwise, set it first:
 
 ```typescript
-async function streamChat(token: string, message: string) {
-  const response = await fetch("https://api.router402.xyz/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      model: "anthropic/claude-sonnet-4.5",
-      messages: [
-        { role: "user", content: message },
-      ],
-      stream: true,
-    }),
-  });
+// If token wasn't in the constructor, set it now
+sdk.setToken(jwtToken);
 
-  const reader = response.body!.getReader();
-  const decoder = new TextDecoder();
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-
-    const text = decoder.decode(value);
-    const lines = text.split("\n");
-
-    for (const line of lines) {
-      if (line.startsWith("data: ") && line !== "data: [DONE]") {
-        const chunk = JSON.parse(line.slice(6));
-        const content = chunk.choices[0]?.delta?.content;
-        if (content) {
-          process.stdout.write(content);
-        }
-      }
-    }
-  }
-}
-
-await streamChat(jwtToken, "Tell me about ERC-4337");
+// Send a chat completion
+const response = await sdk.chat("What is account abstraction?");
+console.log(response);
 ```
+
+### Chat Options
+
+You can pass options to customize the request:
+
+```typescript
+const response = await sdk.chat("Explain ERC-4337", {
+  model: "anthropic/claude-haiku-4.5",  // Default: "anthropic/claude-sonnet-4.5"
+  temperature: 0.7,                     // Sampling temperature (0-2)
+  max_tokens: 1024,                     // Maximum tokens to generate
+});
+```
+
+### Supported Models
+
+| Model | Provider |
+|-------|----------|
+| `anthropic/claude-opus-4.5` | Anthropic |
+| `anthropic/claude-sonnet-4.5` | Anthropic |
+| `anthropic/claude-haiku-4.5` | Anthropic |
+| `google/gemini-3-pro-preview` | Google |
+| `google/gemini-3-flash-preview` | Google |
 
 ## Complete Example
 
@@ -240,6 +217,7 @@ import { signTypedData } from "viem/actions";
 
 const USDC_BASE_SEPOLIA = "0x036CbD53842c5426634e7929541eC2318f3dCF7e";
 
+// Include chain and pimlicoApiKey for smart account operations
 const sdk = new Router402Sdk({
   chain: baseSepolia,
   pimlicoApiKey: process.env.PIMLICO_API_KEY!,
@@ -299,21 +277,10 @@ async function onboard(walletClient, eoaAddress: string) {
 
   const { data } = await authResponse.json();
 
-  // 3. Make a chat completion request
-  const chatResponse = await fetch("https://api.router402.xyz/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${data.token}`,
-    },
-    body: JSON.stringify({
-      model: "anthropic/claude-sonnet-4.5",
-      messages: [{ role: "user", content: "Hello, Router402!" }],
-    }),
-  });
-
-  const result = await chatResponse.json();
-  console.log("Response:", result.choices[0].message.content);
+  // 3. Set token and send chat completion
+  sdk.setToken(data.token);
+  const response = await sdk.chat("Hello, Router402!");
+  console.log("Response:", response);
 }
 ```
 

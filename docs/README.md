@@ -39,6 +39,7 @@ graph TB
     subgraph SDK["@router402/sdk"]
         SmartAccount["Smart Account Management"]
         SessionKeys["Session Key Lifecycle"]
+        Chat["Chat Completions"]
     end
 
     WebApp --> API

@@ -1,13 +1,13 @@
 import type { Address, WalletClient } from "viem";
 import { encodeFunctionData, erc20Abi } from "viem";
-import { resolveConfig, validateConfig } from "./config";
+import { resolveConfig, validateSmartAccountConfig } from "./config.js";
 import {
   createKernelAccountFromWallet,
   createKernelPublicClient,
   createSessionKeyApproval,
   getKernelAccountAddress,
   isKernelAccountDeployed,
-} from "./kernel";
+} from "./kernel.js";
 import {
   canUseSessionKey,
   exportSessionKeyForBackend,
@@ -16,13 +16,15 @@ import {
   isSessionKeyExpired,
   isSessionKeyValid,
   markSessionKeyApproved,
-} from "./session-keys";
+} from "./session-keys.js";
 import {
   sendOwnerTransaction,
   sendSessionKeyTransaction,
-} from "./transactions";
+} from "./transactions.js";
 import type {
   CallData,
+  ChatOptions,
+  ChatResponse,
   ResolvedConfig,
   Router402Config,
   SessionKeyData,
@@ -30,43 +32,48 @@ import type {
   SetupAccountOptions,
   SetupAccountResult,
   SmartAccountInfo,
+  SmartAccountResolvedConfig,
   TransactionExecutionResult,
-} from "./types";
-import { SmartAccountError } from "./types";
+} from "./types.js";
+import { SmartAccountError } from "./types.js";
 
 /**
- * Router402 SDK - Main entry point for smart account operations
+ * Router402 SDK - Main entry point for chat completions and smart account operations
  *
- * Usage:
+ * Usage (chat only):
  * ```typescript
- * import { Router402Sdk } from "@router402/sdk";
- * import { baseSepolia } from "viem/chains";
+ * const sdk = new Router402Sdk({ token: "your-jwt-token" });
+ * const response = await sdk.chat("What is ERC-4337?");
+ * ```
  *
+ * Usage (with smart accounts):
+ * ```typescript
  * const sdk = new Router402Sdk({
  *   chain: baseSepolia,
  *   pimlicoApiKey: "your-api-key",
+ *   token: "your-jwt-token",
  * });
- *
- * // Get smart account address
- * const address = await sdk.getSmartAccountAddress(walletClient);
- *
- * // Deploy smart account
- * await sdk.deploySmartAccount(walletClient);
- *
- * // Create and approve session key
- * const sessionKey = sdk.generateSessionKey(smartAccountAddress, eoaAddress);
- * const approvedKey = await sdk.approveSessionKey(walletClient, sessionKey);
- *
- * // Send transaction with session key
- * await sdk.sendSessionKeyTransaction(approvedKey, [{ to: "0x...", value: 0n }]);
  * ```
  */
 export class Router402Sdk {
   private config: ResolvedConfig;
+  private token: string | null = null;
 
   constructor(userConfig: Router402Config) {
-    validateConfig(userConfig);
     this.config = resolveConfig(userConfig);
+    if (userConfig.token) {
+      this.token = userConfig.token;
+    }
+  }
+
+  /**
+   * Ensures chain and pimlicoApiKey are configured.
+   * Returns the config with smart account fields guaranteed.
+   * Throws SmartAccountError if not configured.
+   */
+  private requireSmartAccountConfig(): SmartAccountResolvedConfig {
+    validateSmartAccountConfig(this.config);
+    return this.config as SmartAccountResolvedConfig;
   }
 
   /**
@@ -77,10 +84,11 @@ export class Router402Sdk {
   }
 
   /**
-   * Get the chain ID
+   * Get the chain ID (requires chain to be configured)
    */
   getChainId(): number {
-    return this.config.chainId;
+    const config = this.requireSmartAccountConfig();
+    return config.chainId;
   }
 
   // =====================
@@ -91,14 +99,16 @@ export class Router402Sdk {
    * Get the deterministic smart account address for a wallet
    */
   async getSmartAccountAddress(walletClient: WalletClient): Promise<Address> {
-    return getKernelAccountAddress(walletClient, this.config);
+    const config = this.requireSmartAccountConfig();
+    return getKernelAccountAddress(walletClient, config);
   }
 
   /**
    * Check if a smart account is deployed on-chain
    */
   async isSmartAccountDeployed(address: Address): Promise<boolean> {
-    return isKernelAccountDeployed(address, this.config);
+    const config = this.requireSmartAccountConfig();
+    return isKernelAccountDeployed(address, config);
   }
 
   /**
@@ -108,17 +118,15 @@ export class Router402Sdk {
     walletClient: WalletClient,
     eoaAddress: Address
   ): Promise<SmartAccountInfo> {
-    const account = await createKernelAccountFromWallet(
-      walletClient,
-      this.config
-    );
+    const config = this.requireSmartAccountConfig();
+    const account = await createKernelAccountFromWallet(walletClient, config);
     const isDeployed = await account.isDeployed();
 
     return {
       address: account.address,
       eoaAddress,
       isDeployed,
-      chainId: this.config.chainId,
+      chainId: config.chainId,
     };
   }
 
@@ -126,7 +134,8 @@ export class Router402Sdk {
    * Get the ETH balance of a smart account
    */
   async getSmartAccountBalance(address: Address): Promise<bigint> {
-    const publicClient = createKernelPublicClient(this.config);
+    const config = this.requireSmartAccountConfig();
+    const publicClient = createKernelPublicClient(config);
     return publicClient.getBalance({ address });
   }
 
@@ -136,6 +145,7 @@ export class Router402Sdk {
   async deploySmartAccount(
     walletClient: WalletClient
   ): Promise<TransactionExecutionResult> {
+    this.requireSmartAccountConfig();
     const address = await this.getSmartAccountAddress(walletClient);
 
     // Send a 0-value transaction to self to trigger deployment
@@ -155,7 +165,8 @@ export class Router402Sdk {
     walletClient: WalletClient,
     calls: CallData[]
   ): Promise<TransactionExecutionResult> {
-    return sendOwnerTransaction(walletClient, calls, this.config);
+    const config = this.requireSmartAccountConfig();
+    return sendOwnerTransaction(walletClient, calls, config);
   }
 
   /**
@@ -165,6 +176,7 @@ export class Router402Sdk {
     sessionKey: SessionKeyData,
     calls: CallData[]
   ): Promise<TransactionExecutionResult> {
+    const config = this.requireSmartAccountConfig();
     if (isSessionKeyExpired(sessionKey)) {
       throw new SmartAccountError(
         "SESSION_KEY_EXPIRED",
@@ -183,7 +195,7 @@ export class Router402Sdk {
       sessionKey.privateKey,
       sessionKey.serializedSessionKey,
       calls,
-      this.config
+      config
     );
   }
 
@@ -194,11 +206,12 @@ export class Router402Sdk {
     sessionKeyData: SessionKeyForBackend,
     calls: CallData[]
   ): Promise<TransactionExecutionResult> {
+    const config = this.requireSmartAccountConfig();
     return sendSessionKeyTransaction(
       sessionKeyData.privateKey,
       sessionKeyData.serializedSessionKey,
       calls,
-      this.config
+      config
     );
   }
 
@@ -213,7 +226,8 @@ export class Router402Sdk {
     smartAccountAddress: Address,
     ownerAddress: Address
   ): SessionKeyData {
-    return generateSessionKey(smartAccountAddress, ownerAddress, this.config);
+    const config = this.requireSmartAccountConfig();
+    return generateSessionKey(smartAccountAddress, ownerAddress, config);
   }
 
   /**
@@ -233,12 +247,13 @@ export class Router402Sdk {
     sessionKey: SessionKeyData,
     allowedCallers?: Address[]
   ): Promise<SessionKeyData> {
+    const config = this.requireSmartAccountConfig();
     const callers = allowedCallers ?? sessionKey.allowedCallers;
 
     const serializedApproval = await createSessionKeyApproval(
       walletClient,
       sessionKey.publicKey,
-      this.config,
+      config,
       sessionKey.expiresAt,
       callers
     );
@@ -283,7 +298,8 @@ export class Router402Sdk {
   exportSessionKeyForBackend(
     sessionKey: SessionKeyData
   ): SessionKeyForBackend | null {
-    return exportSessionKeyForBackend(sessionKey, this.config.chainId);
+    const config = this.requireSmartAccountConfig();
+    return exportSessionKeyForBackend(sessionKey, config.chainId);
   }
 
   // ====================
@@ -304,6 +320,7 @@ export class Router402Sdk {
     usdcAddress: Address,
     smartAccountAddress: Address
   ): Promise<TransactionExecutionResult> {
+    const config = this.requireSmartAccountConfig();
     if (!sessionKey.isApproved || !sessionKey.serializedSessionKey) {
       throw new SmartAccountError(
         "SESSION_KEY_NOT_APPROVED",
@@ -321,7 +338,7 @@ export class Router402Sdk {
       sessionKey.privateKey,
       sessionKey.serializedSessionKey,
       [{ to: usdcAddress, value: BigInt(0), data: approveData }],
-      this.config
+      config
     );
   }
 
@@ -340,6 +357,7 @@ export class Router402Sdk {
     eoaAddress: Address,
     options: SetupAccountOptions
   ): Promise<SetupAccountResult> {
+    this.requireSmartAccountConfig(); // validates upfront before multi-step flow
     const { usdcAddress, existingSessionKey, onStatus } = options;
 
     // Step 1: Get smart account info
@@ -396,6 +414,77 @@ export class Router402Sdk {
 
     onStatus?.("complete");
     return { info, sessionKey, enableResult };
+  }
+
+  // ====================
+  // Chat Methods
+  // ====================
+
+  /**
+   * Set the JWT token for authenticated API requests
+   */
+  setToken(token: string): void {
+    this.token = token;
+  }
+
+  /**
+   * Send a chat completion request to the Router402 API.
+   *
+   * @param prompt - The user message to send
+   * @param options - Optional model, temperature, and max_tokens overrides
+   * @returns The assistant's response content
+   *
+   * @example
+   * ```typescript
+   * sdk.setToken(jwtToken);
+   * const response = await sdk.chat("What is ERC-4337?");
+   * console.log(response);
+   * ```
+   */
+  async chat(prompt: string, options?: ChatOptions): Promise<string> {
+    if (!this.token) {
+      throw new SmartAccountError(
+        "NOT_CONFIGURED",
+        "JWT token is required. Pass `token` in the constructor or call setToken() before using chat()."
+      );
+    }
+
+    const body = {
+      model: options?.model ?? "anthropic/claude-opus-4.6",
+      messages: [{ role: "user" as const, content: prompt }],
+      ...(options?.temperature !== undefined && {
+        temperature: options.temperature,
+      }),
+      ...(options?.max_tokens !== undefined && {
+        max_tokens: options.max_tokens,
+      }),
+    };
+
+    const response = await fetch(
+      `${this.config.apiBaseUrl}/v1/chat/completions`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${this.token}`,
+        },
+        body: JSON.stringify(body),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = (await response.json().catch(() => null)) as Record<
+        string,
+        unknown
+      > | null;
+      const error = errorData?.error as { message?: string } | null | undefined;
+      const message =
+        error?.message ?? `Chat request failed with status ${response.status}`;
+      throw new SmartAccountError("UNKNOWN_ERROR", message);
+    }
+
+    const data = (await response.json()) as ChatResponse;
+    return data.choices[0].message.content;
   }
 }
 

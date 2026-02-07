@@ -53,7 +53,7 @@
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
   --font-sans: var(--font-inter-sans);
-  --font-mono: var(--font-inter-sans);
+  --font-mono: var(--font-jetbrains-mono);
 }
 
 @layer base {

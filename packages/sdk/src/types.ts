@@ -2,31 +2,53 @@ import type { Address, Chain, Hash, Hex } from "viem";
 
 /**
  * SDK Configuration options
+ *
+ * For chat-only usage, only `token` (or later `setToken()`) is needed.
+ * For smart account operations, `chain` and `pimlicoApiKey` are also required.
  */
 export interface Router402Config {
-  /** Target chain for smart account operations */
-  chain: Chain;
+  /** Target chain for smart account operations (required for smart account features) */
+  chain?: Chain;
 
-  /** Pimlico API key for bundler/paymaster services */
-  pimlicoApiKey: string;
+  /** Pimlico API key for bundler/paymaster services (required for smart account features) */
+  pimlicoApiKey?: string;
+
+  /** JWT token for authenticated API requests (optional — can also be set later via setToken()) */
+  token?: string;
 
   /** Entry point version (default: "0.7") */
   entryPointVersion?: "0.7";
 
   /** Session key validity period in seconds (default: 1 year) */
   sessionKeyValidityPeriod?: number;
+
+  /** Router402 API base URL (default: "https://api.router402.xyz") */
+  apiBaseUrl?: string;
 }
 
 /**
- * Resolved configuration with defaults applied
+ * Resolved configuration with defaults applied.
+ * For chat-only usage, chain/pimlico fields may be undefined.
  */
 export interface ResolvedConfig {
+  chain?: Chain;
+  chainId?: number;
+  pimlicoApiKey?: string;
+  pimlicoUrl?: string;
+  entryPointVersion: "0.7";
+  sessionKeyValidityPeriod: number;
+  apiBaseUrl: string;
+}
+
+/**
+ * Resolved configuration with smart account fields guaranteed present.
+ * Used by internal kernel, session key, and transaction modules.
+ */
+export interface SmartAccountResolvedConfig extends ResolvedConfig {
   chain: Chain;
   chainId: number;
   pimlicoApiKey: string;
   pimlicoUrl: string;
-  entryPointVersion: "0.7";
-  sessionKeyValidityPeriod: number;
 }
 
 /**
@@ -184,6 +206,51 @@ export interface SetupAccountResult {
   sessionKey: SessionKeyData;
   /** Result of the session key enablement transaction */
   enableResult: TransactionExecutionResult;
+}
+
+/**
+ * Chat message for completions API
+ */
+export interface ChatMessage {
+  role: "system" | "user" | "assistant";
+  content: string;
+}
+
+/**
+ * Options for the chat method
+ */
+export interface ChatOptions {
+  /** Model to use (default: "anthropic/claude-sonnet-4.5") */
+  model?: string;
+  /** Sampling temperature (0-2) */
+  temperature?: number;
+  /** Maximum tokens to generate */
+  max_tokens?: number;
+}
+
+/**
+ * Usage data from chat completions
+ */
+export interface ChatUsage {
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+}
+
+/**
+ * Response from the chat completions API
+ */
+export interface ChatResponse {
+  id: string;
+  object: string;
+  created: number;
+  model: string;
+  choices: {
+    index: number;
+    message: ChatMessage;
+    finish_reason: string;
+  }[];
+  usage: ChatUsage;
 }
 
 /**

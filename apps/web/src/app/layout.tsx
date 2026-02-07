@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import clsx from "clsx";
 import { Toaster } from "@/components/ui/sonner";
@@ -7,6 +7,11 @@ import { ThemeProvider, Web3Provider } from "@/providers";
 
 const interSans = Inter({
   variable: "--font-inter-sans",
+  subsets: ["latin"],
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-jetbrains-mono",
   subsets: ["latin"],
 });
 
@@ -20,11 +25,11 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: "Router 402 | Access AI Models with Your Smart Account",
   description:
-    "Router 402 lets you access OpenRouter AI models through your smart account on Base. Use crypto to pay for AI inference with session keys and smart wallets.",
+    "Router 402 lets you access AI models through your smart account on Base. Use crypto to pay for AI inference with session keys and smart wallets.",
   openGraph: {
     title: "Router 402 | Access AI Models with Your Smart Account",
     description:
-      "Router 402 lets you access OpenRouter AI models through your smart account on Base. Use crypto to pay for AI inference with session keys and smart wallets.",
+      "Router 402 lets you access AI models through your smart account on Base. Use crypto to pay for AI inference with session keys and smart wallets.",
     images: [
       {
         url: "/og-image.png",
@@ -40,7 +45,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Router 402 | Access AI Models with Your Smart Account",
     description:
-      "Router 402 lets you access OpenRouter AI models through your smart account on Base. Use crypto to pay for AI inference with session keys and smart wallets.",
+      "Router 402 lets you access AI models through your smart account on Base. Use crypto to pay for AI inference with session keys and smart wallets.",
     images: ["/og-image.png"],
   },
   icons: {
@@ -63,7 +68,11 @@ export default function RootLayout({ children }: RootLayoutProps) {
     >
       <body
         suppressHydrationWarning
-        className={clsx(interSans.variable, "antialiased h-full")}
+        className={clsx(
+          interSans.variable,
+          jetbrainsMono.variable,
+          "antialiased h-full"
+        )}
       >
         <ThemeProvider
           attribute="class"

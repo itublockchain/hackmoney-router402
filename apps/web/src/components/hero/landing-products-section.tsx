@@ -2,7 +2,6 @@ import Image from "next/image";
 import { RouterAnimation } from "./router-animation";
 
 const products = [
-  { name: "OpenRouter", logo: "/product/openrouter.png", size: 160 },
   { name: "x402", logo: "/product/x402.png", size: 96 },
   { name: "ZeroDev", logo: "/product/zerodev.png", size: 160 },
   { name: "base", logo: "/product/base.png", size: 112 },
@@ -33,9 +32,9 @@ export function LandingProductsSection() {
             Tools we use
           </h2>
           <p className="mx-auto max-w-3xl text-sm text-neutral-400 sm:text-base">
-            Route 402 is built on battle-tested infrastructure. We leverage
-            OpenRouter for multi-model access, x402 for trustless micropayments,
-            and account abstraction for gasless transactions on Base.
+            Route 402 is built on battle-tested infrastructure. We leverage x402
+            for trustless micropayments, ZeroDev for smart account abstraction,
+            and gasless transactions on Base.
           </p>
         </div>
 
@@ -59,25 +58,7 @@ export function LandingProductsSection() {
 
         {/* Product Logos - Row 2 (centered) */}
         <div className="mt-10 flex flex-wrap items-center justify-center gap-12 md:gap-16">
-          {products.slice(4, 7).map((product) => (
-            <div
-              key={product.name}
-              className="flex items-center justify-center"
-            >
-              <Image
-                src={product.logo}
-                alt={product.name}
-                width={product.size}
-                height={product.size}
-                className={`${sizeClasses[product.size]} h-auto object-contain`}
-              />
-            </div>
-          ))}
-        </div>
-
-        {/* Product Logos - Row 3 (centered) */}
-        <div className="mt-10 flex flex-wrap items-center justify-center gap-12 md:gap-16">
-          {products.slice(7).map((product) => (
+          {products.slice(4).map((product) => (
             <div
               key={product.name}
               className="flex items-center justify-center"

@@ -6,11 +6,14 @@ import { useCallback, useEffect, useRef } from "react";
 export function HeroWaveAnimation() {
   const containerRef = useRef<HTMLDivElement>(null);
   const p5InstanceRef = useRef<p5Type | null>(null);
+  const isInitializedRef = useRef(false);
 
   const createSketch = useCallback(() => {
-    if (!containerRef.current) return;
+    if (!containerRef.current || isInitializedRef.current) return;
+    isInitializedRef.current = true;
 
     import("p5").then((p5Module) => {
+      if (!containerRef.current) return;
       const p5 = p5Module.default;
 
       const sketch = (p: p5Type) => {
@@ -82,10 +85,15 @@ export function HeroWaveAnimation() {
 
       if (p5InstanceRef.current) {
         p5InstanceRef.current.remove();
+        p5InstanceRef.current = null;
       }
 
       const container = containerRef.current;
       if (container) {
+        // Clear any leftover canvases from previous instances
+        while (container.firstChild) {
+          container.removeChild(container.firstChild);
+        }
         p5InstanceRef.current = new p5(sketch, container);
       }
     });
@@ -103,7 +111,7 @@ export function HeroWaveAnimation() {
   }, [createSketch]);
 
   return (
-    <div className="relative z-10 -mt-[20rem] md:-mt-[45vh] h-screen w-full">
+    <div className="relative z-10 -mt-[20rem] md:-mt-[55vh] h-screen w-full">
       <div ref={containerRef} className="h-full w-full" />
     </div>
   );

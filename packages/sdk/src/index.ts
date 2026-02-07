@@ -2,12 +2,14 @@
 
 // Config utilities
 export {
+  DEFAULT_API_BASE_URL,
   DEFAULT_SESSION_KEY_VALIDITY,
   ENTRY_POINT_ADDRESS,
   KERNEL_VERSION,
   resolveConfig,
   validateConfig,
-} from "./config";
+  validateSmartAccountConfig,
+} from "./config.js";
 // Kernel utilities (for advanced use cases)
 export {
   createEcdsaValidator,
@@ -19,8 +21,8 @@ export {
   createSessionKeyApproval,
   getKernelAccountAddress,
   isKernelAccountDeployed,
-} from "./kernel";
-export { createRouter402Sdk, Router402Sdk } from "./sdk";
+} from "./kernel.js";
+export { createRouter402Sdk, Router402Sdk } from "./sdk.js";
 // Session key utilities
 export {
   canUseSessionKey,
@@ -31,15 +33,19 @@ export {
   isSessionKeyExpired,
   isSessionKeyValid,
   markSessionKeyApproved,
-} from "./session-keys";
+} from "./session-keys.js";
 // Transaction utilities
 export {
   sendOwnerTransaction,
   sendSessionKeyTransaction,
-} from "./transactions";
+} from "./transactions.js";
 // Types
 export type {
   CallData,
+  ChatMessage,
+  ChatOptions,
+  ChatResponse,
+  ChatUsage,
   DeploymentResult,
   ResolvedConfig,
   Router402Config,
@@ -51,8 +57,9 @@ export type {
   SetupStatus,
   SmartAccountErrorType,
   SmartAccountInfo,
+  SmartAccountResolvedConfig,
   TransactionExecutionResult,
   TransactionResult,
   UserOperationResult,
-} from "./types";
-export { SmartAccountError } from "./types";
+} from "./types.js";
+export { SmartAccountError } from "./types.js";

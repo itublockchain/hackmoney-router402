@@ -27,7 +27,7 @@ import { createPublicClient, http } from "viem";
 import { entryPoint07Address } from "viem/account-abstraction";
 import { privateKeyToAccount } from "viem/accounts";
 import { KERNEL_VERSION } from "./config";
-import type { ResolvedConfig } from "./types";
+import type { SmartAccountResolvedConfig as ResolvedConfig } from "./types";
 import { SmartAccountError } from "./types";
 
 /**
