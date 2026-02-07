@@ -111,7 +111,7 @@ export function HeroWaveAnimation() {
   }, [createSketch]);
 
   return (
-    <div className="pointer-events-none relative z-10 -mt-[20rem] md:-mt-[55vh] h-screen w-full">
+    <div className="pointer-events-none relative z-10 -mt-[45vh] md:-mt-[55vh] h-screen w-full">
       <div ref={containerRef} className="h-full w-full" />
     </div>
   );
