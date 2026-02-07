@@ -32,9 +32,9 @@ export function LandingProductsSection() {
             Tools we use
           </h2>
           <p className="mx-auto max-w-3xl text-sm text-neutral-400 sm:text-base">
-            Route 402 is built on battle-tested infrastructure. We leverage x402
-            for trustless micropayments, ZeroDev for smart account abstraction,
-            and gasless transactions on Base.
+            Router402 is built on x402 for micropayments, Pimlico for smart
+            account abstraction, Base (Flashblocks) for ~0.2s settlement, and
+            Li.Fi for cross-chain bridge & swap.
           </p>
         </div>
 

@@ -10,29 +10,34 @@ import { cn } from "@/lib";
 
 const features = [
   {
-    title: "No Subscriptions",
+    emoji: "",
+    title: "True Pay-Per-Use",
     description:
-      "Ditch monthly fees. Route 402 uses crypto-native micropayments so you only pay for what you use. Stake a small collateral and get instant access to top-tier AI models.",
+      "Not prepaid, not subscription. Every API call settles the exact cost of your previous request as a USDC micropayment on Base. Your funds stay in your smart account until a completed request is being paid for.",
   },
   {
-    title: "Account-less Access",
+    emoji: "",
+    title: "One API, Multiple Models",
     description:
-      "No sign-ups, no credit cards, no passwords. Just connect your wallet and start using AI immediately. Your wallet is your identity.",
+      "Access Claude, Gemini, and more through a single OpenRouter-compatible endpoint. Switch models by changing one string. No new accounts, no new API keys, no new billing.",
   },
   {
-    title: "Agent-Ready",
-    description:
-      "Built for autonomous AI agents from the ground up. Programmatic session keys and the x402 protocol enable machines to pay for AI services without human intervention.",
-  },
-  {
-    title: "Multi-Provider",
-    description:
-      "Access OpenAI, Anthropic, and Google models through a single unified API. No more juggling multiple accounts and API keys across different providers.",
-  },
-  {
+    emoji: "",
     title: "Gasless UX",
     description:
-      "All transactions are sponsored via account abstraction. Focus on building, not managing gas fees. Seamless, frictionless, just like traditional APIs should be.",
+      "All transactions are handled via Pimlico-powered account abstraction. No gas fees, no wallet popups, no seed phrases. It feels like a traditional API, but your money stays yours.",
+  },
+  {
+    emoji: "",
+    title: "Li.Fi MCP Integration",
+    description:
+      "Bridge and swap assets directly from your own wallet via the built-in Li.Fi MCP server. The gateway returns typed transaction data, you sign it yourself. No private key handoff, no custody risk.",
+  },
+  {
+    emoji: "",
+    title: "~0.2s Settlement",
+    description:
+      "We modified the OpenFacilitator to leverage Base Flashblocks for ~200ms on-chain settlement. The previous request's cost confirms before the next LLM call is forwarded, fast enough to feel instant.",
   },
 ];
 
@@ -65,13 +70,14 @@ export function LandingInfoSection() {
         {/* Title and Subtitle — relative z-20 so it floats above the wave animation (z-10) */}
         <div className="relative z-20 mb-16 text-center">
           <h2 className="mb-4 text-2xl font-bold text-white sm:text-3xl md:text-4xl">
-            What is Router402?
+            Use any LLM with x402 micropayments
           </h2>
           <p className="mx-auto max-w-3xl text-sm text-neutral-400 sm:text-base">
-            Route 402 is a decentralized AI gateway that replaces traditional
-            SaaS subscriptions with crypto-native micropayments. Stake once,
-            access multiple LLM providers through a single API, and let
-            autonomous agents pay for their own compute.
+            One API, multiple models, true pay-per-use. Router402 is an
+            OpenRouter-compatible AI gateway where every API call settles a USDC
+            micropayment on Base via the x402 protocol. No subscriptions, no
+            prepaid balances. Your money stays in your smart account until a
+            completed request is paid for.
           </p>
         </div>
 
@@ -176,7 +182,7 @@ export function LandingInfoSection() {
           {features.slice(0, 3).map((feature, index) => (
             <div key={index} className="flex gap-4">
               <div className="flex-shrink-0">
-                <div className="h-10 w-10 rounded-full bg-blue-600" />
+                <h1>{feature.emoji}</h1>
               </div>
               <div>
                 <h3 className="mb-2 text-lg font-semibold text-white">
@@ -195,7 +201,7 @@ export function LandingInfoSection() {
           {features.slice(3).map((feature, index) => (
             <div key={index + 3} className="flex gap-4">
               <div className="shrink-0">
-                <div className="h-10 w-10 rounded-full bg-blue-600" />
+                <h1>{feature.emoji}</h1>
               </div>
               <div>
                 <h3 className="mb-2 text-lg font-semibold text-white">

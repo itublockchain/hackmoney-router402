@@ -725,6 +725,7 @@ export class GeminiProvider implements LLMProvider {
       let completionTokens = 0;
       let lastFinishReason: ChatResponse["finishReason"] | undefined;
       let hasYieldedToolCalls = false;
+      const allParts: Part[] = [];
 
       // Process stream chunks
       for await (const chunk of streamResult.stream) {
@@ -732,6 +733,9 @@ export class GeminiProvider implements LLMProvider {
 
         if (candidate) {
           const parts = candidate.content?.parts || [];
+
+          // Accumulate all parts for rawAssistantParts (thoughtSignature preservation)
+          allParts.push(...parts);
 
           // Extract text content
           const textContent = extractTextContent(parts);
@@ -762,7 +766,7 @@ export class GeminiProvider implements LLMProvider {
         }
       }
 
-      // Yield final chunk with finish reason and usage
+      // Yield final chunk with finish reason, usage, and raw parts for agentic loop
       yield {
         finishReason: hasYieldedToolCalls
           ? "tool_calls"
@@ -771,6 +775,7 @@ export class GeminiProvider implements LLMProvider {
           promptTokens,
           completionTokens,
         },
+        rawAssistantParts: allParts.length > 0 ? allParts : undefined,
       };
     } catch (error) {
       if (error instanceof ProviderError) {

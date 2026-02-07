@@ -23,13 +23,13 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Router 402 | Access AI Models with Your Smart Account",
+  title: "Router402 | Use Any LLM with x402 Micropayments",
   description:
-    "Router 402 lets you access AI models through your smart account on Base. Use crypto to pay for AI inference with session keys and smart wallets.",
+    "Router 402 lets you access AI models through your smart account on Base. Use crypto to pay for AI inference with session keys and smart wallets. Pay as you go!",
   openGraph: {
-    title: "Router 402 | Access AI Models with Your Smart Account",
+    title: "Router402 | Use Any LLM with x402 Micropayments",
     description:
-      "Router 402 lets you access AI models through your smart account on Base. Use crypto to pay for AI inference with session keys and smart wallets.",
+      "Router 402 lets you access AI models through your smart account on Base. Use crypto to pay for AI inference with session keys and smart wallets. Pay as you go!",
     images: [
       {
         url: "/og-image.png",
@@ -43,9 +43,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Router 402 | Access AI Models with Your Smart Account",
+    title: "Router402 | Use Any LLM with x402 Micropayments",
     description:
-      "Router 402 lets you access AI models through your smart account on Base. Use crypto to pay for AI inference with session keys and smart wallets.",
+      "Router 402 lets you access AI models through your smart account on Base. Use crypto to pay for AI inference with session keys and smart wallets. Pay as you go!",
     images: ["/og-image.png"],
   },
   icons: {

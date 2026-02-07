@@ -228,9 +228,10 @@ export class ChatService {
     while (continueLoop && rounds <= MAX_MCP_ROUNDS) {
       continueLoop = false;
 
-      // Collect tool calls from the stream
+      // Collect tool calls and raw parts from the stream
       const accumulatedToolCalls: ToolCall[] = [];
       let lastContent: string | null = null;
+      let rawAssistantParts: unknown = undefined;
 
       for await (const chunk of provider.chatStream(params)) {
         // Accumulate tool calls for potential MCP execution
@@ -239,6 +240,10 @@ export class ChatService {
         }
         if (chunk.content) {
           lastContent = (lastContent ?? "") + chunk.content;
+        }
+        // Capture raw parts from final chunk (e.g. Gemini thoughtSignature)
+        if (chunk.rawAssistantParts) {
+          rawAssistantParts = chunk.rawAssistantParts;
         }
 
         // Always yield chunks to the client for real-time streaming
@@ -264,12 +269,12 @@ export class ChatService {
         const toolResults = await this.executeMcpToolCalls(mcpCalls);
 
         // Build messages for the next round
-        // Note: streaming doesn't preserve rawParts/thoughtSignature,
-        // so Gemini 3 multi-step tool calling may not work in streaming mode
+        // Attach rawAssistantParts so provider can preserve metadata (e.g. Gemini thoughtSignature)
         const assistantMessage: Message = {
           role: "assistant",
           content: lastContent,
           tool_calls: mcpCalls,
+          ...(rawAssistantParts ? { _rawParts: rawAssistantParts } : {}),
         };
 
         const toolMessages: Message[] = toolResults.map((result) => ({

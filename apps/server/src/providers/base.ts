@@ -118,6 +118,13 @@ export interface ChatChunk {
     /** Number of tokens in the completion */
     completionTokens: number;
   };
+
+  /**
+   * Raw provider-specific response parts accumulated during streaming.
+   * Used to preserve provider metadata (e.g. Gemini thoughtSignature)
+   * that must be echoed back in subsequent tool-calling turns.
+   */
+  rawAssistantParts?: unknown;
 }
 
 // ============================================================================
