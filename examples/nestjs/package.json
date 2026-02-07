@@ -12,7 +12,9 @@
     "@nestjs/core": "^11.0.0",
     "@nestjs/platform-express": "^11.0.0",
     "@router402/sdk": "^0.3.0",
+    "dotenv": "^16.4.0",
     "reflect-metadata": "^0.2.0",
+    "tslib": "^2.8.0",
     "rxjs": "^7.8.0",
     "viem": "^2.0.0"
   },

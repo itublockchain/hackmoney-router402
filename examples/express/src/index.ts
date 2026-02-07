@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { Router402Sdk } from "@router402/sdk";
 import express from "express";
 
