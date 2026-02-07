@@ -10,7 +10,8 @@
     "lint:fix": "biome lint --fix",
     "start": "wrangler dev",
     "cf-typegen": "wrangler types",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf .wrangler"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.25.2",

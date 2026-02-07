@@ -231,7 +231,7 @@ export class ChatService {
       // Collect tool calls and raw parts from the stream
       const accumulatedToolCalls: ToolCall[] = [];
       let lastContent: string | null = null;
-      let rawAssistantParts: unknown = undefined;
+      let rawAssistantParts: unknown;
 
       for await (const chunk of provider.chatStream(params)) {
         // Accumulate tool calls for potential MCP execution

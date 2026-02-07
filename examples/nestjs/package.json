@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "nest start --watch",
     "start": "nest start",
-    "build": "nest build"
+    "build": "nest build",
+    "clean": "rm -rf dist"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",
