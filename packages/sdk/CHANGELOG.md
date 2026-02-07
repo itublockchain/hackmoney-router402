@@ -1,5 +1,11 @@
 # @router402/sdk
 
+## 0.3.1
+
+### Patch Changes
+
+- Update readme
+
 ## 0.3.0
 
 ### Minor Changes
