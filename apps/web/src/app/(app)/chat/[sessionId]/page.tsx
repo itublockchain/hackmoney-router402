@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef } from "react";
 import { ChatHeader } from "@/components/chat/chat-header";
 import { MessageInput } from "@/components/chat/message-input";
@@ -22,6 +22,7 @@ import {
 export default function ChatSessionPage() {
   const params = useParams<{ sessionId: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const session = useSession(params.sessionId);
   const addMessage = useAddMessage();
   const updateMessage = useUpdateMessage();
@@ -32,6 +33,7 @@ export default function ChatSessionPage() {
   const walletAddress = useWalletAddress();
   const smartAccountAddress = useSmartAccountStore((s) => s.address);
   const isDeletingRef = useRef(false);
+  const hasSentInitialPrompt = useRef(false);
 
   const messages = session?.messages ?? [];
   const model = session?.model ?? DEFAULT_MODEL;
@@ -67,6 +69,17 @@ export default function ChatSessionPage() {
       setActiveSession(params.sessionId);
     }
   }, [params.sessionId, session, setActiveSession, createSession]);
+
+  // Auto-send the prompt from query param (e.g. from landing page)
+  const promptParam = searchParams.get("prompt");
+  useEffect(() => {
+    if (promptParam && session && !hasSentInitialPrompt.current) {
+      hasSentInitialPrompt.current = true;
+      sendMessage(promptParam);
+      // Clear the query param from URL to prevent re-sends
+      router.replace(`/chat/${params.sessionId}`);
+    }
+  }, [promptParam, session, sendMessage, router, params.sessionId]);
 
   const handleDelete = useCallback(() => {
     if (walletAddress) {

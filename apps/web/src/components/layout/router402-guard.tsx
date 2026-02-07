@@ -1,7 +1,7 @@
 "use client";
 
 import { Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useRouter402 } from "@/hooks";
 import { ConnectWalletCard } from "./connect-wallet-card";
@@ -23,6 +23,7 @@ interface Router402GuardProps {
 export function Router402Guard({ children }: Router402GuardProps) {
   const { isConnected, isReconnecting, isReady, status } = useRouter402();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const hasRedirected = useRef(false);
 
   // Small delay before showing the connect-wallet card so wagmi has time to
@@ -60,9 +61,14 @@ export function Router402Guard({ children }: Router402GuardProps) {
 
     if (needsSetup && !hasRedirected.current) {
       hasRedirected.current = true;
-      router.replace("/setup");
+      // Preserve query params (e.g. ?prompt=...) so the user returns after setup
+      const prompt = searchParams.get("prompt");
+      const setupUrl = prompt
+        ? `/setup?returnPrompt=${encodeURIComponent(prompt)}`
+        : "/setup";
+      router.replace(setupUrl);
     }
-  }, [isConnected, isReady, status, router]);
+  }, [isConnected, isReady, status, router, searchParams]);
 
   // Wallet not connected — show connect prompt with decorative card.
   // During auto-reconnection (or before mount delay elapses), show loading

@@ -10,6 +10,7 @@ import {
   Wallet,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { erc20Abi, formatUnits } from "viem";
 import { useReadContract } from "wagmi";
@@ -59,6 +60,19 @@ export default function SetupPage() {
     initialize,
     error,
   } = useRouter402();
+
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnPrompt = searchParams.get("returnPrompt");
+
+  // Auto-redirect to chat when setup completes and there's a pending prompt
+  const hasAutoRedirected = useRef(false);
+  useEffect(() => {
+    if (isReady && returnPrompt && !hasAutoRedirected.current) {
+      hasAutoRedirected.current = true;
+      router.replace(`/chat?prompt=${encodeURIComponent(returnPrompt)}`);
+    }
+  }, [isReady, returnPrompt, router]);
 
   // Small delay before showing the connect-wallet card so wagmi has time to
   // start its auto-reconnect cycle and set `isReconnecting = true`.
@@ -276,7 +290,13 @@ export default function SetupPage() {
 
         <div className="flex justify-center">
           <Button asChild>
-            <Link href="/chat">
+            <Link
+              href={
+                returnPrompt
+                  ? `/chat?prompt=${encodeURIComponent(returnPrompt)}`
+                  : "/chat"
+              }
+            >
               <MessageSquare size={16} />
               Start Chatting
             </Link>

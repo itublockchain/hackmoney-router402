@@ -72,12 +72,6 @@ export function LandingInfoSection() {
             access multiple LLM providers through a single API, and let
             autonomous agents pay for their own compute.
           </p>
-          <div className="mt-6 flex justify-center">
-            <Button>
-              Get Started
-              <ExternalLink size={16} />
-            </Button>
-          </div>
         </div>
 
         {/* Tab Selector */}

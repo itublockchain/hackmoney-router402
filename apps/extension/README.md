@@ -2,6 +2,8 @@
 
 AI-powered coding assistant. Pay per use via smart accounts on Base network.
 
+![Demo](https://github.com/itublockchain/hackmoney-router402/blob/483aa083d1fb1f69d1e62bedd70ad932fd3afb7e/apps/web/public/demo/demo-vscode.gif?raw=true)
+
 ## Features
 
 - **Review Current File** — Get a comprehensive code review with actionable feedback

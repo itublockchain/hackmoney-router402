@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import type p5Type from "p5";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -25,6 +26,7 @@ export function Hero402Animation() {
   const [inputValue, setInputValue] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const isInitializedRef = useRef(false);
+  const router = useRouter();
 
   const handleFocus = useCallback(() => {
     animationStateRef.current.isFocused = true;
@@ -245,7 +247,9 @@ export function Hero402Animation() {
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
     }
-  }, [inputValue]);
+
+    router.push(`/chat?prompt=${encodeURIComponent(inputValue)}`);
+  }, [inputValue, router]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -315,29 +319,6 @@ export function Hero402Animation() {
 
               {/* Action buttons - positioned absolute on the right */}
               <div className="absolute bottom-1.5 right-1.5 flex items-center gap-0.5 sm:bottom-3 sm:right-2 sm:gap-1">
-                {/* Attachment button */}
-                <button
-                  type="button"
-                  className="flex h-8 w-8 items-center justify-center rounded-lg text-neutral-400 transition-all duration-200 hover:bg-neutral-800 hover:text-white sm:h-9 sm:w-9"
-                  aria-label="Add attachment"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={1.5}
-                    className="h-4 w-4 sm:h-5 sm:w-5"
-                    aria-hidden="true"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13"
-                    />
-                  </svg>
-                </button>
-
                 {/* Send button */}
                 <button
                   type="button"
