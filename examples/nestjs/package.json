@@ -1,0 +1,23 @@
+{
+  "name": "router402-nestjs-example",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "nest start --watch",
+    "start": "nest start",
+    "build": "nest build"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/core": "^11.0.0",
+    "@nestjs/platform-express": "^11.0.0",
+    "@router402/sdk": "^0.3.0",
+    "reflect-metadata": "^0.2.0",
+    "rxjs": "^7.8.0",
+    "viem": "^2.0.0"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^11.0.0",
+    "typescript": "^5.9.0"
+  }
+}
