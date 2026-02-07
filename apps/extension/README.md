@@ -2,7 +2,7 @@
 
 AI-powered coding assistant. Pay per use via smart accounts on Base network.
 
-![Demo](https://www.router402.xyz/demo/demo-vscode.gif)
+![Demo](https://www.router402.xyz/demo/demo-vscode-compressed.gif)
 
 ## Features
 
