@@ -9,6 +9,7 @@ import { AsyncLocalStorage } from "node:async_hooks";
 
 interface RequestContext {
   walletAddress?: string;
+  smartAccountAddress?: string;
 }
 
 export const requestContext = new AsyncLocalStorage<RequestContext>();
@@ -27,5 +28,22 @@ export function setWalletAddress(address: string): void {
   const store = requestContext.getStore();
   if (store) {
     store.walletAddress = address.toLowerCase();
+  }
+}
+
+/**
+ * Get the current smart account address from request context
+ */
+export function getSmartAccountAddressFromContext(): string | undefined {
+  return requestContext.getStore()?.smartAccountAddress;
+}
+
+/**
+ * Set the smart account address in request context
+ */
+export function setSmartAccountAddress(address: string): void {
+  const store = requestContext.getStore();
+  if (store) {
+    store.smartAccountAddress = address.toLowerCase();
   }
 }

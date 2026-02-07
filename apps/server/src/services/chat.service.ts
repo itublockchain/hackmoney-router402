@@ -319,19 +319,14 @@ export class ChatService {
     if (!mcpManager.hasServers()) return messages;
 
     const systemMessages = mcpManager.getSystemMessages();
-    if (systemMessages.length === 0 && !walletAddress) return messages;
+    if (systemMessages.length === 0) return messages;
 
     const injected: Message[] = systemMessages.map((content) => ({
       role: "system" as const,
-      content,
+      content: walletAddress
+        ? content.replace(/\{\{WALLET_ADDRESS\}\}/g, walletAddress)
+        : content,
     }));
-
-    if (walletAddress) {
-      injected.push({
-        role: "system" as const,
-        content: `User's wallet address: ${walletAddress}`,
-      });
-    }
 
     return [...injected, ...messages];
   }
