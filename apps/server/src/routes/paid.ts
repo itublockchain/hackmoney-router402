@@ -16,6 +16,7 @@ import {
   type Response,
   type Router,
 } from "express";
+import { getChainConfig } from "../config/chain.js";
 import type { Config } from "../config/index.js";
 import { registerX402Hooks, registerX402HTTPHooks } from "../hooks/index.js";
 import { getUserDebt } from "../services/debt.js";
@@ -60,6 +61,7 @@ async function getDynamicPrice(context: HTTPRequestContext): Promise<string> {
 export function createPaidRouter(config: Config): Router {
   const paidRouter: Router = ExpressRouter();
   const payTo = config.PAY_TO;
+  const { network } = getChainConfig();
 
   // Create facilitator client
   const facilitatorClient = new HTTPFacilitatorClient({
@@ -80,7 +82,7 @@ export function createPaidRouter(config: Config): Router {
         {
           scheme: "exact",
           price: getDynamicPrice,
-          network: "eip155:84532" as const, // Base Mainnet
+          network: network as "eip155:8453" | "eip155:84532",
           payTo,
         },
       ],
@@ -91,8 +93,8 @@ export function createPaidRouter(config: Config): Router {
       accepts: [
         {
           scheme: "exact",
-          price: getDynamicPrice, // Dynamic price based on user's debt
-          network: "eip155:84532" as const, // Base Mainnet
+          price: getDynamicPrice,
+          network: network as "eip155:8453" | "eip155:84532",
           payTo,
         },
       ],

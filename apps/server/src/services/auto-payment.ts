@@ -11,8 +11,8 @@
 import { type ResolvedConfig, sendSessionKeyTransaction } from "@router402/sdk";
 import { logger } from "@router402/utils";
 import { encodeFunctionData, getAddress, type Hex } from "viem";
-import { baseSepoliaPreconf } from "viem/chains";
 import { PrismaClient } from "../../generated/prisma/client.js";
+import { getChainConfig } from "../config/chain.js";
 import { getConfig } from "../config/index.js";
 import { processPayment } from "./debt.js";
 
@@ -85,14 +85,16 @@ const erc20TransferAbi = [
  */
 function buildSdkConfig(chainId: number): ResolvedConfig {
   const config = getConfig();
+  const { chain, chainId: expectedChainId } = getChainConfig();
 
-  // Currently only supporting Base Sepolia
-  if (chainId !== 84532) {
-    throw new Error(`Unsupported chainId: ${chainId}`);
+  if (chainId !== expectedChainId) {
+    throw new Error(
+      `Unsupported chainId: ${chainId}. Expected ${expectedChainId} for current environment.`
+    );
   }
 
   return {
-    chain: baseSepoliaPreconf,
+    chain,
     chainId,
     pimlicoApiKey: config.PIMLICO_API_KEY,
     pimlicoUrl: `https://api.pimlico.io/v2/${chainId}/rpc?apikey=${config.PIMLICO_API_KEY}`,
