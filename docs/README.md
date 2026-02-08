@@ -299,8 +299,8 @@ cd apps/server && bunx prisma studio
 - [x] VS Code Extension
 - [x] Demo web client
 - [x] Li.Fi MCP server (bridge & swap with typed transaction data)
+- [x] Usage analytics dashboard
 - [ ] More LLM providers (Llama, Mistral, GPT)
-- [ ] Usage analytics dashboard
 - [ ] Multi-chain support (Optimism, Arbitrum, Solana)
 - [ ] Staking rewards for frequent users
 
