@@ -14,6 +14,7 @@ import {
   useDeleteSession,
   useSession,
   useSetActiveSession,
+  useSetSessionLifiMcp,
   useSetSessionModel,
   useUpdateMessage,
   useWalletAddress,
@@ -30,6 +31,7 @@ export default function ChatSessionPage() {
   const createSession = useCreateSession();
   const deleteSession = useDeleteSession();
   const setSessionModel = useSetSessionModel();
+  const setSessionLifiMcp = useSetSessionLifiMcp();
   const walletAddress = useWalletAddress();
   const smartAccountAddress = useSmartAccountStore((s) => s.address);
   const isDeletingRef = useRef(false);
@@ -37,6 +39,9 @@ export default function ChatSessionPage() {
 
   const messages = session?.messages ?? [];
   const model = session?.model ?? DEFAULT_MODEL;
+  const lifiMcpEnabled = session?.lifiMcpEnabled ?? false;
+
+  const plugins = lifiMcpEnabled ? [{ id: "lifi" }] : undefined;
 
   const { sendMessage, stop, isStreaming } = useChatCompletion({
     sessionId: params.sessionId,
@@ -45,6 +50,7 @@ export default function ChatSessionPage() {
     addMessage,
     updateMessage,
     messages,
+    plugins,
   });
 
   const handleModelChange = useCallback(
@@ -52,6 +58,13 @@ export default function ChatSessionPage() {
       setSessionModel(params.sessionId, newModel);
     },
     [setSessionModel, params.sessionId]
+  );
+
+  const handleLifiMcpChange = useCallback(
+    (enabled: boolean) => {
+      setSessionLifiMcp(params.sessionId, enabled);
+    },
+    [setSessionLifiMcp, params.sessionId]
   );
 
   // Reset deletion flag on mount / when sessionId changes
@@ -103,6 +116,8 @@ export default function ChatSessionPage() {
         isStreaming={isStreaming}
         model={model}
         onModelChange={handleModelChange}
+        lifiMcpEnabled={lifiMcpEnabled}
+        onLifiMcpChange={handleLifiMcpChange}
       />
     </div>
   );

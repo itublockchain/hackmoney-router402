@@ -2,6 +2,7 @@
 
 import { ArrowUp, Square } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Switch } from "@/components/primitives";
 import { ModelSelector } from "./model-selector";
 
 interface MessageInputProps {
@@ -10,6 +11,8 @@ interface MessageInputProps {
   isStreaming: boolean;
   model: string;
   onModelChange: (model: string) => void;
+  lifiMcpEnabled: boolean;
+  onLifiMcpChange: (enabled: boolean) => void;
 }
 
 export function MessageInput({
@@ -18,6 +21,8 @@ export function MessageInput({
   isStreaming,
   model,
   onModelChange,
+  lifiMcpEnabled,
+  onLifiMcpChange,
 }: MessageInputProps) {
   const [input, setInput] = useState("");
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -76,11 +81,24 @@ export function MessageInput({
             />
           </div>
           <div className="flex items-center justify-between pr-3 pl-1 pb-2 sm:pr-4 sm:pl-2 sm:pb-2">
-            <ModelSelector
-              model={model}
-              onModelChange={onModelChange}
-              disabled={isStreaming}
-            />
+            <div className="flex items-center gap-2">
+              <ModelSelector
+                model={model}
+                onModelChange={onModelChange}
+                disabled={isStreaming}
+              />
+              <div className="flex items-center gap-1.5">
+                <Switch
+                  checked={lifiMcpEnabled}
+                  onCheckedChange={onLifiMcpChange}
+                  disabled={isStreaming}
+                  className="h-4 w-7 data-[state=checked]:bg-primary data-[state=unchecked]:bg-input [&>span]:h-3 [&>span]:w-3 [&>span]:data-[state=checked]:translate-x-3"
+                />
+                <label className="text-xs text-muted-foreground select-none">
+                  LiFi MCP
+                </label>
+              </div>
+            </div>
             {isStreaming ? (
               <button
                 type="button"

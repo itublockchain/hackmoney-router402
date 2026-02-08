@@ -16,6 +16,7 @@ export interface ChatSession {
   id: string;
   name: string;
   model: string;
+  lifiMcpEnabled: boolean;
   messages: ChatMessage[];
   createdAt: number;
   updatedAt: number;
@@ -54,6 +55,7 @@ interface ChatActions {
   ) => void;
   renameSession: (id: string, name: string) => void;
   setSessionModel: (id: string, model: string) => void;
+  setSessionLifiMcp: (id: string, enabled: boolean) => void;
   getSortedSessions: () => ChatSession[];
 }
 
@@ -110,6 +112,8 @@ export const useSetActiveSession = () =>
   useChatStore((s) => s.setActiveSession);
 export const useRenameSession = () => useChatStore((s) => s.renameSession);
 export const useSetSessionModel = () => useChatStore((s) => s.setSessionModel);
+export const useSetSessionLifiMcp = () =>
+  useChatStore((s) => s.setSessionLifiMcp);
 export const useGetSortedSessions = () =>
   useChatStore((s) => s.getSortedSessions);
 
@@ -156,6 +160,7 @@ export const useChatStore = create<ChatStore>()(
                     id: sessionId,
                     name: "New Chat",
                     model: DEFAULT_MODEL,
+                    lifiMcpEnabled: false,
                     messages: [],
                     createdAt: now,
                     updatedAt: now,
@@ -331,6 +336,31 @@ export const useChatStore = create<ChatStore>()(
             },
             false,
             "setSessionModel"
+          ),
+
+        setSessionLifiMcp: (id, enabled) =>
+          set(
+            (state) => {
+              const walletAddress = state.walletAddress;
+              if (!walletAddress) return state;
+
+              const walletSessions =
+                state.sessionsByWallet[walletAddress] ?? {};
+              const session = walletSessions[id];
+              if (!session) return state;
+
+              return {
+                sessionsByWallet: {
+                  ...state.sessionsByWallet,
+                  [walletAddress]: {
+                    ...walletSessions,
+                    [id]: { ...session, lifiMcpEnabled: enabled },
+                  },
+                },
+              };
+            },
+            false,
+            "setSessionLifiMcp"
           ),
 
         getSortedSessions: () => {

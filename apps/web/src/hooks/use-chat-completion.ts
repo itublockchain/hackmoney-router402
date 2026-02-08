@@ -41,6 +41,7 @@ interface UseChatCompletionOptions {
     errorCode?: number
   ) => void;
   messages: ChatMessage[];
+  plugins?: { id: string }[];
 }
 
 interface UseChatCompletionReturn {
@@ -56,6 +57,7 @@ export function useChatCompletion({
   addMessage,
   updateMessage,
   messages,
+  plugins,
 }: UseChatCompletionOptions): UseChatCompletionReturn {
   const [isStreaming, setIsStreaming] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -128,6 +130,7 @@ export function useChatCompletion({
               messages: apiMessages,
               stream: true,
               max_tokens: getMaxTokens(model),
+              ...(plugins && plugins.length > 0 && { plugins }),
             }),
             signal: abortController.signal,
           }
@@ -265,7 +268,15 @@ export function useChatCompletion({
         abortControllerRef.current = null;
       }
     },
-    [sessionId, model, smartAccountAddress, addMessage, updateMessage, messages]
+    [
+      sessionId,
+      model,
+      smartAccountAddress,
+      addMessage,
+      updateMessage,
+      messages,
+      plugins,
+    ]
   );
 
   return { sendMessage, stop, isStreaming };
