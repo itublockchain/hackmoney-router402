@@ -16,4 +16,5 @@ declare global {
   }
 }
 
+// biome-ignore lint: We need to augment the Express namespace for our custom request properties
 export {};
