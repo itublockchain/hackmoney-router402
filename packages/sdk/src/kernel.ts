@@ -141,11 +141,11 @@ export function createKernelSmartAccountClient<
         return prices.fast;
       },
       prepareUserOperation: async (client, parameters) => {
-        const userOp = await getAction(
+        const userOp = (await getAction(
           client,
           prepareUserOperation,
           "prepareUserOperation"
-        )(parameters as never);
+        )(parameters as never)) as Record<string, unknown>;
 
         // Apply multiplier to verification and call gas limits
         if (userOp.verificationGasLimit) {
@@ -158,7 +158,7 @@ export function createKernelSmartAccountClient<
             (userOp.callGasLimit as bigint) * CALL_GAS_MULTIPLIER;
         }
 
-        return userOp;
+        return userOp as never;
       },
     },
   });
