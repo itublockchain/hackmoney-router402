@@ -25,6 +25,17 @@ import {
 
 export type { Router402Status };
 
+interface UseRouter402Options {
+  /**
+   * When true, the hook is allowed to run the full setup flow (deploy,
+   * session key, backend auth). When false (default), only the fast path
+   * (cached state check) runs — if it fails, status becomes "needs_setup".
+   *
+   * Only the setup page should pass `true`.
+   */
+  allowSetup?: boolean;
+}
+
 interface UseRouter402Return {
   status: Router402Status;
   smartAccountAddress: Address | undefined;
@@ -51,7 +62,10 @@ interface UseRouter402Return {
  * - Wallet switches reset everything and re-trigger
  * - No competing state machines or sync effects
  */
-export function useRouter402(): UseRouter402Return {
+export function useRouter402(
+  options?: UseRouter402Options
+): UseRouter402Return {
+  const allowSetup = options?.allowSetup ?? false;
   const {
     address: eoaAddress,
     isConnected,
@@ -88,6 +102,7 @@ export function useRouter402(): UseRouter402Return {
   const isRunning = useRef(false);
 
   // Refs for values used inside initialize() — avoids stale closures
+  const allowSetupRef = useRef(allowSetup);
   const walletClientRef = useRef(walletClient);
   const eoaAddressRef = useRef(eoaAddress);
   const switchChainRef = useRef(switchChainAsync);
@@ -96,6 +111,7 @@ export function useRouter402(): UseRouter402Return {
   const updateStateRef = useRef(updateState);
   const updateLastCheckedRef = useRef(updateLastChecked);
 
+  allowSetupRef.current = allowSetup;
   walletClientRef.current = walletClient;
   eoaAddressRef.current = eoaAddress;
   switchChainRef.current = switchChainAsync;
@@ -188,6 +204,15 @@ export function useRouter402(): UseRouter402Return {
           isRunning.current = false;
           return;
         }
+      }
+
+      // Full setup is needed but not allowed outside the setup page.
+      // Set "needs_setup" so the guard can redirect the user to /setup.
+      if (!allowSetupRef.current) {
+        setStatus("needs_setup");
+        setLoadingRef.current(false);
+        isRunning.current = false;
+        return;
       }
 
       // Switch to the correct chain first

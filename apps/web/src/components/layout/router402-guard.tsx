@@ -88,7 +88,7 @@ export function Router402Guard({ children }: Router402GuardProps) {
     );
   }
 
-  // Setup is genuinely needed (status === "error") — show inline CTA
+  // Setup is genuinely needed (status === "error" or "needs_setup") — show inline CTA
   return (
     <div className="flex flex-1 flex-col items-center justify-center p-6">
       <div className="flex flex-col items-center gap-4 text-center">

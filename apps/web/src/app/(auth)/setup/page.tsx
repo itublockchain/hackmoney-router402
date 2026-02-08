@@ -71,6 +71,7 @@ const statusToStep: Record<Router402Status, number> = {
   initializing: 1,
   deploying: 1,
   error: 1,
+  needs_setup: 1,
   creating_session_key: 2,
   approving_session_key: 2,
   enabling_session_key: 3,
@@ -97,7 +98,7 @@ export default function SetupPage() {
     isReconnecting,
     initialize,
     error,
-  } = useRouter402();
+  } = useRouter402({ allowSetup: true });
 
   const disconnect = useDisconnect();
   const router = useRouter();

@@ -8,4 +8,5 @@ export type Router402Status =
   | "enabling_session_key"
   | "sending_to_backend"
   | "ready"
+  | "needs_setup"
   | "error";
