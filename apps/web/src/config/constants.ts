@@ -1,21 +1,23 @@
 import type { Address } from "viem";
-import { base } from "wagmi/chains";
+import { base, baseSepolia } from "wagmi/chains";
 import { getConfig } from "./get-config";
 
 /**
- * Base Mainnet Chain Configuration
- * ChainID: 8453
+ * Chain configuration based on NEXT_PUBLIC_CHAIN_ENV
+ * - mainnet → Base (8453)
+ * - testnet → Base Sepolia (84532)
  */
-export const SUPPORTED_CHAIN = base;
+const config = getConfig();
 
-export const CHAIN_ID = base.id;
+export const SUPPORTED_CHAIN =
+  config.NEXT_PUBLIC_CHAIN_ENV === "mainnet" ? base : baseSepolia;
+
+export const CHAIN_ID = SUPPORTED_CHAIN.id;
 
 /**
  * Application configuration
  * Uses environment-based config for dynamic values
  */
-const config = getConfig();
-
 export const APP_CONFIG = {
   name: "Router 402",
   description: "Decentralized payment routing on Base",

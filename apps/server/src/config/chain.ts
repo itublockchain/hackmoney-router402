@@ -3,9 +3,9 @@ import type { Chain } from "viem";
 import { base, baseSepolia } from "viem/chains";
 
 /**
- * Chain configuration based on NODE_ENV
- * - production → Base Mainnet (8453)
- * - development/test → Base Sepolia (84532)
+ * Chain configuration based on CHAIN_ENV
+ * - mainnet → Base Mainnet (8453)
+ * - testnet → Base Sepolia (84532)
  */
 
 export interface ChainConfig {
@@ -16,9 +16,9 @@ export interface ChainConfig {
 }
 
 export function getChainConfig(): ChainConfig {
-  const isProduction = process.env.NODE_ENV === "production";
+  const isMainnet = process.env.CHAIN_ENV === "mainnet";
 
-  if (isProduction) {
+  if (isMainnet) {
     return {
       chain: base,
       chainId: 8453,

@@ -25,6 +25,15 @@ export const configSchema = z.object({
     .default("development"),
 
   /**
+   * Chain environment — determines which blockchain network to use.
+   * Decoupled from NODE_ENV to avoid framework overrides.
+   * - "mainnet" → Base Mainnet (8453)
+   * - "testnet" → Base Sepolia (84532)
+   * @default "testnet"
+   */
+  CHAIN_ENV: z.enum(["mainnet", "testnet"]).default("testnet"),
+
+  /**
    * CORS origin for cross-origin requests
    * Supports comma-separated values for multiple origins
    * @default "http://localhost:3000"
