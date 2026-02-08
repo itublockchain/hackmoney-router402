@@ -104,6 +104,7 @@ function buildSdkConfig(chainId: number): SmartAccountResolvedConfig {
     entryPointVersion: "0.7",
     sessionKeyValidityPeriod: 365 * 24 * 60 * 60,
     apiBaseUrl: DEFAULT_API_BASE_URL,
+    rpcUrl: config.RPC_URL,
   };
 }
 
