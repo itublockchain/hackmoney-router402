@@ -149,6 +149,9 @@ export function createChatRouter(): Router {
               cost.commission.toNumber(),
               cost.totalCost.toNumber()
             );
+
+            // Attach cost to response
+            response.cost = cost.totalCost.toNumber();
           }
 
           res.json(response);
@@ -236,6 +239,17 @@ async function handleStreamingResponse(
         cost.commission.toNumber(),
         cost.totalCost.toNumber()
       );
+
+      // Send a final cost chunk before [DONE]
+      const costChunk = {
+        id: "",
+        object: "chat.completion.chunk" as const,
+        created: 0,
+        model: request.model,
+        choices: [],
+        cost: cost.totalCost.toNumber(),
+      };
+      res.write(`data: ${JSON.stringify(costChunk)}\n\n`);
     }
 
     // Send termination message (Requirement 6.4)

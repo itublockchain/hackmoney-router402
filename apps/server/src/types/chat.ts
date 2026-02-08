@@ -209,6 +209,9 @@ export const ChatCompletionRequestSchema = z
     logit_bias: z.record(z.string(), z.number()).optional(),
     logprobs: z.boolean().optional(),
     top_logprobs: z.number().int().optional(),
+
+    // Plugins (e.g. [{ "id": "web" }] to enable MCP tools)
+    plugins: z.array(z.object({ id: z.string() }).passthrough()).optional(),
   })
   .passthrough(); // Accept unknown fields per Requirement 1.2
 
@@ -276,6 +279,8 @@ export interface ChatCompletionResponse {
   choices: ChatCompletionChoice[];
   /** Token usage statistics */
   usage: Usage;
+  /** Cost of this request in USD (total including commission) */
+  cost?: number;
   /** Optional system fingerprint */
   system_fingerprint?: string;
 }
@@ -319,6 +324,8 @@ export interface ChatCompletionChunk {
   choices: ChunkChoice[];
   /** Usage statistics (only in final chunk per Requirement 6.5) */
   usage?: Usage;
+  /** Cost of this request in USD (only in final chunk, total including commission) */
+  cost?: number;
 }
 
 // ============================================================================
