@@ -15,8 +15,16 @@ import { Badge } from "@/components/primitives";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
+import { SMART_ACCOUNT_CONFIG } from "@/config";
 import type { AnalyticsData } from "@/hooks";
 import { useAnalytics } from "@/hooks";
+
+function getExplorerUrl(txHash: string): string {
+  const explorer =
+    SMART_ACCOUNT_CONFIG.chain.blockExplorers?.default?.url ??
+    "https://basescan.org";
+  return `${explorer}/tx/${txHash}`;
+}
 
 function formatCost(value: string): string {
   const num = Number.parseFloat(value);
@@ -209,10 +217,15 @@ function PaymentHistoryTable({
               </td>
               <td className="py-3 text-right">
                 {payment.txHash ? (
-                  <span className="inline-flex items-center gap-1 font-mono text-xs text-muted-foreground">
+                  <a
+                    href={getExplorerUrl(payment.txHash)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 font-mono text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
                     {payment.txHash.slice(0, 6)}...{payment.txHash.slice(-4)}
                     <ExternalLink size={12} />
-                  </span>
+                  </a>
                 ) : (
                   <span className="text-xs text-muted-foreground/50">—</span>
                 )}
