@@ -17,6 +17,7 @@ type QuoteData = {
     from: string;
   };
   estimate: {
+    approvalAddress?: string;
     gasCosts: string;
     gasCostsUSD: string;
     totalGasCost: string;
@@ -170,7 +171,17 @@ export async function getQuote(args: {
   const quoteData: QuoteData = await response.json();
   const txReq = quoteData.transactionRequest;
 
-  return `\`\`\`tx\n${JSON.stringify({ value: txReq.value, to: txReq.to, data: txReq.data }, null, 2)}\n\`\`\``;
+  const result: Record<string, string> = {
+    value: txReq.value,
+    to: txReq.to,
+    data: txReq.data,
+  };
+
+  if (quoteData.estimate.approvalAddress) {
+    result.approvalAddress = quoteData.estimate.approvalAddress;
+  }
+
+  return `\`\`\`tx\n${JSON.stringify(result, null, 2)}\n\`\`\``;
 }
 
 /**

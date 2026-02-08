@@ -9,7 +9,8 @@
  */
 
 import { randomUUID } from "node:crypto";
-
+import { getChainConfig } from "../config/chain.js";
+import { getConfig } from "../config/index.js";
 import type { ChatChunk, ChatParams, ChatResponse } from "../providers/base.js";
 import { getProvider } from "../providers/index.js";
 import type {
@@ -23,8 +24,6 @@ import type {
   ToolCall,
   Usage,
 } from "../types/chat.js";
-import { getConfig } from "../config/index.js";
-import { getChainConfig } from "../config/chain.js";
 import { getMcpManager } from "./mcp-manager.js";
 
 /** Maximum number of LLM ↔ MCP tool execution rounds to prevent infinite loops */

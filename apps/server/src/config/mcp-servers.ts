@@ -52,18 +52,20 @@ Workflow:
    - Check the balance of the source token for the user's wallet address ({{WALLET_ADDRESS}}) on the relevant chain.
    - If the user's balance is insufficient for the requested amount, inform them of their current balance and do not proceed with the quote.
 
-4. Check token allowance (ERC20 tokens only, skip for native tokens):
-   - Use get-allowance to check whether the user's wallet ({{WALLET_ADDRESS}}) has approved sufficient spending for the source token on the relevant chain.
-   - If the allowance is insufficient, use get-approve-transaction to build an ERC-20 approve transaction for the user to sign. Pass the token address, the spender address (the contract that needs the allowance), and the required amount (in the token's smallest unit).
-   - Present the approval transaction to the user for signing. After the user confirms the approval transaction has been executed, proceed to the quote step.
+4. Request a quote:
+   - Only after the amount is confirmed and balance is verified sufficient, request a quote with the resolved chain IDs, token addresses, and the amount (converted to the token's smallest unit using its decimals).
 
-5. Request a quote:
-   - Only after the amount is confirmed, balance is verified sufficient, and allowance is confirmed adequate, request a quote with the resolved chain IDs, token addresses, and the amount (converted to the token's smallest unit using its decimals).
-   - Return only the transaction request from the quote response.
+5. Check token allowance and return transactions (ERC20 tokens only, skip for native tokens):
+   - The quote response includes an approvalAddress field. Use this as the spender address for allowance checks.
+   - Use get-allowance to check whether the user's wallet ({{WALLET_ADDRESS}}) has approved sufficient spending for the source token to the approvalAddress.
+   - If the allowance is insufficient, use get-approve-transaction to build an ERC-20 approve transaction. Pass the token address, the approvalAddress as the spender, and the required amount (in the token's smallest unit).
+   - Return BOTH transactions together in a single response: the approval transaction FIRST, then the swap transaction. Do NOT wait for user confirmation between them.
 
-6. Return the transaction:
-   - Present the transaction inside a fenced code block with the tx identifier.
-   - Include only the to, value, and data fields from the actual quote response.
+6. Return the transaction(s):
+   - Present each transaction inside a separate fenced code block with the tx identifier.
+   - Include only the to, value, and data fields from each transaction.
+   - If approval is needed, return the approval tx block first, then the swap tx block.
+   - If no approval is needed (native token or sufficient allowance), return only the swap tx block.
    - Never fabricate, estimate, or return placeholder/dummy transaction data. If the quote fails or returns an error, report the error to the user instead.
 
 Rules:
