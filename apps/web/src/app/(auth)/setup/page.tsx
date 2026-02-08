@@ -86,15 +86,6 @@ const containerVariants = {
   },
 };
 
-const itemVariants = {
-  hidden: { opacity: 0, y: 12 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.4, ease: "easeOut" as const },
-  },
-};
-
 export default function SetupPage() {
   const {
     status,
@@ -178,126 +169,119 @@ export default function SetupPage() {
         animate="visible"
         className="space-y-4"
       >
-        {/* Success Header */}
-        <motion.div variants={itemVariants} className="flex items-center gap-3">
-          <div className="relative">
-            <div className="absolute -inset-2 rounded-full bg-green-500/10 blur-xl" />
-            <div className="relative flex h-10 w-10 items-center justify-center rounded-full border border-green-500/20 bg-green-500/10">
-              <CheckCircle size={20} className="text-green-500" />
+        <div className="relative">
+          <div className="relative flex h-10 w-10 items-center justify-center rounded-full border border-green-500/20 bg-green-500/10">
+            <CheckCircle size={20} className="text-green-500" />
+          </div>
+        </div>
+        <div>
+          <h1 className="text-lg font-semibold text-foreground">
+            Setup Complete
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Your wallet and smart account are ready to go.
+          </p>
+        </div>
+
+        <Card className="overflow-hidden border-border/60">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10">
+                  <Coins size={16} className="text-emerald-500" />
+                </div>
+                <CardTitle className="text-sm">Credits</CardTitle>
+              </div>
+              <div className="flex items-center gap-1.5 rounded-full border border-blue-500/20 bg-blue-500/5 px-2.5 py-1">
+                <div className="h-1.5 w-1.5 rounded-full bg-blue-500" />
+                <span className="text-[10px] font-medium text-blue-400">
+                  {SUPPORTED_CHAIN.name}
+                </span>
+              </div>
             </div>
-          </div>
-          <div>
-            <h1 className="text-lg font-semibold text-foreground">
-              Setup Complete
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Your wallet and smart account are ready to go.
-            </p>
-          </div>
-        </motion.div>
-
-        {/* Balance & Deposit — Full width prominent section */}
-        <motion.div variants={itemVariants}>
-          <Card className="overflow-hidden border-border/60">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10">
-                    <Coins size={16} className="text-emerald-500" />
-                  </div>
-                  <CardTitle className="text-sm">Credits</CardTitle>
-                </div>
-                <div className="flex items-center gap-1.5 rounded-full border border-blue-500/20 bg-blue-500/5 px-2.5 py-1">
-                  <div className="h-1.5 w-1.5 rounded-full bg-blue-500" />
-                  <span className="text-[10px] font-medium text-blue-400">
-                    {SUPPORTED_CHAIN.name}
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {/* Balance Display */}
+            <div className="flex items-baseline gap-2">
+              {isBalanceLoading ? (
+                <Loader2
+                  size={18}
+                  className="animate-spin text-muted-foreground"
+                />
+              ) : (
+                <>
+                  <span className="text-2xl font-bold tabular-nums text-foreground">
+                    {balanceNumber !== undefined
+                      ? balanceNumber.toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 6,
+                        })
+                      : "—"}
                   </span>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {/* Balance Display */}
-              <div className="flex items-baseline gap-2">
-                {isBalanceLoading ? (
-                  <Loader2
-                    size={18}
-                    className="animate-spin text-muted-foreground"
-                  />
-                ) : (
-                  <>
-                    <span className="text-2xl font-bold tabular-nums text-foreground">
-                      {balanceNumber !== undefined
-                        ? balanceNumber.toLocaleString(undefined, {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 6,
-                          })
-                        : "—"}
-                    </span>
-                    <span className="text-sm font-medium text-muted-foreground">
-                      USDC
-                    </span>
-                  </>
-                )}
-              </div>
-
-              {/* Low Balance Warning */}
-              {isLowBalance && (
-                <div className="flex items-start gap-2.5 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
-                  <AlertTriangle
-                    size={14}
-                    className="mt-0.5 shrink-0 text-amber-500"
-                  />
-                  <p className="text-xs leading-relaxed text-amber-200/80">
-                    Low balance — requests may fail. Deposit USDC to your smart
-                    account to continue using Router 402.
-                  </p>
-                </div>
+                  <span className="text-sm font-medium text-muted-foreground">
+                    USDC
+                  </span>
+                </>
               )}
+            </div>
 
-              {/* Deposit Address */}
-              {smartAccountAddress && (
-                <div className="space-y-1.5 rounded-lg border border-dashed border-border/80 bg-muted/30 p-2.5">
-                  <div className="flex items-center gap-2">
-                    <Wallet size={12} className="text-muted-foreground" />
-                    <span className="text-xs font-medium text-muted-foreground">
-                      Deposit Address
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 rounded-md bg-background/50 px-2.5 py-1.5">
-                    <code className="flex-1 truncate font-mono text-xs text-foreground">
-                      {smartAccountAddress}
-                    </code>
-                    <CopyButton
-                      value={smartAccountAddress}
-                      label="Copy deposit address"
-                      className="h-6 w-6 shrink-0"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Funding Information */}
-              <div className="space-y-1.5 rounded-lg border border-border/40 bg-muted/20 p-2.5">
-                <p className="text-[11px] leading-relaxed text-muted-foreground">
-                  Send{" "}
-                  <span className="font-medium text-foreground/80">
-                    USDC on {SUPPORTED_CHAIN.name}
-                  </span>{" "}
-                  to the deposit address above.{" "}
-                  <a
-                    href="https://bridge.base.org"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-0.5 font-medium text-blue-400 transition-colors hover:text-blue-300"
-                  >
-                    Bridge to Base
-                    <ExternalLink size={9} />
-                  </a>
+            {/* Low Balance Warning */}
+            {isLowBalance && (
+              <div className="flex items-start gap-2.5 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
+                <AlertTriangle
+                  size={14}
+                  className="mt-0.5 shrink-0 text-amber-500"
+                />
+                <p className="text-xs leading-relaxed text-amber-200/80">
+                  Low balance — requests may fail. Deposit USDC to your smart
+                  account to continue using Router 402.
                 </p>
               </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+            )}
+
+            {/* Deposit Address */}
+            {smartAccountAddress && (
+              <div className="space-y-1.5 rounded-lg border border-dashed border-border/80 bg-muted/30 p-2.5">
+                <div className="flex items-center gap-2">
+                  <Wallet size={12} className="text-muted-foreground" />
+                  <span className="text-xs font-medium text-muted-foreground">
+                    Deposit Address
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 rounded-md bg-background/50 px-2.5 py-1.5">
+                  <code className="flex-1 truncate font-mono text-xs text-foreground">
+                    {smartAccountAddress}
+                  </code>
+                  <CopyButton
+                    value={smartAccountAddress}
+                    label="Copy deposit address"
+                    className="h-6 w-6 shrink-0"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Funding Information */}
+            <div className="space-y-1.5 rounded-lg border border-border/40 bg-muted/20 p-2.5">
+              <p className="text-[11px] leading-relaxed text-muted-foreground">
+                Send{" "}
+                <span className="font-medium text-foreground/80">
+                  USDC on {SUPPORTED_CHAIN.name}
+                </span>{" "}
+                to the deposit address above.{" "}
+                <a
+                  href="https://bridge.base.org"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-0.5 font-medium text-blue-400 transition-colors hover:text-blue-300"
+                >
+                  Bridge to Base
+                  <ExternalLink size={9} />
+                </a>
+              </p>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Router 402 Token */}
 
@@ -332,10 +316,7 @@ export default function SetupPage() {
         </Card>
 
         {/* CTA */}
-        <motion.div
-          variants={itemVariants}
-          className="flex items-center justify-center gap-3"
-        >
+        <div className="flex items-center justify-center gap-2">
           <Button asChild size="lg">
             <Link
               href={
@@ -356,7 +337,7 @@ export default function SetupPage() {
             <LogOut size={16} />
             Disconnect
           </Button>
-        </motion.div>
+        </div>
       </motion.div>
     );
   }
@@ -370,34 +351,30 @@ export default function SetupPage() {
       className="space-y-6"
     >
       {/* Header */}
-      <motion.div variants={itemVariants} className="text-center">
-        <h1 className="text-xl font-semibold text-foreground">Get Started</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Set up your wallet to start using Router 402
-        </p>
-      </motion.div>
+      <h1 className="text-xl font-semibold text-foreground">Get Started</h1>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Set up your wallet to start using Router 402
+      </p>
 
       {/* Horizontal Progress Bar */}
-      <motion.div variants={itemVariants}>
-        <div className="relative h-1 w-full overflow-hidden rounded-full bg-muted">
-          <motion.div
-            className="absolute inset-y-0 left-0 rounded-full bg-green-500"
-            initial={{ width: "0%" }}
-            animate={{
-              width: `${(currentStep / steps.length) * 100}%`,
-            }}
-            transition={{ duration: 0.5, ease: "easeInOut" }}
-          />
-        </div>
-        <div className="mt-1.5 flex justify-between">
-          <span className="text-[10px] text-muted-foreground">
-            Step {currentStep + 1} of {steps.length}
-          </span>
-          <span className="text-[10px] text-muted-foreground">
-            {Math.round((currentStep / steps.length) * 100)}%
-          </span>
-        </div>
-      </motion.div>
+      <div className="relative h-1 w-full overflow-hidden rounded-full bg-muted">
+        <motion.div
+          className="absolute inset-y-0 left-0 rounded-full bg-green-500"
+          initial={{ width: "0%" }}
+          animate={{
+            width: `${(currentStep / steps.length) * 100}%`,
+          }}
+          transition={{ duration: 0.5, ease: "easeInOut" }}
+        />
+      </div>
+      <div className="mt-1.5 flex justify-between">
+        <span className="text-[10px] text-muted-foreground">
+          Step {currentStep + 1} of {steps.length}
+        </span>
+        <span className="text-[10px] text-muted-foreground">
+          {Math.round((currentStep / steps.length) * 100)}%
+        </span>
+      </div>
 
       {/* Steps */}
       <div className="space-y-2">
@@ -407,9 +384,8 @@ export default function SetupPage() {
           const StepIcon = step.icon;
 
           return (
-            <motion.div
+            <div
               key={step.id}
-              variants={itemVariants}
               className={`group flex items-center gap-3 rounded-lg border p-3 transition-all ${
                 isComplete
                   ? "border-green-500/20 bg-green-500/5"
@@ -454,25 +430,23 @@ export default function SetupPage() {
                   Done
                 </span>
               )}
-            </motion.div>
+            </div>
           );
         })}
       </div>
 
       {/* Action area */}
-      <motion.div variants={itemVariants} className="pt-1">
-        {status === "error" && (
-          <Button onClick={() => initialize()} className="w-full">
-            Retry Setup
-          </Button>
-        )}
+      {status === "error" && (
+        <Button onClick={() => initialize()} className="w-full">
+          Retry Setup
+        </Button>
+      )}
 
-        {error && (
-          <p className="mt-3 text-center text-sm text-destructive">
-            {error.message}
-          </p>
-        )}
-      </motion.div>
+      {error && (
+        <p className="mt-3 text-center text-sm text-destructive">
+          {error.message}
+        </p>
+      )}
     </motion.div>
   );
 }
