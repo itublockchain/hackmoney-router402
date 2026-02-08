@@ -102,14 +102,13 @@ export class LiFiMCP extends McpAgent {
     // --- Blockchain read tools ---
     this.server.tool(
       "get-native-token-balance",
-      { rpcUrl: z.string(), address: z.string() },
+      { address: z.string() },
       async (args) => textContent(await blockchain.getNativeTokenBalance(args)),
     );
 
     this.server.tool(
       "get-token-balance",
       {
-        rpcUrl: z.string(),
         tokenAddress: z.string(),
         walletAddress: z.string(),
       },
@@ -119,7 +118,6 @@ export class LiFiMCP extends McpAgent {
     this.server.tool(
       "get-allowance",
       {
-        rpcUrl: z.string(),
         tokenAddress: z.string(),
         ownerAddress: z.string(),
         spenderAddress: z.string(),
@@ -130,7 +128,6 @@ export class LiFiMCP extends McpAgent {
     this.server.tool(
       "simulate-transaction",
       {
-        rpcUrl: z.string(),
         from: z.string(),
         to: z.string(),
         data: z.string().optional(),

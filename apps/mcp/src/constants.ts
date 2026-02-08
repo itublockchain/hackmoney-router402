@@ -1,4 +1,8 @@
+import { env } from "cloudflare:workers";
+
 export const BASE_URL = "https://li.quest";
+
+export const DEFAULT_RPC_URL = env.DEFAULT_RPC_URL;
 
 export const ERC20_ABI = [
   {

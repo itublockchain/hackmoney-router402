@@ -1,5 +1,5 @@
 import { type Address, encodeFunctionData } from "viem";
-import { ERC20_ABI } from "../constants.js";
+import { DEFAULT_RPC_URL, ERC20_ABI } from "../constants.js";
 import {
   createClient,
   getTokenInfo,
@@ -12,18 +12,17 @@ import { getNativeTokenInfo } from "../utils/chains.js";
  * Get native token balance for an address
  */
 export async function getNativeTokenBalance(args: {
-  rpcUrl: string;
   address: string;
 }): Promise<string> {
-  if (!args.rpcUrl || !args.address) {
-    throw new Error("Both rpcUrl and address parameters are required");
+  if (!args.address) {
+    throw new Error("address parameter is required");
   }
 
   if (!validateAddress(args.address)) {
     throw new Error(`Invalid Ethereum address format: ${args.address}`);
   }
 
-  const client = createClient(args.rpcUrl);
+  const client = createClient(DEFAULT_RPC_URL);
   const address = args.address as Address;
 
   const [balance, chainId] = await Promise.all([
@@ -46,14 +45,11 @@ export async function getNativeTokenBalance(args: {
  * Get ERC20 token balance for an address
  */
 export async function getTokenBalance(args: {
-  rpcUrl: string;
   tokenAddress: string;
   walletAddress: string;
 }): Promise<string> {
-  if (!args.rpcUrl || !args.tokenAddress || !args.walletAddress) {
-    throw new Error(
-      "rpcUrl, tokenAddress, and walletAddress parameters are required",
-    );
+  if (!args.tokenAddress || !args.walletAddress) {
+    throw new Error("tokenAddress and walletAddress parameters are required");
   }
 
   if (!validateAddress(args.tokenAddress)) {
@@ -63,7 +59,7 @@ export async function getTokenBalance(args: {
     throw new Error(`Invalid wallet address format: ${args.walletAddress}`);
   }
 
-  const client = createClient(args.rpcUrl);
+  const client = createClient(DEFAULT_RPC_URL);
   const tokenAddress = args.tokenAddress as Address;
   const walletAddress = args.walletAddress as Address;
 
@@ -93,14 +89,10 @@ export async function getTokenBalance(args: {
  * Get ERC20 token allowance
  */
 export async function getAllowance(args: {
-  rpcUrl: string;
   tokenAddress: string;
   ownerAddress: string;
   spenderAddress: string;
 }): Promise<string> {
-  if (!args.rpcUrl) {
-    throw new Error("RPC URL is required");
-  }
   if (!args.tokenAddress) {
     throw new Error("token address is required");
   }
@@ -121,7 +113,7 @@ export async function getAllowance(args: {
     throw new Error(`Invalid spender address format: ${args.spenderAddress}`);
   }
 
-  const client = createClient(args.rpcUrl);
+  const client = createClient(DEFAULT_RPC_URL);
   const tokenAddress = args.tokenAddress as Address;
   const ownerAddress = args.ownerAddress as Address;
   const spenderAddress = args.spenderAddress as Address;
@@ -154,15 +146,11 @@ export async function getAllowance(args: {
  * This is exposed as an MCP tool for clients to pre-validate transactions
  */
 export async function simulateTransactionTool(args: {
-  rpcUrl: string;
   from: string;
   to: string;
   data?: string;
   value?: string;
 }): Promise<string> {
-  if (!args.rpcUrl) {
-    throw new Error("RPC URL is required");
-  }
   if (!args.from) {
     throw new Error("from address is required");
   }
@@ -177,7 +165,7 @@ export async function simulateTransactionTool(args: {
     throw new Error(`Invalid to address format: ${args.to}`);
   }
 
-  const client = createClient(args.rpcUrl);
+  const client = createClient(DEFAULT_RPC_URL);
   const fromAddress = args.from as Address;
   const toAddress = args.to as Address;
 
