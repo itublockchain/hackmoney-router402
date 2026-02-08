@@ -23,6 +23,8 @@ import type {
   ToolCall,
   Usage,
 } from "../types/chat.js";
+import { getConfig } from "../config/index.js";
+import { getChainConfig } from "../config/chain.js";
 import { getMcpManager } from "./mcp-manager.js";
 
 /** Maximum number of LLM ↔ MCP tool execution rounds to prevent infinite loops */
@@ -377,12 +379,19 @@ export class ChatService {
     const systemMessages = mcpManager.getSystemMessages();
     if (systemMessages.length === 0) return messages;
 
-    const injected: Message[] = systemMessages.map((content) => ({
-      role: "system" as const,
-      content: walletAddress
-        ? content.replace(/\{\{WALLET_ADDRESS\}\}/g, walletAddress)
-        : content,
-    }));
+    const config = getConfig();
+    const { chainId } = getChainConfig();
+    const rpcUrl =
+      config.RPC_URL ??
+      `https://rpc.walletconnect.com/v1/?chainId=eip155:${chainId}&projectId=${config.WALLET_CONNECT_PROJECT_ID}`;
+
+    const injected: Message[] = systemMessages.map((content) => {
+      let resolved = content.replace(/\{\{RPC_URL\}\}/g, rpcUrl);
+      if (walletAddress) {
+        resolved = resolved.replace(/\{\{WALLET_ADDRESS\}\}/g, walletAddress);
+      }
+      return { role: "system" as const, content: resolved };
+    });
 
     return [...injected, ...messages];
   }
