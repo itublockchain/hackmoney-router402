@@ -121,14 +121,19 @@ export class ChatService {
     const model = this.getModelFromRequest(request);
     const { provider, modelId } = getProvider(model);
 
-    // Merge client tools with MCP tools
-    const mergedTools = this.mergeTools(request.tools);
+    const hasLifiPlugin = this.hasPlugin(request, "lifi");
+
     const params = this.buildParams(request, modelId);
-    params.tools = mergedTools.length > 0 ? mergedTools : params.tools;
-    params.messages = this.injectMcpSystemMessages(
-      params.messages,
-      walletAddress
-    );
+
+    // Only include MCP tools and system prompt when the lifi plugin is active
+    if (hasLifiPlugin) {
+      const mergedTools = this.mergeTools(request.tools);
+      params.tools = mergedTools.length > 0 ? mergedTools : params.tools;
+      params.messages = this.injectMcpSystemMessages(
+        params.messages,
+        walletAddress
+      );
+    }
 
     let response = await provider.chat(params);
     const totalUsage = { ...response.usage };
@@ -136,6 +141,7 @@ export class ChatService {
     // Agentic loop: if LLM calls MCP tools, execute them and re-prompt
     let rounds = 0;
     while (
+      hasLifiPlugin &&
       response.toolCalls &&
       response.toolCalls.length > 0 &&
       this.hasMcpToolCalls(response.toolCalls) &&
@@ -155,7 +161,6 @@ export class ChatService {
       const toolResults = await this.executeMcpToolCalls(mcpCalls);
 
       // Build the assistant message with tool calls
-      // Attach rawAssistantParts so provider can preserve metadata (e.g. Gemini thoughtSignature)
       const assistantMessage: Message = {
         role: "assistant",
         content: response.content,
@@ -209,14 +214,19 @@ export class ChatService {
     const model = this.getModelFromRequest(request);
     const { provider, modelId } = getProvider(model);
 
-    // Merge client tools with MCP tools
-    const mergedTools = this.mergeTools(request.tools);
+    const hasLifiPlugin = this.hasPlugin(request, "lifi");
+
     const params = this.buildParams(request, modelId);
-    params.tools = mergedTools.length > 0 ? mergedTools : params.tools;
-    params.messages = this.injectMcpSystemMessages(
-      params.messages,
-      walletAddress
-    );
+
+    // Only include MCP tools and system prompt when the lifi plugin is active
+    if (hasLifiPlugin) {
+      const mergedTools = this.mergeTools(request.tools);
+      params.tools = mergedTools.length > 0 ? mergedTools : params.tools;
+      params.messages = this.injectMcpSystemMessages(
+        params.messages,
+        walletAddress
+      );
+    }
 
     // Generate a consistent ID for all chunks in this stream
     const responseId = generateResponseId();
@@ -234,42 +244,36 @@ export class ChatService {
       let rawAssistantParts: unknown;
 
       for await (const chunk of provider.chatStream(params)) {
-        // Accumulate tool calls for potential MCP execution
         if (chunk.toolCalls) {
           accumulatedToolCalls.push(...chunk.toolCalls);
         }
         if (chunk.content) {
           lastContent = (lastContent ?? "") + chunk.content;
         }
-        // Capture raw parts from final chunk (e.g. Gemini thoughtSignature)
         if (chunk.rawAssistantParts) {
           rawAssistantParts = chunk.rawAssistantParts;
         }
 
-        // Always yield chunks to the client for real-time streaming
         yield this.formatChunk(model, chunk, responseId, created);
       }
 
       // After stream ends, check if we need to execute MCP tools
       if (
+        hasLifiPlugin &&
         accumulatedToolCalls.length > 0 &&
         this.hasMcpToolCalls(accumulatedToolCalls)
       ) {
         const { mcpCalls, clientCalls } =
           this.splitToolCalls(accumulatedToolCalls);
 
-        // If there are client-side calls mixed in, stop
         if (clientCalls.length > 0) {
           break;
         }
 
         rounds++;
 
-        // Execute MCP tool calls
         const toolResults = await this.executeMcpToolCalls(mcpCalls);
 
-        // Build messages for the next round
-        // Attach rawAssistantParts so provider can preserve metadata (e.g. Gemini thoughtSignature)
         const assistantMessage: Message = {
           role: "assistant",
           content: lastContent,
@@ -292,6 +296,17 @@ export class ChatService {
         continueLoop = true;
       }
     }
+  }
+
+  // ==========================================================================
+  // Plugin Helpers
+  // ==========================================================================
+
+  /**
+   * Check if a specific plugin is requested in the chat completion request.
+   */
+  private hasPlugin(request: ChatCompletionRequest, pluginId: string): boolean {
+    return request.plugins?.some((p) => p.id === pluginId) ?? false;
   }
 
   // ==========================================================================
