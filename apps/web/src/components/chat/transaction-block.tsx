@@ -162,20 +162,20 @@ export function TransactionBlock({
             Transaction Confirmed
           </span>
         </div>
-        <div className="mt-3 flex items-center gap-2 rounded-lg border border-border/40 bg-muted/30 px-3 py-2">
-          <span className="text-xs text-muted-foreground">Tx Hash:</span>
-          <code className="text-xs font-mono text-foreground">
-            {truncateAddress(txHash)}
-          </code>
-        </div>
         <a
           href={getExplorerUrl(txHash)}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-sm font-medium text-emerald-400 transition-colors hover:bg-emerald-500/20"
+          className="mt-3 flex items-center gap-2 rounded-lg border border-border/40 bg-muted/30 px-3 py-2 transition-colors hover:bg-muted/50"
         >
-          View on Explorer
-          <ExternalLink size={14} />
+          <span className="text-xs text-muted-foreground">Tx Hash:</span>
+          <code className="text-xs font-mono text-foreground">
+            {truncateAddress(txHash)}
+          </code>
+          <ExternalLink
+            size={12}
+            className="ml-auto shrink-0 text-muted-foreground"
+          />
         </a>
       </div>
     );
@@ -345,20 +345,20 @@ export function CompletedTransactionBlock({
           Transaction Confirmed
         </span>
       </div>
-      <div className="mt-3 flex items-center gap-2 rounded-lg border border-border/40 bg-muted/30 px-3 py-2">
-        <span className="text-xs text-muted-foreground">Tx Hash:</span>
-        <code className="text-xs font-mono text-foreground">
-          {truncateAddress(txHash)}
-        </code>
-      </div>
       <a
         href={getExplorerUrl(txHash)}
         target="_blank"
         rel="noopener noreferrer"
-        className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-sm font-medium text-emerald-400 transition-colors hover:bg-emerald-500/20"
+        className="mt-3 flex items-center gap-2 rounded-lg border border-border/40 bg-muted/30 px-3 py-2 transition-colors hover:bg-muted/50"
       >
-        View on Explorer
-        <ExternalLink size={14} />
+        <span className="text-xs text-muted-foreground">Tx Hash:</span>
+        <code className="text-xs font-mono text-foreground">
+          {truncateAddress(txHash)}
+        </code>
+        <ExternalLink
+          size={12}
+          className="ml-auto shrink-0 text-muted-foreground"
+        />
       </a>
     </div>
   );
