@@ -1,7 +1,7 @@
 import type { SessionKeyData } from "@router402/sdk";
 import type { Address, Hash } from "viem";
 import { create } from "zustand";
-import { devtools, persist } from "zustand/middleware";
+import { devtools } from "zustand/middleware";
 
 interface SmartAccountState {
   /** Smart Account address (deterministic) */
@@ -65,49 +65,36 @@ const initialState: SmartAccountState = {
 
 export const useSmartAccountStore = create<SmartAccountStore>()(
   devtools(
-    persist(
-      (set) => ({
-        ...initialState,
+    (set) => ({
+      ...initialState,
 
-        setAddress: (address) => set({ address }, false, "setAddress"),
+      setAddress: (address) => set({ address }, false, "setAddress"),
 
-        setEoaAddress: (eoaAddress) =>
-          set({ eoaAddress }, false, "setEoaAddress"),
+      setEoaAddress: (eoaAddress) =>
+        set({ eoaAddress }, false, "setEoaAddress"),
 
-        setDeployed: (isDeployed) => set({ isDeployed }, false, "setDeployed"),
+      setDeployed: (isDeployed) => set({ isDeployed }, false, "setDeployed"),
 
-        setLoading: (isLoading) => set({ isLoading }, false, "setLoading"),
+      setLoading: (isLoading) => set({ isLoading }, false, "setLoading"),
 
-        setError: (error) => set({ error }, false, "setError"),
+      setError: (error) => set({ error }, false, "setError"),
 
-        setDeploymentTxHash: (deploymentTxHash) =>
-          set({ deploymentTxHash }, false, "setDeploymentTxHash"),
+      setDeploymentTxHash: (deploymentTxHash) =>
+        set({ deploymentTxHash }, false, "setDeploymentTxHash"),
 
-        setSessionKey: (sessionKey) =>
-          set({ sessionKey }, false, "setSessionKey"),
+      setSessionKey: (sessionKey) =>
+        set({ sessionKey }, false, "setSessionKey"),
 
-        setSessionKeyAuthorized: (isSessionKeyAuthorized) =>
-          set({ isSessionKeyAuthorized }, false, "setSessionKeyAuthorized"),
+      setSessionKeyAuthorized: (isSessionKeyAuthorized) =>
+        set({ isSessionKeyAuthorized }, false, "setSessionKeyAuthorized"),
 
-        updateLastChecked: () =>
-          set({ lastCheckedAt: Date.now() }, false, "updateLastChecked"),
+      updateLastChecked: () =>
+        set({ lastCheckedAt: Date.now() }, false, "updateLastChecked"),
 
-        reset: () => set(initialState, false, "reset"),
+      reset: () => set(initialState, false, "reset"),
 
-        updateState: (state) => set(state, false, "updateState"),
-      }),
-      {
-        name: "router402-smart-account",
-        partialize: (state) => ({
-          // Only persist these fields
-          address: state.address,
-          eoaAddress: state.eoaAddress,
-          isDeployed: state.isDeployed,
-          deploymentTxHash: state.deploymentTxHash,
-          // Don't persist loading/error states or session keys (stored separately)
-        }),
-      }
-    ),
+      updateState: (state) => set(state, false, "updateState"),
+    }),
     { name: "SmartAccountStore" }
   )
 );

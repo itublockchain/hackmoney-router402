@@ -16,6 +16,7 @@ import {
   getActiveSessionKey,
   getAuthToken,
 } from "@/lib/session-keys";
+import { getSmartAccountInfo } from "@/lib/smart-account/client";
 import {
   useAuthStore,
   usePaymentFlowStore,
@@ -66,7 +67,6 @@ export function useRouter402(): UseRouter402Return {
 
   const {
     address: smartAccountAddress,
-    eoaAddress: storedEoaAddress,
     isDeployed,
     setLoading,
     setError: setStoreError,
@@ -139,13 +139,23 @@ export function useRouter402(): UseRouter402Return {
     setLoadingRef.current(true);
 
     try {
-      // Fast path: if Zustand store already has the smart account for this EOA
-      // and localStorage has both a valid session key and auth token, skip
-      // everything (including the chain switch) and go straight to "ready".
-      const store = useSmartAccountStore.getState();
-      if (store.address && store.eoaAddress === eoa && store.isDeployed) {
-        const cachedKey = getActiveSessionKey(store.address);
-        const cachedToken = getAuthToken(store.address);
+      // Fast path: derive the smart account address from the EOA and check
+      // if localStorage already has a valid session key + auth token.
+      // This avoids the full setup flow (chain switch, deploy, etc.) on
+      // page refresh when setup was completed in a previous session.
+      const info = await getSmartAccountInfo(client, eoa);
+
+      updateStateRef.current({
+        address: info.address,
+        eoaAddress: info.eoaAddress,
+        isDeployed: info.isDeployed,
+        isLoading: false,
+        error: undefined,
+      });
+
+      if (info.isDeployed) {
+        const cachedKey = getActiveSessionKey(info.address);
+        const cachedToken = getAuthToken(info.address);
         if (cachedKey && cachedToken) {
           setActiveSessionKey(cachedKey);
           setAuthToken(cachedToken);
@@ -196,31 +206,15 @@ export function useRouter402(): UseRouter402Return {
   }, []);
 
   /**
-   * Try the fast path: check localStorage for existing valid session.
-   * Returns true if we found a valid session and set status to "ready".
-   */
-  const tryFastPath = useCallback((saAddress: Address): boolean => {
-    const existingKey = getActiveSessionKey(saAddress);
-    const existingToken = getAuthToken(saAddress);
-    if (existingKey && existingToken) {
-      setActiveSessionKey(existingKey);
-      setAuthToken(existingToken);
-      setStatus("ready");
-      return true;
-    }
-    return false;
-  }, []);
-
-  /**
    * Main effect: triggers setup when wallet connects.
    *
    * Flow:
    * 1. Not connected → "disconnected", clear state
    * 2. Connected but no walletClient yet → "not_configured" (waiting)
-   * 3. Connected + walletClient → check store for smart account address
-   *    a. If store has address → try fast path (localStorage session key)
-   *    b. If fast path succeeds → "ready"
-   *    c. If fast path fails or no store address → run initialize()
+   * 3. Connected + walletClient → run initialize() which:
+   *    a. Derives smart account address from EOA
+   *    b. If deployed + localStorage has session key + auth token → "ready" (fast path)
+   *    c. Otherwise → runs full SDK setup (deploy, session key, approve, enable, backend auth)
    */
   useEffect(() => {
     // Disconnected: reset everything
@@ -270,34 +264,16 @@ export function useRouter402(): UseRouter402Return {
       return;
     }
 
-    // Try fast path: check if store already has the smart account address
-    // for THIS EOA (persisted from a previous session via Zustand persist).
-    // Skip if the store has data from a different wallet.
-    if (smartAccountAddress && storedEoaAddress === eoaAddress) {
-      if (tryFastPath(smartAccountAddress)) {
-        initializedForEoa.current = eoaAddress;
-        return;
-      }
-    }
-
-    // Run full initialization. Use a small delay to let React state settle
-    // (prevents firing during wagmi's reconnect flicker).
+    // Run initialization (includes its own fast path that derives the address
+    // and checks localStorage for session key + auth token).
+    // Use a small delay to let React state settle (prevents firing during
+    // wagmi's reconnect flicker).
     const timer = setTimeout(() => {
       initialize();
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [
-    isConnected,
-    eoaAddress,
-    walletClient,
-    smartAccountAddress,
-    storedEoaAddress,
-    reset,
-    initialize,
-    tryFastPath,
-    queryClient,
-  ]);
+  }, [isConnected, eoaAddress, walletClient, reset, initialize, queryClient]);
 
   const sessionKeyForBackend = activeSessionKey
     ? exportSessionKeyForBackend(activeSessionKey)

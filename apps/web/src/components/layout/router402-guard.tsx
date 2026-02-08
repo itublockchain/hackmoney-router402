@@ -2,16 +2,25 @@
 
 import { Loader2, Settings } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/primitives/button";
+import type { Router402Status } from "@/hooks";
 import { useRouter402 } from "@/hooks";
-import { getActiveSessionKey, getAuthToken } from "@/lib/session-keys";
-import { useSmartAccountStore } from "@/stores";
 import { ConnectWalletCard } from "./connect-wallet-card";
 
 interface Router402GuardProps {
   children: React.ReactNode;
 }
+
+/** Statuses that indicate setup is actively running */
+const IN_PROGRESS_STATUSES: Set<Router402Status> = new Set([
+  "initializing",
+  "deploying",
+  "creating_session_key",
+  "approving_session_key",
+  "enabling_session_key",
+  "sending_to_backend",
+]);
 
 /**
  * Guard component for protected routes (e.g. /chat).
@@ -24,33 +33,7 @@ interface Router402GuardProps {
  * renders the appropriate UI based on the current state.
  */
 export function Router402Guard({ children }: Router402GuardProps) {
-  const { isConnected, isReconnecting, isReady, status, eoaAddress } =
-    useRouter402();
-
-  const {
-    address: storedSmartAccountAddress,
-    eoaAddress: storedEoaAddress,
-    isDeployed: storedIsDeployed,
-  } = useSmartAccountStore();
-
-  /**
-   * Check if the persisted store + localStorage indicate a previously
-   * completed setup for the current EOA. If so, the "not_configured" status
-   * is just a transient state while walletClient hydrates — don't show setup CTA.
-   */
-  const hasPreviousSetup = useCallback((): boolean => {
-    if (!eoaAddress || !storedSmartAccountAddress) return false;
-    if (storedEoaAddress !== eoaAddress || !storedIsDeployed) return false;
-
-    const sessionKey = getActiveSessionKey(storedSmartAccountAddress);
-    const authToken = getAuthToken(storedSmartAccountAddress);
-    return !!sessionKey && !!authToken;
-  }, [
-    eoaAddress,
-    storedSmartAccountAddress,
-    storedEoaAddress,
-    storedIsDeployed,
-  ]);
+  const { isConnected, isReconnecting, isReady, status } = useRouter402();
 
   // Small delay before showing the connect-wallet card so wagmi has time to
   // start its auto-reconnect cycle and set `isReconnecting = true`.
@@ -80,14 +63,23 @@ export function Router402Guard({ children }: Router402GuardProps) {
     return <>{children}</>;
   }
 
-  // Connected but hook status is still "disconnected" (pre-hydration default)
-  // or "not_configured" with a previous setup (fast path will resolve shortly).
-  // Show a loading spinner while the hook settles.
-  const isHydrating =
-    status === "disconnected" ||
-    (status === "not_configured" && hasPreviousSetup());
+  // Setup is actively running — show loading spinner, not "Setup Required".
+  if (IN_PROGRESS_STATUSES.has(status)) {
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6">
+        <Loader2 size={24} className="animate-spin text-muted-foreground" />
+        <p className="text-sm text-muted-foreground">
+          Setting up your account...
+        </p>
+      </div>
+    );
+  }
 
-  if (isHydrating) {
+  // Connected but hook status is still "disconnected" (pre-hydration default)
+  // or "not_configured" (waiting for walletClient / initialize() to run).
+  // Show a loading spinner while the hook settles — initialize() will
+  // either fast-path to "ready" or start the full setup flow.
+  if (status === "disconnected" || status === "not_configured") {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6">
         <Loader2 size={24} className="animate-spin text-muted-foreground" />
@@ -96,7 +88,7 @@ export function Router402Guard({ children }: Router402GuardProps) {
     );
   }
 
-  // Setup is needed or in progress — show inline CTA instead of redirecting
+  // Setup is genuinely needed (status === "error") — show inline CTA
   return (
     <div className="flex flex-1 flex-col items-center justify-center p-6">
       <div className="flex flex-col items-center gap-4 text-center">

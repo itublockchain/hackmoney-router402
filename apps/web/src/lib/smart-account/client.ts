@@ -1,4 +1,5 @@
 import {
+  type SessionKeyData,
   SmartAccountError,
   type SmartAccountInfo,
   type TransactionResult,
@@ -58,6 +59,33 @@ export async function sendUserOperation(
     throw new SmartAccountError(
       "UNKNOWN_ERROR",
       result.error || "Failed to send transaction"
+    );
+  }
+
+  return {
+    txHash: result.txHash,
+    success: result.success,
+  };
+}
+
+/**
+ * Send a sponsored transaction using a session key (no owner wallet signature needed)
+ */
+export async function sendSessionKeyUserOperation(
+  sessionKey: SessionKeyData,
+  calls: Array<{
+    to: Address;
+    value?: bigint;
+    data?: Hex;
+  }>
+): Promise<TransactionResult> {
+  const sdk = assertSdkConfigured();
+  const result = await sdk.sendSessionKeyTransaction(sessionKey, calls);
+
+  if (!result.success) {
+    throw new SmartAccountError(
+      "UNKNOWN_ERROR",
+      result.error || "Failed to send session key transaction"
     );
   }
 

@@ -11,10 +11,11 @@ import {
 } from "lucide-react";
 import { useCallback, useState } from "react";
 import type { Address, Hex } from "viem";
-import { useWalletClient } from "wagmi";
 import { Button } from "@/components/primitives/button";
 import { SMART_ACCOUNT_CONFIG } from "@/config";
-import { sendUserOperation } from "@/lib/smart-account/client";
+import { getActiveSessionKey } from "@/lib/session-keys";
+import { sendSessionKeyUserOperation } from "@/lib/smart-account/client";
+import { useSmartAccountStore } from "@/stores";
 import { useChatStore } from "@/stores/chat.store";
 
 type TxStatus = "idle" | "executing" | "success" | "failed";
@@ -83,21 +84,23 @@ export function TransactionBlock({
   const [status, setStatus] = useState<TxStatus>("idle");
   const [txHash, setTxHash] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const { data: walletClient } = useWalletClient({
-    chainId: SMART_ACCOUNT_CONFIG.chainId,
-  });
+  const smartAccountAddress = useSmartAccountStore((s) => s.address);
   const updateMessage = useChatStore((s) => s.updateMessage);
 
   const txData = parseTransactionData(code);
 
+  const sessionKey = smartAccountAddress
+    ? getActiveSessionKey(smartAccountAddress)
+    : undefined;
+
   const handleExecute = useCallback(async () => {
-    if (!walletClient || !txData) return;
+    if (!sessionKey || !txData) return;
 
     setStatus("executing");
     setError(null);
 
     try {
-      const result = await sendUserOperation(walletClient, [
+      const result = await sendSessionKeyUserOperation(sessionKey, [
         {
           to: txData.to as Address,
           value: BigInt(txData.value),
@@ -140,7 +143,7 @@ export function TransactionBlock({
       setStatus("failed");
       setError(err instanceof Error ? err.message : "Transaction failed");
     }
-  }, [walletClient, txData, sessionId, messageId, updateMessage]);
+  }, [sessionKey, txData, sessionId, messageId, updateMessage]);
 
   if (!txData) {
     return (
@@ -192,7 +195,7 @@ export function TransactionBlock({
               Executing Transaction
             </p>
             <p className="text-xs text-muted-foreground">
-              Confirm in your wallet and wait for confirmation...
+              Sending via session key, waiting for confirmation...
             </p>
           </div>
         </div>
@@ -293,14 +296,14 @@ export function TransactionBlock({
         size="sm"
         className="mt-3 w-full"
         onClick={handleExecute}
-        disabled={!walletClient}
+        disabled={!sessionKey}
       >
         <Send size={14} />
         Execute Transaction
       </Button>
-      {!walletClient && (
+      {!sessionKey && (
         <p className="mt-2 text-center text-xs text-muted-foreground">
-          Connect your wallet to execute
+          No active session key. Complete setup first.
         </p>
       )}
     </div>
