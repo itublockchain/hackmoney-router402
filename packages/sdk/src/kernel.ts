@@ -24,12 +24,8 @@ import type {
   WalletClient,
 } from "viem";
 import { createPublicClient, http } from "viem";
-import {
-  entryPoint07Address,
-  prepareUserOperation,
-} from "viem/account-abstraction";
+import { entryPoint07Address } from "viem/account-abstraction";
 import { privateKeyToAccount } from "viem/accounts";
-import { getAction } from "viem/utils";
 import { KERNEL_VERSION } from "./config.js";
 import type { SmartAccountResolvedConfig as ResolvedConfig } from "./types.js";
 import { SmartAccountError } from "./types.js";
@@ -112,18 +108,7 @@ export async function createKernelAccountFromWallet(
 }
 
 /**
- * Verification gas limit multiplier.
- * Kernel V3.1 accounts with permission validators (session keys + policies)
- * have higher verification costs than the bundler estimates. This multiplier
- * gives a safety buffer to prevent AA26 (over verificationGasLimit) errors.
- */
-const VERIFICATION_GAS_MULTIPLIER = 3n;
-const CALL_GAS_MULTIPLIER = 2n;
-
-/**
  * Create a Smart Account Client with Pimlico bundler and paymaster.
- * Applies a gas multiplier to verificationGasLimit to handle the higher
- * gas costs of permission-based validators (session keys with policies).
  */
 export function createKernelSmartAccountClient<
   TAccount extends Awaited<ReturnType<typeof createKernelAccount>>,
@@ -139,26 +124,6 @@ export function createKernelSmartAccountClient<
       estimateFeesPerGas: async () => {
         const prices = await pimlicoClient.getUserOperationGasPrice();
         return prices.fast;
-      },
-      prepareUserOperation: async (client, parameters) => {
-        const userOp = (await getAction(
-          client,
-          prepareUserOperation,
-          "prepareUserOperation"
-        )(parameters as never)) as Record<string, unknown>;
-
-        // Apply multiplier to verification and call gas limits
-        if (userOp.verificationGasLimit) {
-          userOp.verificationGasLimit =
-            (userOp.verificationGasLimit as bigint) *
-            VERIFICATION_GAS_MULTIPLIER;
-        }
-        if (userOp.callGasLimit) {
-          userOp.callGasLimit =
-            (userOp.callGasLimit as bigint) * CALL_GAS_MULTIPLIER;
-        }
-
-        return userOp as never;
       },
     },
   });
