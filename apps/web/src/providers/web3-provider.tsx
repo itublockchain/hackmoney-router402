@@ -28,7 +28,12 @@ export function Web3Provider({ children }: { children: React.ReactNode }) {
   return (
     <WagmiProvider config={config}>
       <QueryProvider>
-        <ConnectKitProvider mode="dark">
+        <ConnectKitProvider
+          options={{
+            disableSiweRedirect: true,
+          }}
+          mode="dark"
+        >
           <WalletSync />
           {children}
         </ConnectKitProvider>

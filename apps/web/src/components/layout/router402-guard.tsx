@@ -1,8 +1,9 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Loader2, Settings } from "lucide-react";
+import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
+import { Button } from "@/components/primitives/button";
 import { useRouter402 } from "@/hooks";
 import { getActiveSessionKey, getAuthToken } from "@/lib/session-keys";
 import { useSmartAccountStore } from "@/stores";
@@ -16,25 +17,15 @@ interface Router402GuardProps {
  * Guard component for protected routes (e.g. /chat).
  *
  * - If wallet is not connected, shows a connect wallet prompt.
- * - If Router402 setup is not complete, redirects to /setup.
+ * - If Router402 setup is not complete, shows an inline setup CTA.
  * - If ready, renders children.
  *
  * IMPORTANT: This guard NEVER calls initialize(). It only reads status and
- * redirects to the setup page where initialization is managed.
+ * renders the appropriate UI based on the current state.
  */
 export function Router402Guard({ children }: Router402GuardProps) {
   const { isConnected, isReconnecting, isReady, status, eoaAddress } =
     useRouter402();
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const hasRedirected = useRef(false);
-  const prevEoaAddress = useRef(eoaAddress);
-
-  // Reset redirect guard when wallet changes so the new wallet can be redirected to setup
-  if (prevEoaAddress.current !== eoaAddress) {
-    prevEoaAddress.current = eoaAddress;
-    hasRedirected.current = false;
-  }
 
   const {
     address: storedSmartAccountAddress,
@@ -45,7 +36,7 @@ export function Router402Guard({ children }: Router402GuardProps) {
   /**
    * Check if the persisted store + localStorage indicate a previously
    * completed setup for the current EOA. If so, the "not_configured" status
-   * is just a transient state while walletClient hydrates — don't redirect.
+   * is just a transient state while walletClient hydrates — don't show setup CTA.
    */
   const hasPreviousSetup = useCallback((): boolean => {
     if (!eoaAddress || !storedSmartAccountAddress) return false;
@@ -69,49 +60,6 @@ export function Router402Guard({ children }: Router402GuardProps) {
     return () => clearTimeout(id);
   }, []);
 
-  useEffect(() => {
-    if (!isConnected) {
-      hasRedirected.current = false;
-      return;
-    }
-
-    if (isReady) {
-      hasRedirected.current = false;
-      return;
-    }
-
-    // Redirect on any state that indicates setup is needed or in progress.
-    // "disconnected" is excluded because it's the pre-hydration default when
-    // isConnected is true but the hook hasn't settled yet. Once Zustand
-    // hydrates, the hook transitions to either "ready" or "not_configured".
-    const needsSetup =
-      status === "not_configured" ||
-      status === "initializing" ||
-      status === "deploying" ||
-      status === "creating_session_key" ||
-      status === "approving_session_key" ||
-      status === "enabling_session_key" ||
-      status === "sending_to_backend" ||
-      status === "error";
-
-    if (needsSetup && !hasRedirected.current) {
-      // If the persisted store has a completed setup for this EOA,
-      // "not_configured" is just transient while walletClient loads.
-      // Wait for the hook to resolve via its fast path instead of redirecting.
-      if (status === "not_configured" && hasPreviousSetup()) {
-        return;
-      }
-
-      hasRedirected.current = true;
-      // Preserve query params (e.g. ?prompt=...) so the user returns after setup
-      const prompt = searchParams.get("prompt");
-      const setupUrl = prompt
-        ? `/setup?returnPrompt=${encodeURIComponent(prompt)}`
-        : "/setup";
-      router.replace(setupUrl);
-    }
-  }, [isConnected, isReady, status, router, searchParams, hasPreviousSetup]);
-
   // Wallet not connected — show connect prompt with decorative card.
   // During auto-reconnection (or before mount delay elapses), show loading
   // spinner instead to avoid flash of the connect wallet card.
@@ -132,13 +80,41 @@ export function Router402Guard({ children }: Router402GuardProps) {
     return <>{children}</>;
   }
 
-  // Brief loading state while Zustand hydrates from localStorage.
-  // Once hydrated, the hook will either set "ready" or "not_configured",
-  // and this spinner will be replaced by children or a redirect.
+  // Connected but hook status is still "disconnected" (pre-hydration default)
+  // or "not_configured" with a previous setup (fast path will resolve shortly).
+  // Show a loading spinner while the hook settles.
+  const isHydrating =
+    status === "disconnected" ||
+    (status === "not_configured" && hasPreviousSetup());
+
+  if (isHydrating) {
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6">
+        <Loader2 size={24} className="animate-spin text-muted-foreground" />
+        <p className="text-sm text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
+
+  // Setup is needed or in progress — show inline CTA instead of redirecting
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6">
-      <Loader2 size={24} className="animate-spin text-muted-foreground" />
-      <p className="text-sm text-muted-foreground">Loading...</p>
+    <div className="flex flex-1 flex-col items-center justify-center p-6">
+      <div className="flex flex-col items-center gap-4 text-center">
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-accent">
+          <Settings size={24} className="text-muted-foreground" />
+        </div>
+        <h2 className="text-lg font-semibold text-foreground">
+          Setup Required
+        </h2>
+        <p className="max-w-sm text-sm text-muted-foreground">
+          You need to complete your Router 402 setup before you can start
+          chatting. This includes deploying your smart account and creating
+          session keys.
+        </p>
+        <Button asChild className="mt-2">
+          <Link href="/setup">Go to Setup</Link>
+        </Button>
+      </div>
     </div>
   );
 }
