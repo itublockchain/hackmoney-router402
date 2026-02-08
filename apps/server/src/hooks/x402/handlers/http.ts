@@ -16,6 +16,7 @@ import {
 } from "../../../services/auth.service.js";
 import { autoPayDebt } from "../../../services/auto-payment.js";
 import { getUserDebt, isDebtBelowThreshold } from "../../../services/debt.js";
+// import { checkIsStaked } from "../../../services/stake.service.js";
 import {
   setSmartAccountAddress,
   setWalletAddress,
@@ -102,6 +103,24 @@ export async function onProtectedRequest(
 
       // Look up smart account address for MCP system prompt injection
       const smartAccountAddr = await getSmartAccountAddress(userId);
+
+      // SKIP --- HACKATHON ---
+      // Check if user has staked via the staking contract
+      // if (smartAccountAddr) {
+      //   const staked = await checkIsStaked(smartAccountAddr);
+      //   if (!staked) {
+      //     hookLogger.warn("Access denied - user has not staked", {
+      //       wallet: walletAddress.slice(0, 10),
+      //       smartAccount: smartAccountAddr.slice(0, 10),
+      //       path,
+      //     });
+      //     return {
+      //       abort: true,
+      //       reason:
+      //         "User has not staked. Please stake before accessing this resource.",
+      //     };
+      //   }
+      // }
 
       // Check if debt is below threshold (from database)
       // Task 3.2 will add: if debt >= threshold, trigger autoPayDebt()
