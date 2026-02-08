@@ -96,6 +96,10 @@ function buildSdkConfig(chainId: number): SmartAccountResolvedConfig {
     );
   }
 
+  const rpcUrl =
+    config.RPC_URL ??
+    `https://rpc.walletconnect.com/v1/?chainId=eip155:${chainId}&projectId=${config.WALLET_CONNECT_PROJECT_ID}`;
+
   return {
     chain,
     chainId,
@@ -104,7 +108,7 @@ function buildSdkConfig(chainId: number): SmartAccountResolvedConfig {
     entryPointVersion: "0.7",
     sessionKeyValidityPeriod: 365 * 24 * 60 * 60,
     apiBaseUrl: DEFAULT_API_BASE_URL,
-    rpcUrl: config.RPC_URL,
+    rpcUrl,
   };
 }
 

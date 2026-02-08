@@ -19,10 +19,7 @@ function getTargetChain() {
 function getRpcUrl() {
   const appConfig = getConfig();
   const targetChain = getTargetChain();
-  if (appConfig.NEXT_PUBLIC_PIMLICO_API_KEY) {
-    return `https://api.pimlico.io/v2/${targetChain.id}/rpc?apikey=${appConfig.NEXT_PUBLIC_PIMLICO_API_KEY}`;
-  }
-  return undefined;
+  return `https://rpc.walletconnect.com/v1/?chainId=eip155:${targetChain.id}&projectId=${appConfig.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID}`;
 }
 
 export function getWagmiConfig(): WagmiConfig {

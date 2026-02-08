@@ -41,7 +41,18 @@ export function resolveConfig(config: Router402Config): ResolvedConfig {
       ? `https://api.pimlico.io/v2/${chainId}/rpc?apikey=${config.pimlicoApiKey}`
       : undefined;
 
-  const rpcUrl = config.rpcUrl ?? pimlicoUrl;
+  // Build WalletConnect RPC URL if project ID is available
+  const walletConnectRpcUrl =
+    config.walletConnectProjectId && chainId
+      ? `https://rpc.walletconnect.com/v1/?chainId=eip155:${chainId}&projectId=${config.walletConnectProjectId}`
+      : undefined;
+
+  // Use explicit rpcUrl, then WalletConnect RPC, then chain's default, then Pimlico as last resort.
+  // Pimlico bundler URL returns non-standard revert error formats that break
+  // getSenderAddress in @zerodev/sdk, so prefer a standard JSON-RPC endpoint.
+  const chainDefaultRpc = chain?.rpcUrls?.default?.http?.[0];
+  const rpcUrl =
+    config.rpcUrl ?? walletConnectRpcUrl ?? chainDefaultRpc ?? pimlicoUrl;
 
   return {
     chain,

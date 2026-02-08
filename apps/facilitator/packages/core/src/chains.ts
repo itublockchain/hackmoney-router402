@@ -1,27 +1,39 @@
 import type { ChainConfig, ChainId } from './types.js';
 
 /**
+ * Build WalletConnect RPC URL for an EVM chain
+ */
+function walletConnectRpc(chainId: number): string {
+  const projectId = process.env.WALLET_CONNECT_PROJECT_ID;
+  if (!projectId) {
+    throw new Error('WALLET_CONNECT_PROJECT_ID environment variable is required');
+  }
+  return `https://rpc.walletconnect.com/v1/?chainId=eip155:${chainId}&projectId=${projectId}`;
+}
+
+/**
  * Default supported chains for x402 facilitators
  * RPC URLs can be overridden via environment variables
+ * EVM chains default to WalletConnect RPC
  */
 export const defaultChains: Record<string, ChainConfig> = {
   // ===== MAINNETS =====
-  
+
   // Avalanche C-Chain
   '43114': {
     chainId: 43114,
     name: 'Avalanche',
     network: 'avalanche',
-    rpcUrl: process.env.AVALANCHE_RPC_URL || 'https://api.avax.network/ext/bc/C/rpc',
+    rpcUrl: process.env.AVALANCHE_RPC_URL || walletConnectRpc(43114),
     blockExplorerUrl: 'https://snowtrace.io',
     isEVM: true,
   },
-  // Base Mainnet (with Flashblocks preconf support for ~200ms confirmations)
+  // Base Mainnet
   '8453': {
     chainId: 8453,
     name: 'Base',
     network: 'base',
-    rpcUrl: process.env.BASE_RPC_URL || 'https://mainnet-preconf.base.org',
+    rpcUrl: process.env.BASE_RPC_URL || walletConnectRpc(8453),
     blockExplorerUrl: 'https://basescan.org',
     isEVM: true,
   },
@@ -30,7 +42,7 @@ export const defaultChains: Record<string, ChainConfig> = {
     chainId: 1,
     name: 'Ethereum',
     network: 'ethereum',
-    rpcUrl: process.env.ETHEREUM_RPC_URL || 'https://eth.llamarpc.com',
+    rpcUrl: process.env.ETHEREUM_RPC_URL || walletConnectRpc(1),
     blockExplorerUrl: 'https://etherscan.io',
     isEVM: true,
   },
@@ -39,7 +51,7 @@ export const defaultChains: Record<string, ChainConfig> = {
     chainId: 4689,
     name: 'IoTeX',
     network: 'iotex',
-    rpcUrl: process.env.IOTEX_RPC_URL || 'https://babel-api.mainnet.iotex.io',
+    rpcUrl: process.env.IOTEX_RPC_URL || walletConnectRpc(4689),
     blockExplorerUrl: 'https://iotexscan.io',
     isEVM: true,
   },
@@ -48,7 +60,7 @@ export const defaultChains: Record<string, ChainConfig> = {
     chainId: 3338,
     name: 'Peaq',
     network: 'peaq',
-    rpcUrl: process.env.PEAQ_RPC_URL || 'https://peaq.api.onfinality.io/public',
+    rpcUrl: process.env.PEAQ_RPC_URL || walletConnectRpc(3338),
     blockExplorerUrl: 'https://peaq.subscan.io',
     isEVM: true,
   },
@@ -57,7 +69,7 @@ export const defaultChains: Record<string, ChainConfig> = {
     chainId: 137,
     name: 'Polygon',
     network: 'polygon',
-    rpcUrl: process.env.POLYGON_RPC_URL || 'https://polygon-rpc.com',
+    rpcUrl: process.env.POLYGON_RPC_URL || walletConnectRpc(137),
     blockExplorerUrl: 'https://polygonscan.com',
     isEVM: true,
   },
@@ -66,7 +78,7 @@ export const defaultChains: Record<string, ChainConfig> = {
     chainId: 1329,
     name: 'Sei',
     network: 'sei',
-    rpcUrl: process.env.SEI_RPC_URL || 'https://evm-rpc.sei-apis.com',
+    rpcUrl: process.env.SEI_RPC_URL || walletConnectRpc(1329),
     blockExplorerUrl: 'https://seitrace.com',
     isEVM: true,
   },
@@ -75,7 +87,7 @@ export const defaultChains: Record<string, ChainConfig> = {
     chainId: 196,
     name: 'XLayer',
     network: 'xlayer',
-    rpcUrl: process.env.XLAYER_RPC_URL || 'https://rpc.xlayer.tech',
+    rpcUrl: process.env.XLAYER_RPC_URL || walletConnectRpc(196),
     blockExplorerUrl: 'https://www.okx.com/explorer/xlayer',
     isEVM: true,
   },
@@ -99,22 +111,22 @@ export const defaultChains: Record<string, ChainConfig> = {
   },
 
   // ===== TESTNETS =====
-  
+
   // Avalanche Fuji Testnet
   '43113': {
     chainId: 43113,
     name: 'Avalanche Fuji',
     network: 'avalanche-fuji',
-    rpcUrl: process.env.AVALANCHE_FUJI_RPC_URL || 'https://api.avax-test.network/ext/bc/C/rpc',
+    rpcUrl: process.env.AVALANCHE_FUJI_RPC_URL || walletConnectRpc(43113),
     blockExplorerUrl: 'https://testnet.snowtrace.io',
     isEVM: true,
   },
-  // Base Sepolia (Testnet with Flashblocks preconf support)
+  // Base Sepolia (Testnet)
   '84532': {
     chainId: 84532,
     name: 'Base Sepolia',
     network: 'base-sepolia',
-    rpcUrl: process.env.BASE_SEPOLIA_RPC_URL || 'https://sepolia-preconf.base.org',
+    rpcUrl: process.env.BASE_SEPOLIA_RPC_URL || walletConnectRpc(84532),
     blockExplorerUrl: 'https://sepolia.basescan.org',
     isEVM: true,
   },
@@ -123,7 +135,7 @@ export const defaultChains: Record<string, ChainConfig> = {
     chainId: 80002,
     name: 'Polygon Amoy',
     network: 'polygon-amoy',
-    rpcUrl: process.env.POLYGON_AMOY_RPC_URL || 'https://rpc-amoy.polygon.technology',
+    rpcUrl: process.env.POLYGON_AMOY_RPC_URL || walletConnectRpc(80002),
     blockExplorerUrl: 'https://amoy.polygonscan.com',
     isEVM: true,
   },
@@ -132,7 +144,7 @@ export const defaultChains: Record<string, ChainConfig> = {
     chainId: 1328,
     name: 'Sei Testnet',
     network: 'sei-testnet',
-    rpcUrl: process.env.SEI_TESTNET_RPC_URL || 'https://evm-rpc-testnet.sei-apis.com',
+    rpcUrl: process.env.SEI_TESTNET_RPC_URL || walletConnectRpc(1328),
     blockExplorerUrl: 'https://testnet.seitrace.com',
     isEVM: true,
   },
@@ -141,7 +153,7 @@ export const defaultChains: Record<string, ChainConfig> = {
     chainId: 11155111,
     name: 'Sepolia',
     network: 'sepolia',
-    rpcUrl: process.env.SEPOLIA_RPC_URL || 'https://rpc.sepolia.org',
+    rpcUrl: process.env.SEPOLIA_RPC_URL || walletConnectRpc(11155111),
     blockExplorerUrl: 'https://sepolia.etherscan.io',
     isEVM: true,
   },
@@ -150,7 +162,7 @@ export const defaultChains: Record<string, ChainConfig> = {
     chainId: 195,
     name: 'XLayer Testnet',
     network: 'xlayer-testnet',
-    rpcUrl: process.env.XLAYER_TESTNET_RPC_URL || 'https://testrpc.xlayer.tech',
+    rpcUrl: process.env.XLAYER_TESTNET_RPC_URL || walletConnectRpc(195),
     blockExplorerUrl: 'https://www.okx.com/explorer/xlayer-test',
     isEVM: true,
   },

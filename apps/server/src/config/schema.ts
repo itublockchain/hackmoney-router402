@@ -44,11 +44,19 @@ export const configSchema = z.object({
   DATABASE_URL: z.url(),
 
   /**
+   * WalletConnect Project ID
+   * Used for constructing the default RPC URL
+   */
+  WALLET_CONNECT_PROJECT_ID: z.string().min(1, {
+    message: "WalletConnect Project ID is required",
+  }),
+
+  /**
    * Base RPC URL
    * RPC endpoint for blockchain interactions
-   * @default "https://mainnet.base.org/"
+   * If not set, defaults to WalletConnect RPC URL
    */
-  RPC_URL: z.url().default("https://mainnet.base.org/"),
+  RPC_URL: z.url().optional(),
 
   /**
    * x402 Payment wallet address

@@ -6,10 +6,14 @@ let _publicClient: PublicClient | null = null;
 
 export function getPublicClient(): PublicClient {
   if (!_publicClient) {
-    const { chain } = getChainConfig();
+    const { chain, chainId } = getChainConfig();
+    const config = getConfig();
+    const rpcUrl =
+      config.RPC_URL ??
+      `https://rpc.walletconnect.com/v1/?chainId=eip155:${chainId}&projectId=${config.WALLET_CONNECT_PROJECT_ID}`;
     _publicClient = createPublicClient({
       chain,
-      transport: http(getConfig().RPC_URL),
+      transport: http(rpcUrl),
     });
   }
   return _publicClient;

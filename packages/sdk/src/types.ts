@@ -25,8 +25,11 @@ export interface Router402Config {
   /** Router402 API base URL (default: "https://api.router402.xyz") */
   apiBaseUrl?: string;
 
-  /** Custom RPC URL for chain interactions (defaults to Pimlico RPC if pimlicoApiKey is set) */
+  /** Custom RPC URL for chain interactions (defaults to WalletConnect RPC if walletConnectProjectId is set) */
   rpcUrl?: string;
+
+  /** WalletConnect Project ID for default RPC URL */
+  walletConnectProjectId?: string;
 }
 
 /**

@@ -62,6 +62,13 @@ export const configSchema = z.object({
    * @default "testnet"
    */
   NEXT_PUBLIC_CHAIN_ENV: z.enum(["testnet", "mainnet"]).default("testnet"),
+
+  /**
+   * Custom RPC URL for chain interactions
+   * Overrides the chain's default RPC endpoint for smart account operations
+   * If not set, the chain's built-in default RPC is used
+   */
+  NEXT_PUBLIC_RPC_URL: z.string().url().optional(),
 });
 
 /**

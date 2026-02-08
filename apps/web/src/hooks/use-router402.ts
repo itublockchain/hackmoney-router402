@@ -167,6 +167,7 @@ export function useRouter402(): UseRouter402Return {
                 : "Failed to initialize Router402"
             );
 
+      console.error(err);
       setError(wrapped);
       setStoreErrorRef.current(wrapped);
       setStatus("error");

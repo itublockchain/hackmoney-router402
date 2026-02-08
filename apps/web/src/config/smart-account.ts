@@ -27,6 +27,8 @@ if (!config.NEXT_PUBLIC_PIMLICO_API_KEY) {
 const sdkConfig: Router402Config = {
   chain: targetChain,
   pimlicoApiKey: config.NEXT_PUBLIC_PIMLICO_API_KEY,
+  walletConnectProjectId: config.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID,
+  rpcUrl: config.NEXT_PUBLIC_RPC_URL,
 };
 
 /**

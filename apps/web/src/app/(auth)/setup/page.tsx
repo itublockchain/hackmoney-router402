@@ -1,13 +1,19 @@
 "use client";
 
+import { motion } from "framer-motion";
 import {
   AlertTriangle,
+  ArrowRight,
   CheckCircle,
+  CircleDollarSign,
   Coins,
+  ExternalLink,
   Key,
   Loader2,
   MessageSquare,
+  Shield,
   Wallet,
+  Zap,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -23,16 +29,41 @@ import {
   CardTitle,
   CopyButton,
 } from "@/components/ui";
-import { SMART_ACCOUNT_CONFIG, USDC_ADDRESS } from "@/config";
+import { SMART_ACCOUNT_CONFIG, SUPPORTED_CHAIN, USDC_ADDRESS } from "@/config";
 import type { Router402Status } from "@/hooks";
 import { useRouter402 } from "@/hooks";
 
 const steps = [
-  { id: "connect", label: "Connect Wallet" },
-  { id: "smart-account", label: "Smart Account Setup" },
-  { id: "session-key", label: "Session Key Authorization" },
-  { id: "enable-session-key", label: "Enable Session Key On-Chain" },
-  { id: "backend", label: "Authorization" },
+  {
+    id: "connect",
+    label: "Connect Wallet",
+    description: "Link your wallet",
+    icon: Wallet,
+  },
+  {
+    id: "smart-account",
+    label: "Smart Account",
+    description: "Deploy your account",
+    icon: Shield,
+  },
+  {
+    id: "session-key",
+    label: "Session Key",
+    description: "Authorize sessions",
+    icon: Key,
+  },
+  {
+    id: "enable-session-key",
+    label: "Enable On-Chain",
+    description: "Activate key on-chain",
+    icon: Zap,
+  },
+  {
+    id: "backend",
+    label: "Authorization",
+    description: "Verify with backend",
+    icon: CheckCircle,
+  },
 ] as const;
 
 const statusToStep: Record<Router402Status, number> = {
@@ -46,6 +77,23 @@ const statusToStep: Record<Router402Status, number> = {
   enabling_session_key: 3,
   sending_to_backend: 4,
   ready: 5,
+};
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.08, delayChildren: 0.1 },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 12 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.4, ease: "easeOut" as const },
+  },
 };
 
 export default function SetupPage() {
@@ -104,10 +152,6 @@ export default function SetupPage() {
   const currentStep = !isConnected ? 0 : statusToStep[status];
 
   // Show connect wallet card when not connected.
-  // Suppress during reconnection (auto-reconnect on page load) and
-  // during active connection attempts to avoid a brief flash of the card.
-  // Also suppress until mount delay has elapsed — wagmi may not have set
-  // isReconnecting yet on the very first render.
   if (!isConnected) {
     if (isConnecting || isReconnecting || !hasMounted) {
       return (
@@ -128,32 +172,54 @@ export default function SetupPage() {
 
   if (isReady) {
     return (
-      <div className="space-y-6">
-        <div className="flex flex-col items-center gap-4 text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-500/10">
-            <CheckCircle size={32} className="text-green-500" />
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="space-y-6"
+      >
+        {/* Success Header */}
+        <motion.div
+          variants={itemVariants}
+          className="flex flex-col items-center gap-3 text-center"
+        >
+          <div className="relative">
+            <div className="absolute -inset-3 rounded-full bg-green-500/10 blur-xl" />
+            <div className="relative flex h-14 w-14 items-center justify-center rounded-full border border-green-500/20 bg-green-500/10">
+              <CheckCircle size={28} className="text-green-500" />
+            </div>
           </div>
-          <h1 className="text-xl font-semibold text-foreground">
-            Setup Complete
-          </h1>
-          <p className="max-w-sm text-sm text-muted-foreground">
-            Your wallet and smart account are configured. You&apos;re ready to
-            interact with Router402.
-          </p>
-        </div>
+          <div>
+            <h1 className="text-xl font-semibold text-foreground">
+              Setup Complete
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Your wallet and smart account are ready to go.
+            </p>
+          </div>
+        </motion.div>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {/* Credits / USDC Balance */}
-          <Card>
-            <CardHeader className="pb-2">
-              <div className="flex items-center gap-2">
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500/10">
-                  <Coins size={14} className="text-emerald-500" />
+        {/* Balance & Deposit — Full width prominent section */}
+        <motion.div variants={itemVariants}>
+          <Card className="overflow-hidden border-border/60">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10">
+                    <Coins size={16} className="text-emerald-500" />
+                  </div>
+                  <CardTitle className="text-sm">Credits</CardTitle>
                 </div>
-                <CardTitle className="text-sm">Credits</CardTitle>
+                <div className="flex items-center gap-1.5 rounded-full border border-blue-500/20 bg-blue-500/5 px-2.5 py-1">
+                  <div className="h-1.5 w-1.5 rounded-full bg-blue-500" />
+                  <span className="text-[10px] font-medium text-blue-400">
+                    {SUPPORTED_CHAIN.name}
+                  </span>
+                </div>
               </div>
             </CardHeader>
-            <CardContent className="space-y-2">
+            <CardContent className="space-y-4">
+              {/* Balance Display */}
               <div className="flex items-baseline gap-2">
                 {isBalanceLoading ? (
                   <Loader2
@@ -162,7 +228,7 @@ export default function SetupPage() {
                   />
                 ) : (
                   <>
-                    <span className="text-2xl font-bold tabular-nums text-foreground">
+                    <span className="text-3xl font-bold tabular-nums text-foreground">
                       {balanceNumber !== undefined
                         ? balanceNumber.toLocaleString(undefined, {
                             minimumFractionDigits: 2,
@@ -170,35 +236,38 @@ export default function SetupPage() {
                           })
                         : "—"}
                     </span>
-                    <span className="text-xs font-medium text-muted-foreground">
+                    <span className="text-sm font-medium text-muted-foreground">
                       USDC
                     </span>
                   </>
                 )}
               </div>
 
+              {/* Low Balance Warning */}
               {isLowBalance && (
-                <div className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/5 p-2">
+                <div className="flex items-start gap-2.5 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
                   <AlertTriangle
                     size={14}
                     className="mt-0.5 shrink-0 text-amber-500"
                   />
-                  <p className="text-[11px] leading-tight text-amber-200/80">
-                    Low balance — requests may fail. Deposit USDC to continue.
+                  <p className="text-xs leading-relaxed text-amber-200/80">
+                    Low balance — requests may fail. Deposit USDC to your smart
+                    account to continue using Router 402.
                   </p>
                 </div>
               )}
 
+              {/* Deposit Address */}
               {smartAccountAddress && (
-                <div className="space-y-1.5 rounded-md border bg-muted/50 p-2">
-                  <div className="flex items-center gap-1.5">
+                <div className="space-y-2 rounded-lg border border-dashed border-border/80 bg-muted/30 p-3">
+                  <div className="flex items-center gap-2">
                     <Wallet size={12} className="text-muted-foreground" />
-                    <span className="text-[11px] font-medium text-muted-foreground">
+                    <span className="text-xs font-medium text-muted-foreground">
                       Deposit Address
                     </span>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <code className="flex-1 truncate font-mono text-[11px] text-foreground">
+                  <div className="flex items-center gap-2 rounded-md bg-background/50 px-3 py-2">
+                    <code className="flex-1 truncate font-mono text-xs text-foreground">
                       {smartAccountAddress}
                     </code>
                     <CopyButton
@@ -209,23 +278,68 @@ export default function SetupPage() {
                   </div>
                 </div>
               )}
+
+              {/* Funding Information */}
+              <div className="space-y-2.5 rounded-lg border border-border/40 bg-muted/20 p-3">
+                <div className="flex items-center gap-2">
+                  <CircleDollarSign
+                    size={12}
+                    className="text-muted-foreground"
+                  />
+                  <span className="text-xs font-medium text-muted-foreground">
+                    How to Fund Your Account
+                  </span>
+                </div>
+                <p className="text-[11px] leading-relaxed text-muted-foreground">
+                  Send{" "}
+                  <span className="font-medium text-foreground/80">
+                    USDC on {SUPPORTED_CHAIN.name}
+                  </span>{" "}
+                  to your deposit address above. You can get USDC on Base by:
+                </p>
+                <div className="space-y-1.5">
+                  <FundingOption
+                    icon={<ArrowRight size={10} />}
+                    text="Bridging from Ethereum or other chains to Base"
+                  />
+                  <FundingOption
+                    icon={<ArrowRight size={10} />}
+                    text="Purchasing USDC directly on a centralized exchange and withdrawing to Base"
+                  />
+                  <FundingOption
+                    icon={<ArrowRight size={10} />}
+                    text="Transferring from another Base wallet"
+                  />
+                </div>
+                <a
+                  href="https://bridge.base.org"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-blue-400 transition-colors hover:text-blue-300"
+                >
+                  Bridge to Base
+                  <ExternalLink size={10} />
+                </a>
+              </div>
             </CardContent>
           </Card>
+        </motion.div>
 
-          {/* API Key */}
-          {authToken && (
-            <Card>
-              <CardHeader className="pb-2">
-                <div className="flex items-center gap-2">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-500/10">
-                    <Key size={14} className="text-blue-500" />
+        {/* API Key */}
+        {authToken && (
+          <motion.div variants={itemVariants}>
+            <Card className="border-border/60">
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10">
+                    <Key size={16} className="text-blue-500" />
                   </div>
                   <CardTitle className="text-sm">API Key</CardTitle>
                 </div>
               </CardHeader>
               <CardContent className="space-y-2">
-                <div className="flex items-center gap-1.5 rounded-md border bg-muted/50 p-2">
-                  <code className="flex-1 truncate font-mono text-[11px] text-foreground">
+                <div className="flex items-center gap-2 rounded-md border bg-muted/30 px-3 py-2">
+                  <code className="flex-1 truncate font-mono text-xs text-foreground">
                     {authToken}
                   </code>
                   <CopyButton
@@ -234,20 +348,24 @@ export default function SetupPage() {
                     className="h-6 w-6 shrink-0"
                   />
                 </div>
-                <p className="text-[11px] leading-tight text-muted-foreground">
+                <p className="text-[11px] leading-relaxed text-muted-foreground">
                   Use in the{" "}
                   <code className="rounded bg-muted px-1 py-0.5 text-[10px]">
                     Authorization
                   </code>{" "}
-                  header for Router402 API requests.
+                  header for Router 402 API requests.
                 </p>
               </CardContent>
             </Card>
-          )}
-        </div>
+          </motion.div>
+        )}
 
-        <div className="flex justify-center">
-          <Button asChild>
+        {/* CTA */}
+        <motion.div
+          variants={itemVariants}
+          className="flex justify-center pt-1"
+        >
+          <Button asChild size="lg">
             <Link
               href={
                 returnPrompt
@@ -259,60 +377,111 @@ export default function SetupPage() {
               Start Chatting
             </Link>
           </Button>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     );
   }
 
+  // In-progress setup flow
   return (
-    <div className="space-y-6">
-      <div className="text-center">
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="space-y-6"
+    >
+      {/* Header */}
+      <motion.div variants={itemVariants} className="text-center">
         <h1 className="text-xl font-semibold text-foreground">Get Started</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Set up your wallet to start using Router 402
         </p>
-      </div>
+      </motion.div>
+
+      {/* Horizontal Progress Bar */}
+      <motion.div variants={itemVariants}>
+        <div className="relative h-1 w-full overflow-hidden rounded-full bg-muted">
+          <motion.div
+            className="absolute inset-y-0 left-0 rounded-full bg-green-500"
+            initial={{ width: "0%" }}
+            animate={{
+              width: `${(currentStep / steps.length) * 100}%`,
+            }}
+            transition={{ duration: 0.5, ease: "easeInOut" }}
+          />
+        </div>
+        <div className="mt-1.5 flex justify-between">
+          <span className="text-[10px] text-muted-foreground">
+            Step {currentStep + 1} of {steps.length}
+          </span>
+          <span className="text-[10px] text-muted-foreground">
+            {Math.round((currentStep / steps.length) * 100)}%
+          </span>
+        </div>
+      </motion.div>
 
       {/* Steps */}
-      <div className="space-y-3">
+      <div className="space-y-2">
         {steps.map((step, index) => {
           const isComplete = index < currentStep;
           const isCurrent = index === currentStep;
+          const StepIcon = step.icon;
 
           return (
-            <div
+            <motion.div
               key={step.id}
-              className={`flex items-center gap-3 rounded-lg border p-3 transition ${
+              variants={itemVariants}
+              className={`group flex items-center gap-3 rounded-lg border p-3 transition-all ${
                 isComplete
-                  ? "border-green-500/30 bg-green-500/5"
+                  ? "border-green-500/20 bg-green-500/5"
                   : isCurrent
                     ? "border-border bg-accent/50"
-                    : "border-border/40 opacity-50"
+                    : "border-border/30 opacity-40"
               }`}
             >
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/50">
+              <div
+                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors ${
+                  isComplete
+                    ? "bg-green-500/10"
+                    : isCurrent
+                      ? "bg-accent"
+                      : "bg-muted/50"
+                }`}
+              >
                 {isComplete ? (
                   <CheckCircle size={16} className="text-green-500" />
                 ) : isCurrent && currentStep > 0 ? (
                   <Loader2 size={16} className="animate-spin text-foreground" />
                 ) : (
-                  <span className="text-xs text-muted-foreground">
-                    {index + 1}
-                  </span>
+                  <StepIcon size={16} className="text-muted-foreground" />
                 )}
               </div>
-              <span
-                className={`text-sm ${isComplete || isCurrent ? "text-foreground" : "text-muted-foreground"}`}
-              >
-                {step.label}
-              </span>
-            </div>
+              <div className="min-w-0 flex-1">
+                <span
+                  className={`block text-sm font-medium ${
+                    isComplete || isCurrent
+                      ? "text-foreground"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  {step.label}
+                </span>
+                <span className="block text-[11px] text-muted-foreground">
+                  {step.description}
+                </span>
+              </div>
+              {isComplete && (
+                <span className="text-[10px] font-medium text-green-500">
+                  Done
+                </span>
+              )}
+            </motion.div>
           );
         })}
       </div>
 
       {/* Action area */}
-      <div className="pt-2">
+      <motion.div variants={itemVariants} className="pt-1">
         {status === "error" && (
           <Button onClick={() => initialize()} className="w-full">
             Retry Setup
@@ -324,7 +493,24 @@ export default function SetupPage() {
             {error.message}
           </p>
         )}
-      </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function FundingOption({
+  icon,
+  text,
+}: {
+  icon: React.ReactNode;
+  text: string;
+}) {
+  return (
+    <div className="flex items-start gap-2">
+      <span className="mt-0.5 shrink-0 text-muted-foreground">{icon}</span>
+      <span className="text-[11px] leading-relaxed text-muted-foreground">
+        {text}
+      </span>
     </div>
   );
 }

@@ -24,6 +24,7 @@ export function loadConfig(): Config {
       FACILITATOR_URL: process.env.FACILITATOR_URL,
       JWT_SECRET: process.env.JWT_SECRET,
       PIMLICO_API_KEY: process.env.PIMLICO_API_KEY,
+      WALLET_CONNECT_PROJECT_ID: process.env.WALLET_CONNECT_PROJECT_ID,
     });
 
     configLogger.info("Configuration loaded successfully");

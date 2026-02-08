@@ -25,6 +25,7 @@ function loadConfig(): Config {
         process.env.NEXT_PUBLIC_ZERODEV_PROJECT_ID,
       NODE_ENV: process.env.NODE_ENV,
       NEXT_PUBLIC_CHAIN_ENV: process.env.NEXT_PUBLIC_CHAIN_ENV,
+      NEXT_PUBLIC_RPC_URL: process.env.NEXT_PUBLIC_RPC_URL,
     });
 
     return config;
