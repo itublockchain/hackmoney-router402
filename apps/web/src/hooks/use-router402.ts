@@ -231,6 +231,7 @@ export function useRouter402(): UseRouter402Return {
       setError(undefined);
       initializedForEoa.current = undefined;
       isRunning.current = false;
+      reset();
       useAuthStore.getState().logout();
       usePaymentFlowStore.getState().reset();
       queryClient.removeQueries();
