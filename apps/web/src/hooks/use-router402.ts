@@ -5,8 +5,9 @@ import {
   type SessionKeyForBackend,
   SmartAccountError,
 } from "@router402/sdk";
+import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Address } from "viem";
+import { type Address, isAddressEqual } from "viem";
 import { useConnection, useSwitchChain, useWalletClient } from "wagmi";
 import { SMART_ACCOUNT_CONFIG } from "@/config";
 import { initializeRouter402, type Router402Status } from "@/lib/router402";
@@ -15,7 +16,7 @@ import {
   getActiveSessionKey,
   getAuthToken,
 } from "@/lib/session-keys";
-import { useSmartAccountStore } from "@/stores";
+import { useAuthStore, useSmartAccountStore } from "@/stores";
 
 export type { Router402Status };
 
@@ -56,6 +57,8 @@ export function useRouter402(): UseRouter402Return {
   // Use walletClient WITHOUT chain filter — we switch chains inside initialize()
   const { data: walletClient } = useWalletClient();
   const { mutateAsync: switchChainAsync } = useSwitchChain();
+
+  const queryClient = useQueryClient();
 
   const {
     address: smartAccountAddress,
@@ -107,6 +110,15 @@ export function useRouter402(): UseRouter402Return {
 
     if (isRunning.current) return;
     if (!client || !eoa) return;
+
+    // Verify the walletClient's signer matches the target EOA.
+    // After a MetaMask account switch, eoaAddress updates immediately but
+    // walletClient is re-fetched asynchronously via TanStack Query. During
+    // this window the old client is still cached — skip until the new one arrives.
+    if (!isAddressEqual(client.account?.address, eoa)) {
+      return;
+    }
+
     if (!SMART_ACCOUNT_CONFIG.isConfigured) {
       setStatus("error");
       setError(new Error("Pimlico API key is not configured"));
@@ -214,6 +226,8 @@ export function useRouter402(): UseRouter402Return {
       setAuthToken(undefined);
       setError(undefined);
       initializedForEoa.current = undefined;
+      isRunning.current = false;
+      useAuthStore.getState().logout();
       return;
     }
 
@@ -221,18 +235,27 @@ export function useRouter402(): UseRouter402Return {
     if (initializedForEoa.current && initializedForEoa.current !== eoaAddress) {
       reset();
       initializedForEoa.current = undefined;
+      isRunning.current = false;
       setActiveSessionKey(undefined);
       setAuthToken(undefined);
       setError(undefined);
       setStatus("not_configured");
+      useAuthStore.getState().logout();
+      // Flush all TanStack Query caches (balances, contract reads, wallet client)
+      // to prevent stale data from the previous account leaking through.
+      queryClient.invalidateQueries();
       // Fall through — will trigger init below or on next render when walletClient updates
     }
 
     // Already initialized for this EOA
     if (initializedForEoa.current === eoaAddress) return;
 
-    // No wallet client yet — wait for it
-    if (!walletClient) {
+    // No wallet client yet, or wallet client still belongs to previous account —
+    // wait for wagmi to re-fetch the correct one after account switch.
+    if (
+      !walletClient ||
+      walletClient.account?.address.toLowerCase() !== eoaAddress.toLowerCase()
+    ) {
       setStatus("not_configured");
       return;
     }
@@ -263,6 +286,7 @@ export function useRouter402(): UseRouter402Return {
     reset,
     initialize,
     tryFastPath,
+    queryClient,
   ]);
 
   const sessionKeyForBackend = activeSessionKey

@@ -3,13 +3,12 @@
 import { motion } from "framer-motion";
 import {
   AlertTriangle,
-  ArrowRight,
   CheckCircle,
-  CircleDollarSign,
   Coins,
   ExternalLink,
   Key,
   Loader2,
+  LogOut,
   MessageSquare,
   Shield,
   Wallet,
@@ -19,7 +18,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { erc20Abi, formatUnits } from "viem";
-import { useReadContract } from "wagmi";
+import { useDisconnect, useReadContract } from "wagmi";
 import { ConnectWalletCard } from "@/components/layout";
 import { Button } from "@/components/primitives/button";
 import {
@@ -109,6 +108,7 @@ export default function SetupPage() {
     error,
   } = useRouter402();
 
+  const disconnect = useDisconnect();
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnPrompt = searchParams.get("returnPrompt");
@@ -176,24 +176,21 @@ export default function SetupPage() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="space-y-6"
+        className="space-y-4"
       >
         {/* Success Header */}
-        <motion.div
-          variants={itemVariants}
-          className="flex flex-col items-center gap-3 text-center"
-        >
+        <motion.div variants={itemVariants} className="flex items-center gap-3">
           <div className="relative">
-            <div className="absolute -inset-3 rounded-full bg-green-500/10 blur-xl" />
-            <div className="relative flex h-14 w-14 items-center justify-center rounded-full border border-green-500/20 bg-green-500/10">
-              <CheckCircle size={28} className="text-green-500" />
+            <div className="absolute -inset-2 rounded-full bg-green-500/10 blur-xl" />
+            <div className="relative flex h-10 w-10 items-center justify-center rounded-full border border-green-500/20 bg-green-500/10">
+              <CheckCircle size={20} className="text-green-500" />
             </div>
           </div>
           <div>
-            <h1 className="text-xl font-semibold text-foreground">
+            <h1 className="text-lg font-semibold text-foreground">
               Setup Complete
             </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Your wallet and smart account are ready to go.
             </p>
           </div>
@@ -218,7 +215,7 @@ export default function SetupPage() {
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3">
               {/* Balance Display */}
               <div className="flex items-baseline gap-2">
                 {isBalanceLoading ? (
@@ -228,7 +225,7 @@ export default function SetupPage() {
                   />
                 ) : (
                   <>
-                    <span className="text-3xl font-bold tabular-nums text-foreground">
+                    <span className="text-2xl font-bold tabular-nums text-foreground">
                       {balanceNumber !== undefined
                         ? balanceNumber.toLocaleString(undefined, {
                             minimumFractionDigits: 2,
@@ -259,14 +256,14 @@ export default function SetupPage() {
 
               {/* Deposit Address */}
               {smartAccountAddress && (
-                <div className="space-y-2 rounded-lg border border-dashed border-border/80 bg-muted/30 p-3">
+                <div className="space-y-1.5 rounded-lg border border-dashed border-border/80 bg-muted/30 p-2.5">
                   <div className="flex items-center gap-2">
                     <Wallet size={12} className="text-muted-foreground" />
                     <span className="text-xs font-medium text-muted-foreground">
                       Deposit Address
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 rounded-md bg-background/50 px-3 py-2">
+                  <div className="flex items-center gap-2 rounded-md bg-background/50 px-2.5 py-1.5">
                     <code className="flex-1 truncate font-mono text-xs text-foreground">
                       {smartAccountAddress}
                     </code>
@@ -280,90 +277,64 @@ export default function SetupPage() {
               )}
 
               {/* Funding Information */}
-              <div className="space-y-2.5 rounded-lg border border-border/40 bg-muted/20 p-3">
-                <div className="flex items-center gap-2">
-                  <CircleDollarSign
-                    size={12}
-                    className="text-muted-foreground"
-                  />
-                  <span className="text-xs font-medium text-muted-foreground">
-                    How to Fund Your Account
-                  </span>
-                </div>
+              <div className="space-y-1.5 rounded-lg border border-border/40 bg-muted/20 p-2.5">
                 <p className="text-[11px] leading-relaxed text-muted-foreground">
                   Send{" "}
                   <span className="font-medium text-foreground/80">
                     USDC on {SUPPORTED_CHAIN.name}
                   </span>{" "}
-                  to your deposit address above. You can get USDC on Base by:
+                  to the deposit address above.{" "}
+                  <a
+                    href="https://bridge.base.org"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-0.5 font-medium text-blue-400 transition-colors hover:text-blue-300"
+                  >
+                    Bridge to Base
+                    <ExternalLink size={9} />
+                  </a>
                 </p>
-                <div className="space-y-1.5">
-                  <FundingOption
-                    icon={<ArrowRight size={10} />}
-                    text="Bridging from Ethereum or other chains to Base"
-                  />
-                  <FundingOption
-                    icon={<ArrowRight size={10} />}
-                    text="Purchasing USDC directly on a centralized exchange and withdrawing to Base"
-                  />
-                  <FundingOption
-                    icon={<ArrowRight size={10} />}
-                    text="Transferring from another Base wallet"
-                  />
-                </div>
-                <a
-                  href="https://bridge.base.org"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-blue-400 transition-colors hover:text-blue-300"
-                >
-                  Bridge to Base
-                  <ExternalLink size={10} />
-                </a>
               </div>
             </CardContent>
           </Card>
         </motion.div>
 
-        {/* API Key */}
-        {authToken && (
-          <motion.div variants={itemVariants}>
-            <Card className="border-border/60">
-              <CardHeader className="pb-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10">
-                    <Key size={16} className="text-blue-500" />
-                  </div>
-                  <CardTitle className="text-sm">API Key</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="flex items-center gap-2 rounded-md border bg-muted/30 px-3 py-2">
-                  <code className="flex-1 truncate font-mono text-xs text-foreground">
-                    {authToken}
-                  </code>
-                  <CopyButton
-                    value={authToken}
-                    label="Copy API key"
-                    className="h-6 w-6 shrink-0"
-                  />
-                </div>
-                <p className="text-[11px] leading-relaxed text-muted-foreground">
-                  Use in the{" "}
-                  <code className="rounded bg-muted px-1 py-0.5 text-[10px]">
-                    Authorization
-                  </code>{" "}
-                  header for Router 402 API requests.
-                </p>
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
+        {/* Router 402 Token */}
+
+        <Card className="border-border/60">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10">
+                <Key size={16} className="text-blue-500" />
+              </div>
+              <CardTitle className="text-sm">Router 402 Token</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="flex items-center gap-2 rounded-md border bg-muted/30 px-3 py-2">
+              <code className="flex-1 truncate font-mono text-xs text-foreground">
+                {authToken}
+              </code>
+              <CopyButton
+                value={authToken ?? ""}
+                label="Copy token"
+                className="h-6 w-6 shrink-0"
+              />
+            </div>
+            <p className="text-[11px] leading-relaxed text-muted-foreground">
+              Use this token in the{" "}
+              <code className="rounded bg-muted px-1 py-0.5 text-[10px]">
+                Authorization
+              </code>{" "}
+              header for Router 402 API requests.
+            </p>
+          </CardContent>
+        </Card>
 
         {/* CTA */}
         <motion.div
           variants={itemVariants}
-          className="flex justify-center pt-1"
+          className="flex items-center justify-center gap-3"
         >
           <Button asChild size="lg">
             <Link
@@ -376,6 +347,14 @@ export default function SetupPage() {
               <MessageSquare size={16} />
               Start Chatting
             </Link>
+          </Button>
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={() => disconnect.mutate()}
+          >
+            <LogOut size={16} />
+            Disconnect
           </Button>
         </motion.div>
       </motion.div>
@@ -495,22 +474,5 @@ export default function SetupPage() {
         )}
       </motion.div>
     </motion.div>
-  );
-}
-
-function FundingOption({
-  icon,
-  text,
-}: {
-  icon: React.ReactNode;
-  text: string;
-}) {
-  return (
-    <div className="flex items-start gap-2">
-      <span className="mt-0.5 shrink-0 text-muted-foreground">{icon}</span>
-      <span className="text-[11px] leading-relaxed text-muted-foreground">
-        {text}
-      </span>
-    </div>
   );
 }

@@ -28,6 +28,13 @@ export function Router402Guard({ children }: Router402GuardProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const hasRedirected = useRef(false);
+  const prevEoaAddress = useRef(eoaAddress);
+
+  // Reset redirect guard when wallet changes so the new wallet can be redirected to setup
+  if (prevEoaAddress.current !== eoaAddress) {
+    prevEoaAddress.current = eoaAddress;
+    hasRedirected.current = false;
+  }
 
   const {
     address: storedSmartAccountAddress,

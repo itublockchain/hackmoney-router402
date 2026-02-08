@@ -8,7 +8,7 @@ interface AuthLayoutProps {
 
 export function AuthLayout({ children }: AuthLayoutProps) {
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center bg-background px-4">
+    <div className="relative flex min-h-screen flex-col items-center justify-center bg-background px-4 py-8">
       {/* Subtle radial gradient accent */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute left-1/2 top-0 h-[500px] w-[800px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/[0.02] blur-3xl" />
