@@ -129,6 +129,29 @@ export function useRouter402(): UseRouter402Return {
       return;
     }
 
+    // Synchronous fast path: if the Zustand store already has data from an
+    // earlier initialize() call in this session, skip the RPC call entirely.
+    // This prevents status flickering ("ready" → "initializing" → "ready")
+    // when the effect re-fires due to walletClient identity changes or
+    // transient disconnect flickers.
+    const storeState = useSmartAccountStore.getState();
+    if (
+      storeState.address &&
+      storeState.eoaAddress &&
+      isAddressEqual(storeState.eoaAddress, eoa) &&
+      storeState.isDeployed
+    ) {
+      const cachedKey = getActiveSessionKey(storeState.address);
+      const cachedToken = getAuthToken(storeState.address);
+      if (cachedKey && cachedToken) {
+        setActiveSessionKey(cachedKey);
+        setAuthToken(cachedToken);
+        setStatus("ready");
+        initializedForEoa.current = eoa;
+        return;
+      }
+    }
+
     isRunning.current = true;
     // Mark this EOA as "in progress" immediately so the useEffect won't
     // re-trigger initialize() when Zustand store updates mid-flow cause
@@ -139,8 +162,8 @@ export function useRouter402(): UseRouter402Return {
     setLoadingRef.current(true);
 
     try {
-      // Fast path: derive the smart account address from the EOA and check
-      // if localStorage already has a valid session key + auth token.
+      // Async fast path: derive the smart account address from the EOA and
+      // check if localStorage already has a valid session key + auth token.
       // This avoids the full setup flow (chain switch, deploy, etc.) on
       // page refresh when setup was completed in a previous session.
       const info = await getSmartAccountInfo(client, eoa);
@@ -217,8 +240,12 @@ export function useRouter402(): UseRouter402Return {
    *    c. Otherwise → runs full SDK setup (deploy, session key, approve, enable, backend auth)
    */
   useEffect(() => {
-    // Disconnected: reset everything
+    // Disconnected: reset everything.
+    // Skip resetting during wagmi's reconnect flicker — isReconnecting stays
+    // true while wagmi tries to restore the previous session, even though
+    // isConnected briefly becomes false.
     if (!isConnected || !eoaAddress) {
+      if (isReconnecting) return;
       setStatus("disconnected");
       setActiveSessionKey(undefined);
       setAuthToken(undefined);
@@ -264,8 +291,8 @@ export function useRouter402(): UseRouter402Return {
       return;
     }
 
-    // Run initialization (includes its own fast path that derives the address
-    // and checks localStorage for session key + auth token).
+    // Run initialization (includes its own synchronous fast path that checks
+    // the Zustand store, and an async fast path via getSmartAccountInfo).
     // Use a small delay to let React state settle (prevents firing during
     // wagmi's reconnect flicker).
     const timer = setTimeout(() => {
@@ -273,7 +300,15 @@ export function useRouter402(): UseRouter402Return {
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [isConnected, eoaAddress, walletClient, reset, initialize, queryClient]);
+  }, [
+    isConnected,
+    isReconnecting,
+    eoaAddress,
+    walletClient,
+    reset,
+    initialize,
+    queryClient,
+  ]);
 
   const sessionKeyForBackend = activeSessionKey
     ? exportSessionKeyForBackend(activeSessionKey)
