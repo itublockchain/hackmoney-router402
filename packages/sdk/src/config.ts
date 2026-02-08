@@ -41,11 +41,14 @@ export function resolveConfig(config: Router402Config): ResolvedConfig {
       ? `https://api.pimlico.io/v2/${chainId}/rpc?apikey=${config.pimlicoApiKey}`
       : undefined;
 
+  const rpcUrl = config.rpcUrl ?? pimlicoUrl;
+
   return {
     chain,
     chainId,
     pimlicoApiKey: config.pimlicoApiKey,
     pimlicoUrl,
+    rpcUrl,
     entryPointVersion: config.entryPointVersion ?? "0.7",
     sessionKeyValidityPeriod:
       config.sessionKeyValidityPeriod ?? DEFAULT_SESSION_KEY_VALIDITY,

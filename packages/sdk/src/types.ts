@@ -24,6 +24,9 @@ export interface Router402Config {
 
   /** Router402 API base URL (default: "https://api.router402.xyz") */
   apiBaseUrl?: string;
+
+  /** Custom RPC URL for chain interactions (defaults to Pimlico RPC if pimlicoApiKey is set) */
+  rpcUrl?: string;
 }
 
 /**
@@ -35,6 +38,7 @@ export interface ResolvedConfig {
   chainId?: number;
   pimlicoApiKey?: string;
   pimlicoUrl?: string;
+  rpcUrl?: string;
   entryPointVersion: "0.7";
   sessionKeyValidityPeriod: number;
   apiBaseUrl: string;
@@ -49,6 +53,7 @@ export interface SmartAccountResolvedConfig extends ResolvedConfig {
   chainId: number;
   pimlicoApiKey: string;
   pimlicoUrl: string;
+  rpcUrl: string;
 }
 
 /**

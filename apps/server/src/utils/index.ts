@@ -1,4 +1,4 @@
-export { publicClient } from "./client.js";
+export { getPublicClient } from "./client.js";
 export {
   createErrorResponse,
   type ErrorType,

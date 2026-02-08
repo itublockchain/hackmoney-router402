@@ -1,3 +1,4 @@
+import "dotenv/config";
 import type { Chain } from "viem";
 import { base, baseSepolia } from "viem/chains";
 

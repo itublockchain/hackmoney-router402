@@ -38,7 +38,7 @@ export function createKernelPublicClient(
 ): PublicClient<Transport, Chain> {
   return createPublicClient({
     chain: config.chain,
-    transport: http(),
+    transport: http(config.rpcUrl),
   }) as PublicClient<Transport, Chain>;
 }
 

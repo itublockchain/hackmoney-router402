@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  BarChart3,
   ChevronLeft,
   ChevronRight,
   MessageSquare,
@@ -204,7 +205,19 @@ export function Sidebar() {
           </nav>
 
           {/* Footer */}
-          <div className="border-t border-border/40 p-3">
+          <div className="border-t border-border/40 p-3 space-y-0.5">
+            <Link
+              href="/analytics"
+              onClick={handleNavigation}
+              className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-accent ${
+                pathname === "/analytics"
+                  ? "bg-accent text-foreground"
+                  : "text-muted-foreground"
+              }`}
+            >
+              <BarChart3 size={16} className="shrink-0" />
+              <span className="whitespace-nowrap">Analytics</span>
+            </Link>
             <Link
               href="/setup"
               onClick={handleNavigation}
@@ -258,7 +271,18 @@ export function Sidebar() {
                 <Search size={16} />
               </button>
             </div>
-            <div className="mt-auto border-t border-border/40 py-3 flex justify-center w-full">
+            <div className="mt-auto border-t border-border/40 py-3 flex flex-col items-center gap-2 w-full">
+              <Link
+                href="/analytics"
+                className={`flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-accent hover:text-foreground cursor-pointer ${
+                  pathname === "/analytics"
+                    ? "text-foreground"
+                    : "text-muted-foreground"
+                }`}
+                aria-label="Analytics"
+              >
+                <BarChart3 size={16} />
+              </Link>
               <Link
                 href="/setup"
                 className={`flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-accent hover:text-foreground cursor-pointer ${

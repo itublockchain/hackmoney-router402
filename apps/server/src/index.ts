@@ -49,6 +49,7 @@ if (mcpServers.length > 0) {
 
 // Create routers that depend on config
 const paidRouter = createPaidRouter(config);
+const analyticsRouter = createAnalyticsRouter();
 
 const app = express();
 const PORT = config.PORT;
@@ -75,7 +76,7 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
 app.use("/health", healthRouter);
 app.use("/v1/authorize", authorizeRouter);
 app.use("/v1/models", modelsRouter);
-app.use("/v1/analytics", createAnalyticsRouter());
+app.use("/v1/analytics", analyticsRouter);
 app.use("/v1", paidRouter);
 
 // 404 handler

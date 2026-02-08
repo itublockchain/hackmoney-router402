@@ -16,6 +16,15 @@ function getTargetChain() {
   return appConfig.NEXT_PUBLIC_CHAIN_ENV === "mainnet" ? base : baseSepolia;
 }
 
+function getRpcUrl() {
+  const appConfig = getConfig();
+  const targetChain = getTargetChain();
+  if (appConfig.NEXT_PUBLIC_PIMLICO_API_KEY) {
+    return `https://api.pimlico.io/v2/${targetChain.id}/rpc?apikey=${appConfig.NEXT_PUBLIC_PIMLICO_API_KEY}`;
+  }
+  return undefined;
+}
+
 export function getWagmiConfig(): WagmiConfig {
   if (cachedConfig) {
     return cachedConfig;
@@ -23,6 +32,7 @@ export function getWagmiConfig(): WagmiConfig {
 
   const appConfig = getConfig();
   const targetChain = getTargetChain();
+  const rpcUrl = getRpcUrl();
 
   cachedConfig = createConfig(
     getDefaultConfig({
@@ -30,7 +40,7 @@ export function getWagmiConfig(): WagmiConfig {
       walletConnectProjectId: appConfig.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID,
       chains: [targetChain],
       transports: {
-        [targetChain.id]: http(),
+        [targetChain.id]: http(rpcUrl),
       },
       ssr: true,
       enableFamily: false,

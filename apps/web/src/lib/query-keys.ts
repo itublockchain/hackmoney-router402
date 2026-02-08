@@ -53,4 +53,10 @@ export const queryKeys = {
     transactions: (address: string) =>
       [...queryKeys.wallet.all, "transactions", address] as const,
   },
+
+  // Analytics queries
+  analytics: {
+    all: ["analytics"] as const,
+    data: () => [...queryKeys.analytics.all, "data"] as const,
+  },
 } as const;
