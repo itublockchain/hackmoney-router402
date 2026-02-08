@@ -422,7 +422,7 @@ No prepaid balances. No subscriptions. No custody.
 
 - [Website](https://router402.xyz)
 - [Documentation](https://docs.router402.xyz)
-- [GitHub](https://github.com/itublockchain/hackmoney-route402)
+- [GitHub](https://github.com/itublockchain/hackmoney-router402)
 - [VS Code Extension](https://marketplace.visualstudio.com/items?itemName=router402xyz.router402-vscode)
 
 ## License

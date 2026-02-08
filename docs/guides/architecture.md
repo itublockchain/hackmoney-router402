@@ -7,7 +7,7 @@ This guide explains the technical architecture of Router402, how its components 
 Router402 is a monorepo containing multiple applications and shared packages:
 
 ```
-hackmoney-route402/
+hackmoney-router402/
 ├── apps/
 │   ├── server/           # Express.js API server
 │   ├── web/              # Next.js frontend

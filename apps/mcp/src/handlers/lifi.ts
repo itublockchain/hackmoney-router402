@@ -27,8 +27,12 @@ type QuoteData = {
   };
 };
 
+/** Maximum number of tokens to return per chain to limit payload size */
+const MAX_TOKENS_PER_CHAIN = 50;
+
 /**
  * Get tokens from LiFi API
+ * Filters response to essential fields and caps per-chain results to reduce token usage.
  */
 export async function getTokens(args: {
   chains?: string;
@@ -48,7 +52,42 @@ export async function getTokens(args: {
   if (!response.ok) {
     throw new Error(`Failed to fetch tokens: ${response.statusText}`);
   }
-  return await response.text();
+
+  const data = (await response.json()) as {
+    tokens: Record<
+      string,
+      Array<{
+        address: string;
+        symbol: string;
+        decimals: number;
+        name: string;
+        chainId?: number;
+      }>
+    >;
+  };
+
+  const filtered: Record<
+    string,
+    Array<{
+      address: string;
+      symbol: string;
+      decimals: number;
+      name: string;
+      chainId?: number;
+    }>
+  > = {};
+
+  for (const [chainId, tokens] of Object.entries(data.tokens)) {
+    filtered[chainId] = tokens.slice(0, MAX_TOKENS_PER_CHAIN).map((t) => ({
+      address: t.address,
+      symbol: t.symbol,
+      decimals: t.decimals,
+      name: t.name,
+      chainId: t.chainId,
+    }));
+  }
+
+  return JSON.stringify({ tokens: filtered });
 }
 
 /**
@@ -161,7 +200,30 @@ export async function getStatus(args: {
 }
 
 /**
+ * Slim a chain object to only the fields the LLM needs for resolution.
+ */
+function slimChain(chain: {
+  id: number;
+  key: string;
+  name: string;
+  nativeToken?: { symbol: string; decimals: number };
+}) {
+  return {
+    id: chain.id,
+    key: chain.key,
+    name: chain.name,
+    nativeToken: chain.nativeToken
+      ? {
+          symbol: chain.nativeToken.symbol,
+          decimals: chain.nativeToken.decimals,
+        }
+      : undefined,
+  };
+}
+
+/**
  * Get supported chains
+ * Returns slim chain objects (id, key, name, nativeToken basics) to reduce token usage.
  */
 export async function getChains(args: {
   chainTypes?: string;
@@ -169,7 +231,9 @@ export async function getChains(args: {
   const cache = await getChainsCache();
 
   if (!args.chainTypes) {
-    return JSON.stringify(cache);
+    return JSON.stringify({
+      chains: cache.chains.map(slimChain),
+    });
   }
 
   const chainTypesSlice = args.chainTypes
@@ -188,14 +252,23 @@ export async function getChains(args: {
     if (!response.ok) {
       throw new Error(`Failed to fetch chains: ${response.statusText}`);
     }
-    return await response.text();
+    const data = (await response.json()) as {
+      chains: Array<{
+        id: number;
+        key: string;
+        name: string;
+        nativeToken?: { symbol: string; decimals: number };
+      }>;
+    };
+    return JSON.stringify({ chains: data.chains.map(slimChain) });
   }
 
-  return JSON.stringify({ chains: filteredChains });
+  return JSON.stringify({ chains: filteredChains.map(slimChain) });
 }
 
 /**
  * Get connections between chains
+ * Filters response to essential token fields to reduce token usage.
  */
 export async function getConnections(args: {
   fromChain?: string;
@@ -221,7 +294,46 @@ export async function getConnections(args: {
   if (!response.ok) {
     throw new Error(`Failed to fetch connections: ${response.statusText}`);
   }
-  return await response.text();
+
+  const data = (await response.json()) as {
+    connections: Array<{
+      fromChainId: number;
+      toChainId: number;
+      fromTokens: Array<{
+        address: string;
+        symbol: string;
+        decimals: number;
+        name: string;
+      }>;
+      toTokens: Array<{
+        address: string;
+        symbol: string;
+        decimals: number;
+        name: string;
+      }>;
+    }>;
+  };
+
+  const filtered = {
+    connections: data.connections.map((conn) => ({
+      fromChainId: conn.fromChainId,
+      toChainId: conn.toChainId,
+      fromTokens: conn.fromTokens.map((t) => ({
+        address: t.address,
+        symbol: t.symbol,
+        decimals: t.decimals,
+        name: t.name,
+      })),
+      toTokens: conn.toTokens.map((t) => ({
+        address: t.address,
+        symbol: t.symbol,
+        decimals: t.decimals,
+        name: t.name,
+      })),
+    })),
+  };
+
+  return JSON.stringify(filtered);
 }
 
 /**

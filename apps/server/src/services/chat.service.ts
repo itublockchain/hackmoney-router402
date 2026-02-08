@@ -28,9 +28,48 @@ import { getMcpManager } from "./mcp-manager.js";
 /** Maximum number of LLM ↔ MCP tool execution rounds to prevent infinite loops */
 const MAX_MCP_ROUNDS = 10;
 
+/** Maximum character length for a single MCP tool result before truncation */
+const MAX_TOOL_RESULT_LENGTH = 8000;
+
+/** Maximum character length for a compressed (old-round) tool result summary */
+const COMPRESSED_TOOL_RESULT_LENGTH = 200;
+
 // ============================================================================
 // Helper Functions
 // ============================================================================
+
+/**
+ * Compress old tool result messages to short summaries to prevent token explosion
+ * across multiple agentic loop rounds. Only the latest round's tool results are
+ * kept at full length; all prior tool results are truncated to a brief summary.
+ *
+ * @param messages - The full messages array
+ * @param latestToolMessageCount - Number of tool messages at the end belonging to the latest round
+ * @returns Messages with old tool results compressed
+ */
+function compressOldToolResults(
+  messages: Message[],
+  latestToolMessageCount: number
+): Message[] {
+  // Find the boundary: messages before the latest round's tool messages
+  const boundaryIndex = messages.length - latestToolMessageCount;
+
+  return messages.map((msg, index) => {
+    if (msg.role !== "tool" || index >= boundaryIndex) {
+      return msg;
+    }
+    // Compress old tool result content
+    const content =
+      typeof msg.content === "string" ? msg.content : String(msg.content);
+    if (content.length <= COMPRESSED_TOOL_RESULT_LENGTH) {
+      return msg;
+    }
+    return {
+      ...msg,
+      content: `${content.slice(0, COMPRESSED_TOOL_RESULT_LENGTH)}\n[compressed - old round]`,
+    };
+  });
+}
 
 /**
  * Generates a unique response ID with 'gen-' prefix.
@@ -177,8 +216,11 @@ export class ChatService {
         tool_call_id: result.toolCallId,
       }));
 
-      // Append to conversation and re-prompt
-      params.messages = [...params.messages, assistantMessage, ...toolMessages];
+      // Append to conversation, compress old tool results, and re-prompt
+      params.messages = compressOldToolResults(
+        [...params.messages, assistantMessage, ...toolMessages],
+        toolMessages.length
+      );
 
       response = await provider.chat(params);
 
@@ -287,11 +329,10 @@ export class ChatService {
           tool_call_id: result.toolCallId,
         }));
 
-        params.messages = [
-          ...params.messages,
-          assistantMessage,
-          ...toolMessages,
-        ];
+        params.messages = compressOldToolResults(
+          [...params.messages, assistantMessage, ...toolMessages],
+          toolMessages.length
+        );
 
         continueLoop = true;
       }
@@ -378,6 +419,7 @@ export class ChatService {
 
   /**
    * Execute MCP tool calls and return results.
+   * Truncates results that exceed MAX_TOOL_RESULT_LENGTH to prevent token explosion.
    */
   private async executeMcpToolCalls(
     toolCalls: ToolCall[]
@@ -388,7 +430,10 @@ export class ChatService {
       toolCalls.map(async (tc) => {
         try {
           const args = JSON.parse(tc.function.arguments);
-          const content = await mcpManager.executeTool(tc.function.name, args);
+          let content = await mcpManager.executeTool(tc.function.name, args);
+          if (content.length > MAX_TOOL_RESULT_LENGTH) {
+            content = `${content.slice(0, MAX_TOOL_RESULT_LENGTH)}\n[truncated]`;
+          }
           return { toolCallId: tc.id, content };
         } catch (error) {
           const errorMsg =

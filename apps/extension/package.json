@@ -7,7 +7,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/itublockchain/hackmoney-route402",
+    "url": "https://github.com/itublockchain/hackmoney-router402",
     "directory": "apps/extension"
   },
   "engines": {
@@ -151,7 +151,7 @@
     "watch": "tsc -watch -p ./",
     "lint": "npx @biomejs/biome check src/",
     "prepackage": "npm run compile",
-    "package": "vsce package --baseContentUrl https://github.com/itublockchain/hackmoney-route402/blob/master/apps/extension --baseImagesUrl https://github.com/itublockchain/hackmoney-route402/raw/master/apps/extension",
+    "package": "vsce package --baseContentUrl https://github.com/itublockchain/hackmoney-router402/blob/master/apps/extension --baseImagesUrl https://github.com/itublockchain/hackmoney-router402/raw/master/apps/extension",
     "clean": "rm -rf out"
   },
   "devDependencies": {

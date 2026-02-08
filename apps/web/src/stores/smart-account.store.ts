@@ -97,7 +97,7 @@ export const useSmartAccountStore = create<SmartAccountStore>()(
         updateState: (state) => set(state, false, "updateState"),
       }),
       {
-        name: "route402-smart-account",
+        name: "router402-smart-account",
         partialize: (state) => ({
           // Only persist these fields
           address: state.address,

@@ -414,7 +414,7 @@ export default function SDKPage() {
               </Button>
               <Button variant="outline" size="lg" asChild>
                 <a
-                  href="https://github.com/route402"
+                  href="https://github.com/itublockchain/hackmoney-router402"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
