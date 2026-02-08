@@ -114,6 +114,10 @@ export function useRouter402(): UseRouter402Return {
     }
 
     isRunning.current = true;
+    // Mark this EOA as "in progress" immediately so the useEffect won't
+    // re-trigger initialize() when Zustand store updates mid-flow cause
+    // dependency changes (e.g. smartAccountAddress gets set during setup).
+    initializedForEoa.current = eoa;
     setError(undefined);
     setStatus("initializing");
     setLoadingRef.current(true);
@@ -153,7 +157,6 @@ export function useRouter402(): UseRouter402Return {
       setActiveSessionKey(result.sessionKey);
       setAuthToken(result.authToken);
       setStatus("ready");
-      initializedForEoa.current = eoa;
     } catch (err) {
       const wrapped =
         err instanceof SmartAccountError
@@ -167,6 +170,8 @@ export function useRouter402(): UseRouter402Return {
       setError(wrapped);
       setStoreErrorRef.current(wrapped);
       setStatus("error");
+      // Reset so the retry button can re-trigger initialize()
+      initializedForEoa.current = undefined;
     }
 
     setLoadingRef.current(false);

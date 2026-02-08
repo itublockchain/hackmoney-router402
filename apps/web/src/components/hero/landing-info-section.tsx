@@ -205,8 +205,8 @@ export function LandingInfoSection() {
         <div className="grid grid-cols-1 gap-8 md:grid-cols-3 mt-50">
           {features.slice(0, 3).map((feature, index) => (
             <div key={index} className="flex gap-4">
-              <div className="flex-shrink-0">
-                <h1>{feature.emoji}</h1>
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-[#0000ff]">
+                <span className="text-lg">{feature.emoji}</span>
               </div>
               <div>
                 <h3 className="mb-2 text-lg font-semibold text-white">
@@ -224,8 +224,8 @@ export function LandingInfoSection() {
         <div className="mt-8 grid grid-cols-1 gap-8 md:grid-cols-2 md:px-[16.67%]">
           {features.slice(3).map((feature, index) => (
             <div key={index + 3} className="flex gap-4">
-              <div className="shrink-0">
-                <h1>{feature.emoji}</h1>
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0000ff]">
+                <span className="text-lg">{feature.emoji}</span>
               </div>
               <div>
                 <h3 className="mb-2 text-lg font-semibold text-white">
@@ -241,9 +241,15 @@ export function LandingInfoSection() {
 
         {/* Learn Details Button */}
         <div className="mt-12 flex justify-center">
-          <Button>
-            More Details
-            <ExternalLink size={16} />
+          <Button asChild>
+            <a
+              href="https://docs.router402.xyz"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              More Details
+              <ExternalLink size={16} />
+            </a>
           </Button>
         </div>
       </div>
