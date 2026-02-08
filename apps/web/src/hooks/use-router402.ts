@@ -16,7 +16,11 @@ import {
   getActiveSessionKey,
   getAuthToken,
 } from "@/lib/session-keys";
-import { useAuthStore, useSmartAccountStore } from "@/stores";
+import {
+  useAuthStore,
+  usePaymentFlowStore,
+  useSmartAccountStore,
+} from "@/stores";
 
 export type { Router402Status };
 
@@ -228,6 +232,8 @@ export function useRouter402(): UseRouter402Return {
       initializedForEoa.current = undefined;
       isRunning.current = false;
       useAuthStore.getState().logout();
+      usePaymentFlowStore.getState().reset();
+      queryClient.removeQueries();
       return;
     }
 
@@ -241,9 +247,12 @@ export function useRouter402(): UseRouter402Return {
       setError(undefined);
       setStatus("not_configured");
       useAuthStore.getState().logout();
-      // Flush all TanStack Query caches (balances, contract reads, wallet client)
-      // to prevent stale data from the previous account leaking through.
-      queryClient.invalidateQueries();
+      usePaymentFlowStore.getState().reset();
+      // Remove all TanStack Query cached data (balances, contract reads, wallet client).
+      // invalidateQueries() only marks queries stale — cached data is still returned
+      // synchronously while the background refetch runs. removeQueries() fully clears
+      // the cache so no stale data from the previous wallet leaks through.
+      queryClient.removeQueries();
       // Fall through — will trigger init below or on next render when walletClient updates
     }
 
