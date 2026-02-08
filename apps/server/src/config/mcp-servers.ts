@@ -26,6 +26,7 @@ export const mcpServers: McpServerConfig[] = [
       "get-token-balance",
       "get-native-token-balance",
       "get-allowance",
+      "get-approve-transaction",
       "get-chain-by-id",
       "get-chain-by-name",
       "get-connections",
@@ -52,8 +53,8 @@ Workflow:
 
 4. Check token allowance (ERC20 tokens only, skip for native tokens):
    - Use get-allowance to check whether the user's wallet ({{WALLET_ADDRESS}}) has approved sufficient spending for the source token on the relevant chain.
-   - If the allowance is insufficient, return an approval transaction first for the user to sign before proceeding with the swap/bridge.
-   - After the user confirms the approval transaction has been executed, proceed to the quote step.
+   - If the allowance is insufficient, use get-approve-transaction to build an ERC-20 approve transaction for the user to sign. Pass the token address, the spender address (the contract that needs the allowance), and the required amount (in the token's smallest unit).
+   - Present the approval transaction to the user for signing. After the user confirms the approval transaction has been executed, proceed to the quote step.
 
 5. Request a quote:
    - Only after the amount is confirmed, balance is verified sufficient, and allowance is confirmed adequate, request a quote with the resolved chain IDs, token addresses, and the amount (converted to the token's smallest unit using its decimals).

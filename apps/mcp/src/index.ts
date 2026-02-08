@@ -139,6 +139,16 @@ export class LiFiMCP extends McpAgent {
       async (args) =>
         textContent(await blockchain.simulateTransactionTool(args)),
     );
+
+    this.server.tool(
+      "get-approve-transaction",
+      {
+        tokenAddress: z.string(),
+        spenderAddress: z.string(),
+        amount: z.string(),
+      },
+      async (args) => textContent(await blockchain.getApproveTransaction(args)),
+    );
   }
 }
 

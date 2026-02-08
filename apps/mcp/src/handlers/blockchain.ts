@@ -1,4 +1,4 @@
-import type { Address } from "viem";
+import { type Address, encodeFunctionData } from "viem";
 import { ERC20_ABI } from "../constants.js";
 import {
   createClient,
@@ -235,4 +235,41 @@ export async function simulateTransactionTool(args: {
     chainId: chainId.toString(),
     gasEstimate,
   });
+}
+
+/**
+ * Build an ERC-20 approve transaction for the user to sign
+ */
+export async function getApproveTransaction(args: {
+  tokenAddress: string;
+  spenderAddress: string;
+  amount: string;
+}): Promise<string> {
+  if (!args.tokenAddress) {
+    throw new Error("tokenAddress is required");
+  }
+  if (!args.spenderAddress) {
+    throw new Error("spenderAddress is required");
+  }
+  if (!args.amount) {
+    throw new Error("amount is required (in smallest unit, e.g. wei)");
+  }
+
+  if (!validateAddress(args.tokenAddress)) {
+    throw new Error(`Invalid token address format: ${args.tokenAddress}`);
+  }
+  if (!validateAddress(args.spenderAddress)) {
+    throw new Error(`Invalid spender address format: ${args.spenderAddress}`);
+  }
+
+  const spenderAddress = args.spenderAddress as Address;
+  const approveAmount = BigInt(args.amount);
+
+  const data = encodeFunctionData({
+    abi: ERC20_ABI,
+    functionName: "approve",
+    args: [spenderAddress, approveAmount],
+  });
+
+  return `\`\`\`tx\n${JSON.stringify({ value: "0", to: args.tokenAddress, data }, null, 2)}\n\`\`\``;
 }
