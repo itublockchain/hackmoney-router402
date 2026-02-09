@@ -439,7 +439,8 @@ export class ChatService {
         try {
           const args = JSON.parse(tc.function.arguments);
           let content = await mcpManager.executeTool(tc.function.name, args);
-          if (content.length > MAX_TOOL_RESULT_LENGTH) {
+          const skipTruncation = tc.function.name.includes("getQuote");
+          if (!skipTruncation && content.length > MAX_TOOL_RESULT_LENGTH) {
             content = `${content.slice(0, MAX_TOOL_RESULT_LENGTH)}\n[truncated]`;
           }
           return { toolCallId: tc.id, content };

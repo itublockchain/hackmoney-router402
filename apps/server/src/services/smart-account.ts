@@ -1,6 +1,7 @@
 import {
   type CallData,
   createRouter402Sdk,
+  type GasOverrides,
   type Router402Config,
   type SessionKeyForBackend,
   type TransactionExecutionResult,
@@ -41,10 +42,15 @@ function createSdk() {
  */
 export async function sendSessionKeyTransaction(
   sessionKeyData: SessionKeyForBackend,
-  calls: CallData[]
+  calls: CallData[],
+  gasOverrides?: GasOverrides
 ): Promise<TransactionExecutionResult> {
   const sdk = createSdk();
-  return sdk.sendSessionKeyTransactionFromBackend(sessionKeyData, calls);
+  return sdk.sendSessionKeyTransactionFromBackend(
+    sessionKeyData,
+    calls,
+    gasOverrides
+  );
 }
 
 /**

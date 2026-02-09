@@ -162,6 +162,24 @@ export interface CallData {
 }
 
 /**
+ * Gas overrides to skip bundler gas estimation.
+ * When provided, the UserOperation is sent with these gas limits directly,
+ * bypassing eth_estimateUserOperationGas (which can fail for complex calldata like LiFi swaps).
+ */
+export interface GasOverrides {
+  /** Gas limit for the main execution call */
+  callGasLimit: bigint;
+  /** Gas limit for account validation */
+  verificationGasLimit: bigint;
+  /** Gas overhead for bundler pre-verification */
+  preVerificationGas: bigint;
+  /** Gas limit for paymaster validation (default: 200_000n) */
+  paymasterVerificationGasLimit?: bigint;
+  /** Gas limit for paymaster postOp callback (default: 200_000n) */
+  paymasterPostOpGasLimit?: bigint;
+}
+
+/**
  * Transaction execution result
  */
 export interface TransactionExecutionResult {

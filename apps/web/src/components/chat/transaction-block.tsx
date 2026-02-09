@@ -14,8 +14,13 @@ import type { Address, Hex } from "viem";
 import { useWalletClient } from "wagmi";
 import { Button } from "@/components/primitives/button";
 import { SMART_ACCOUNT_CONFIG } from "@/config";
-import { sendUserOperation } from "@/lib/smart-account/client";
+import { getActiveSessionKey } from "@/lib/session-keys/storage";
+import {
+  sendSessionKeyUserOperation,
+  sendUserOperation,
+} from "@/lib/smart-account/client";
 import { useChatStore } from "@/stores/chat.store";
+import { useSmartAccountStore } from "@/stores/smart-account.store";
 
 type TxStatus = "idle" | "executing" | "success" | "failed";
 
@@ -86,24 +91,47 @@ export function TransactionBlock({
   const { data: walletClient } = useWalletClient({
     chainId: SMART_ACCOUNT_CONFIG.chainId,
   });
+  const smartAccountAddress = useSmartAccountStore((s) => s.address);
   const updateMessage = useChatStore((s) => s.updateMessage);
 
   const txData = parseTransactionData(code);
 
+  const sessionKey = smartAccountAddress
+    ? getActiveSessionKey(smartAccountAddress)
+    : undefined;
+
+  const canExecute = sessionKey || walletClient;
+
   const handleExecute = useCallback(async () => {
-    if (!walletClient || !txData) return;
+    if (!txData || !canExecute) return;
 
     setStatus("executing");
     setError(null);
 
     try {
-      const result = await sendUserOperation(walletClient, [
+      const calls = [
         {
           to: txData.to as Address,
           value: BigInt(txData.value),
           data: (txData.data as Hex) ?? "0x",
         },
-      ]);
+      ];
+
+      const gasOverrides = {
+        callGasLimit: 1_000_000n,
+        verificationGasLimit: 1_000_000n,
+        preVerificationGas: 1_000_000n,
+      };
+
+      const result = sessionKey
+        ? await sendSessionKeyUserOperation(sessionKey, calls, gasOverrides)
+        : walletClient
+          ? await sendUserOperation(walletClient, calls, gasOverrides)
+          : undefined;
+
+      if (!result) {
+        throw new Error("Transaction failed");
+      }
 
       if (result.success && result.txHash) {
         setStatus("success");
@@ -140,7 +168,15 @@ export function TransactionBlock({
       setStatus("failed");
       setError(err instanceof Error ? err.message : "Transaction failed");
     }
-  }, [walletClient, txData, sessionId, messageId, updateMessage]);
+  }, [
+    walletClient,
+    sessionKey,
+    canExecute,
+    txData,
+    sessionId,
+    messageId,
+    updateMessage,
+  ]);
 
   if (!txData) {
     return (
@@ -192,7 +228,8 @@ export function TransactionBlock({
               Executing Transaction
             </p>
             <p className="text-xs text-muted-foreground">
-              Signing with wallet, waiting for confirmation...
+              {sessionKey ? "Sending via session key" : "Signing with wallet"},
+              waiting for confirmation...
             </p>
           </div>
         </div>
@@ -293,14 +330,14 @@ export function TransactionBlock({
         size="sm"
         className="mt-3 w-full"
         onClick={handleExecute}
-        disabled={!walletClient}
+        disabled={!canExecute}
       >
         <Send size={14} />
-        Execute Transaction
+        {sessionKey ? "Execute via Session Key" : "Execute Transaction"}
       </Button>
-      {!walletClient && (
+      {!canExecute && (
         <p className="mt-2 text-center text-xs text-muted-foreground">
-          Wallet not connected. Connect your wallet first.
+          No session key or wallet available. Connect your wallet first.
         </p>
       )}
     </div>
