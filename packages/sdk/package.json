@@ -34,7 +34,8 @@
     "access": "public"
   },
   "scripts": {
-    "build": "bun build ./src/index.ts --outdir ./dist --target node --format esm --external @zerodev/ecdsa-validator --external @zerodev/permissions --external @zerodev/sdk --external permissionless --external viem && tsc --emitDeclarationOnly -p tsconfig.build.json",
+    "build": "bun build ./src/index.ts --outdir ./dist --target node --format esm --external @zerodev/ecdsa-validator --external @zerodev/permissions --external @zerodev/sdk --external permissionless --external viem",
+    "build:publish": "bun run build && tsc --emitDeclarationOnly -p tsconfig.build.json",
     "declarations": "tsc --emitDeclarationOnly -p tsconfig.build.json",
     "dev": "tsc -p tsconfig.build.json --watch",
     "typecheck": "tsc --noEmit",
