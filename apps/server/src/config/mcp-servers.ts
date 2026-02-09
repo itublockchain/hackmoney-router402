@@ -25,7 +25,6 @@ export const mcpServers: McpServerConfig[] = [
       "get-status",
       "get-token-balance",
       "get-native-token-balance",
-      "get-allowance",
       "get-approve-transaction",
       "get-chain-by-id",
       "get-chain-by-name",
@@ -55,17 +54,16 @@ Workflow:
 4. Request a quote:
    - Only after the amount is confirmed and balance is verified sufficient, request a quote with the resolved chain IDs, token addresses, and the amount (converted to the token's smallest unit using its decimals).
 
-5. Check token allowance and return transactions (ERC20 tokens only, skip for native tokens):
-   - The quote response includes an approvalAddress field. Use this as the spender address for allowance checks.
-   - Use get-allowance to check whether the user's wallet ({{WALLET_ADDRESS}}) has approved sufficient spending for the source token to the approvalAddress.
-   - If the allowance is insufficient, use get-approve-transaction to build an ERC-20 approve transaction. Pass the token address, the approvalAddress as the spender, and the required amount (in the token's smallest unit).
+5. Build approve transaction and return transactions (ERC20 tokens only, skip for native tokens):
+   - The quote response includes an approvalAddress field. Use this as the spender address.
+   - ALWAYS use get-approve-transaction to build an ERC-20 approve transaction. Pass the token address, the approvalAddress as the spender, and the required amount (in the token's smallest unit). Do NOT check allowance first — always include the approve transaction.
    - Return BOTH transactions together in a single response: the approval transaction FIRST, then the swap transaction. Do NOT wait for user confirmation between them.
 
 6. Return the transaction(s):
    - Present each transaction inside a separate fenced code block with the tx identifier.
    - Include only the to, value, and data fields from each transaction.
-   - If approval is needed, return the approval tx block first, then the swap tx block.
-   - If no approval is needed (native token or sufficient allowance), return only the swap tx block.
+   - For ERC-20 swaps, ALWAYS return the approval tx block first, then the swap tx block.
+   - For native token swaps, return only the swap tx block.
    - Never fabricate, estimate, or return placeholder/dummy transaction data. If the quote fails or returns an error, report the error to the user instead.
 
 Defaults:
