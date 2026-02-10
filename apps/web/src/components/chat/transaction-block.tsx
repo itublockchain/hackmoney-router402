@@ -10,9 +10,17 @@ import {
   XCircle,
 } from "lucide-react";
 import { useCallback, useState } from "react";
+import type { Address, Hex } from "viem";
+import { useWalletClient } from "wagmi";
 import { Button } from "@/components/primitives/button";
 import { SMART_ACCOUNT_CONFIG } from "@/config";
+import { getActiveSessionKey } from "@/lib/session-keys/storage";
+import {
+  sendSessionKeyUserOperation,
+  sendUserOperation,
+} from "@/lib/smart-account/client";
 import { useChatStore } from "@/stores/chat.store";
+import { useSmartAccountStore } from "@/stores/smart-account.store";
 
 type TxStatus = "idle" | "executing" | "success" | "failed";
 
@@ -80,55 +88,95 @@ export function TransactionBlock({
   const [status, setStatus] = useState<TxStatus>("idle");
   const [txHash, setTxHash] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { data: walletClient } = useWalletClient({
+    chainId: SMART_ACCOUNT_CONFIG.chainId,
+  });
+  const smartAccountAddress = useSmartAccountStore((s) => s.address);
   const updateMessage = useChatStore((s) => s.updateMessage);
 
   const txData = parseTransactionData(code);
 
-  // TEMPORARY MOCK — remove this and restore real SDK call once session key tx is fixed
+  const sessionKey = smartAccountAddress
+    ? getActiveSessionKey(smartAccountAddress)
+    : undefined;
+
+  const canExecute = sessionKey || walletClient;
+
   const handleExecute = useCallback(async () => {
-    if (!txData) return;
+    if (!txData || !canExecute) return;
 
     setStatus("executing");
     setError(null);
 
-    // Simulate on-chain confirmation delay
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+    try {
+      const calls = [
+        {
+          to: txData.to as Address,
+          value: BigInt(txData.value),
+          data: (txData.data as Hex) ?? "0x",
+        },
+      ];
 
-    // Generate a fake tx hash that looks realistic
-    const fakeTxHash =
-      "0x" +
-      Array.from({ length: 64 }, () =>
-        Math.floor(Math.random() * 16).toString(16)
-      ).join("");
+      const gasOverrides = {
+        callGasLimit: 1_000_000n,
+        verificationGasLimit: 1_000_000n,
+        preVerificationGas: 1_000_000n,
+      };
 
-    setStatus("success");
-    setTxHash(fakeTxHash);
+      const result = sessionKey
+        ? await sendSessionKeyUserOperation(sessionKey, calls, gasOverrides)
+        : walletClient
+          ? await sendUserOperation(walletClient, calls, gasOverrides)
+          : undefined;
 
-    // Update the message content to replace ```tx with ```tx-complete
-    // This prevents re-execution on re-render
-    const state = useChatStore.getState();
-    const walletAddress = state.walletAddress;
-    if (walletAddress) {
-      const sessions = state.sessionsByWallet[walletAddress] ?? {};
-      const session = sessions[sessionId];
-      if (session) {
-        const message = session.messages.find((m) => m.id === messageId);
-        if (message) {
-          const completedData = JSON.stringify(
-            { ...txData, txHash: fakeTxHash },
-            null,
-            2
-          );
-          const newContent = message.content.replace(
-            /```tx\n[\s\S]*?```/,
-            `\`\`\`tx-complete\n${completedData}\n\`\`\``
-          );
-          updateMessage(sessionId, messageId, newContent);
-        }
+      if (!result) {
+        throw new Error("Transaction failed");
       }
+
+      if (result.success && result.txHash) {
+        setStatus("success");
+        setTxHash(result.txHash);
+
+        // Update the message content to replace ```tx with ```tx-complete
+        // This prevents re-execution on re-render
+        const state = useChatStore.getState();
+        const walletAddress = state.walletAddress;
+        if (walletAddress) {
+          const sessions = state.sessionsByWallet[walletAddress] ?? {};
+          const session = sessions[sessionId];
+          if (session) {
+            const message = session.messages.find((m) => m.id === messageId);
+            if (message) {
+              const completedData = JSON.stringify(
+                { ...txData, txHash: result.txHash },
+                null,
+                2
+              );
+              const newContent = message.content.replace(
+                /```tx\n[\s\S]*?```/,
+                `\`\`\`tx-complete\n${completedData}\n\`\`\``
+              );
+              updateMessage(sessionId, messageId, newContent);
+            }
+          }
+        }
+      } else {
+        setStatus("failed");
+        setError("Transaction failed");
+      }
+    } catch (err) {
+      setStatus("failed");
+      setError(err instanceof Error ? err.message : "Transaction failed");
     }
-  }, [txData, sessionId, messageId, updateMessage]);
-  // END TEMPORARY MOCK
+  }, [
+    walletClient,
+    sessionKey,
+    canExecute,
+    txData,
+    sessionId,
+    messageId,
+    updateMessage,
+  ]);
 
   if (!txData) {
     return (
@@ -180,7 +228,8 @@ export function TransactionBlock({
               Executing Transaction
             </p>
             <p className="text-xs text-muted-foreground">
-              Sending via session key, waiting for confirmation...
+              {sessionKey ? "Sending via session key" : "Signing with wallet"},
+              waiting for confirmation...
             </p>
           </div>
         </div>
@@ -277,10 +326,20 @@ export function TransactionBlock({
         )}
       </div>
 
-      <Button size="sm" className="mt-3 w-full" onClick={handleExecute}>
+      <Button
+        size="sm"
+        className="mt-3 w-full"
+        onClick={handleExecute}
+        disabled={!canExecute}
+      >
         <Send size={14} />
-        Execute Transaction
+        {sessionKey ? "Execute via Session Key" : "Execute Transaction"}
       </Button>
+      {!canExecute && (
+        <p className="mt-2 text-center text-xs text-muted-foreground">
+          No session key or wallet available. Connect your wallet first.
+        </p>
+      )}
     </div>
   );
 }

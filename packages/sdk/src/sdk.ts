@@ -25,6 +25,7 @@ import type {
   CallData,
   ChatOptions,
   ChatResponse,
+  GasOverrides,
   ResolvedConfig,
   Router402Config,
   SessionKeyData,
@@ -163,10 +164,11 @@ export class Router402Sdk {
    */
   async sendOwnerTransaction(
     walletClient: WalletClient,
-    calls: CallData[]
+    calls: CallData[],
+    gasOverrides?: GasOverrides
   ): Promise<TransactionExecutionResult> {
     const config = this.requireSmartAccountConfig();
-    return sendOwnerTransaction(walletClient, calls, config);
+    return sendOwnerTransaction(walletClient, calls, config, gasOverrides);
   }
 
   /**
@@ -174,7 +176,8 @@ export class Router402Sdk {
    */
   async sendSessionKeyTransaction(
     sessionKey: SessionKeyData,
-    calls: CallData[]
+    calls: CallData[],
+    gasOverrides?: GasOverrides
   ): Promise<TransactionExecutionResult> {
     const config = this.requireSmartAccountConfig();
     if (isSessionKeyExpired(sessionKey)) {
@@ -195,7 +198,8 @@ export class Router402Sdk {
       sessionKey.privateKey,
       sessionKey.serializedSessionKey,
       calls,
-      config
+      config,
+      gasOverrides
     );
   }
 
@@ -204,14 +208,16 @@ export class Router402Sdk {
    */
   async sendSessionKeyTransactionFromBackend(
     sessionKeyData: SessionKeyForBackend,
-    calls: CallData[]
+    calls: CallData[],
+    gasOverrides?: GasOverrides
   ): Promise<TransactionExecutionResult> {
     const config = this.requireSmartAccountConfig();
     return sendSessionKeyTransaction(
       sessionKeyData.privateKey,
       sessionKeyData.serializedSessionKey,
       calls,
-      config
+      config,
+      gasOverrides
     );
   }
 

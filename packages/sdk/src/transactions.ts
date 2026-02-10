@@ -6,6 +6,7 @@ import {
 } from "./kernel.js";
 import type {
   CallData,
+  GasOverrides,
   SmartAccountResolvedConfig as ResolvedConfig,
   TransactionExecutionResult,
 } from "./types.js";
@@ -16,7 +17,8 @@ import type {
 export async function sendOwnerTransaction(
   walletClient: WalletClient,
   calls: CallData[],
-  config: ResolvedConfig
+  config: ResolvedConfig,
+  gasOverrides?: GasOverrides
 ): Promise<TransactionExecutionResult> {
   try {
     const account = await createKernelAccountFromWallet(walletClient, config);
@@ -28,6 +30,22 @@ export async function sendOwnerTransaction(
         data: call.data ?? "0x",
         value: call.value ?? 0n,
       })),
+      ...(gasOverrides && {
+        callGasLimit: gasOverrides.callGasLimit,
+        verificationGasLimit: gasOverrides.verificationGasLimit,
+        preVerificationGas: gasOverrides.preVerificationGas,
+        paymasterVerificationGasLimit:
+          gasOverrides.paymasterVerificationGasLimit ?? 200_000n,
+        paymasterPostOpGasLimit:
+          gasOverrides.paymasterPostOpGasLimit ?? 200_000n,
+        parameters: [
+          "factory",
+          "fees",
+          "paymaster",
+          "nonce",
+          "signature",
+        ] as unknown[],
+      }),
     });
 
     const receipt = await client.waitForUserOperationReceipt({
@@ -55,7 +73,8 @@ export async function sendSessionKeyTransaction(
   sessionKeyPrivateKey: Hex,
   serializedApproval: string,
   calls: CallData[],
-  config: ResolvedConfig
+  config: ResolvedConfig,
+  gasOverrides?: GasOverrides
 ): Promise<TransactionExecutionResult> {
   try {
     const client = await createKernelClientFromSessionKey(
@@ -70,6 +89,22 @@ export async function sendSessionKeyTransaction(
         data: call.data ?? "0x",
         value: call.value ?? 0n,
       })),
+      ...(gasOverrides && {
+        callGasLimit: gasOverrides.callGasLimit,
+        verificationGasLimit: gasOverrides.verificationGasLimit,
+        preVerificationGas: gasOverrides.preVerificationGas,
+        paymasterVerificationGasLimit:
+          gasOverrides.paymasterVerificationGasLimit ?? 200_000n,
+        paymasterPostOpGasLimit:
+          gasOverrides.paymasterPostOpGasLimit ?? 200_000n,
+        parameters: [
+          "factory",
+          "fees",
+          "paymaster",
+          "nonce",
+          "signature",
+        ] as unknown[],
+      }),
     });
 
     const receipt = await client.waitForUserOperationReceipt({

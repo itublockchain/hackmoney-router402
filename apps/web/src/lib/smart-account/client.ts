@@ -1,4 +1,5 @@
 import {
+  type GasOverrides,
   type SessionKeyData,
   SmartAccountError,
   type SmartAccountInfo,
@@ -50,10 +51,15 @@ export async function sendUserOperation(
     to: Address;
     value?: bigint;
     data?: Hex;
-  }>
+  }>,
+  gasOverrides?: GasOverrides
 ): Promise<TransactionResult> {
   const sdk = assertSdkConfigured();
-  const result = await sdk.sendOwnerTransaction(walletClient, calls);
+  const result = await sdk.sendOwnerTransaction(
+    walletClient,
+    calls,
+    gasOverrides
+  );
 
   if (!result.success) {
     throw new SmartAccountError(
@@ -77,10 +83,15 @@ export async function sendSessionKeyUserOperation(
     to: Address;
     value?: bigint;
     data?: Hex;
-  }>
+  }>,
+  gasOverrides?: GasOverrides
 ): Promise<TransactionResult> {
   const sdk = assertSdkConfigured();
-  const result = await sdk.sendSessionKeyTransaction(sessionKey, calls);
+  const result = await sdk.sendSessionKeyTransaction(
+    sessionKey,
+    calls,
+    gasOverrides
+  );
 
   if (!result.success) {
     throw new SmartAccountError(

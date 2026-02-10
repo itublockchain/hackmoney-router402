@@ -27,13 +27,7 @@ import type {
 import { getMcpManager } from "./mcp-manager.js";
 
 /** Maximum number of LLM ↔ MCP tool execution rounds to prevent infinite loops */
-const MAX_MCP_ROUNDS = 10;
-
-/** Maximum character length for a single MCP tool result before truncation */
-const MAX_TOOL_RESULT_LENGTH = 8000;
-
-/** Maximum character length for a compressed (old-round) tool result summary */
-const COMPRESSED_TOOL_RESULT_LENGTH = 200;
+const MAX_MCP_ROUNDS = 20;
 
 // ============================================================================
 // Helper Functions
@@ -62,12 +56,10 @@ function compressOldToolResults(
     // Compress old tool result content
     const content =
       typeof msg.content === "string" ? msg.content : String(msg.content);
-    if (content.length <= COMPRESSED_TOOL_RESULT_LENGTH) {
-      return msg;
-    }
+
     return {
       ...msg,
-      content: `${content.slice(0, COMPRESSED_TOOL_RESULT_LENGTH)}\n[compressed - old round]`,
+      content,
     };
   });
 }
@@ -438,10 +430,7 @@ export class ChatService {
       toolCalls.map(async (tc) => {
         try {
           const args = JSON.parse(tc.function.arguments);
-          let content = await mcpManager.executeTool(tc.function.name, args);
-          if (content.length > MAX_TOOL_RESULT_LENGTH) {
-            content = `${content.slice(0, MAX_TOOL_RESULT_LENGTH)}\n[truncated]`;
-          }
+          const content = await mcpManager.executeTool(tc.function.name, args);
           return { toolCallId: tc.id, content };
         } catch (error) {
           const errorMsg =

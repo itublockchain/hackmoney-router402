@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "tsx watch --clear-screen=false src/index.ts",
     "build": "prisma generate && bun build ./src/index.ts --outdir ./dist --target bun",
+    "build:fast": "prisma generate && bun build ./src/index.ts --outdir ./dist --target bun",
     "start": "bun dist/index.js",
     "typecheck": "tsc --noEmit",
     "lint": "biome check .",

@@ -47,6 +47,7 @@ export type {
   ChatResponse,
   ChatUsage,
   DeploymentResult,
+  GasOverrides,
   ResolvedConfig,
   Router402Config,
   SessionKeyData,

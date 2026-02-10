@@ -25,7 +25,7 @@
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "turbo build && changeset publish",
-    "build:server": "turbo build --filter=@router402/sdk && turbo build --filter=@router402/types && turbo build --filter=@router402/utils && turbo build --filter=@router402/server"
+    "build:server": "turbo build:fast --filter=@router402/server"
   },
   "type": "module",
   "engines": {
